@@ -10,12 +10,12 @@ import androidx.compose.ui.unit.dp
 import com.example.dacs3.ui.components.*
 
 @Composable
-fun HomeScreen() {
+fun AppHomeScreen() {
     val backgroundColor = Color(0xFFF1F5F9) 
     
     Scaffold(
         containerColor = backgroundColor,
-        bottomBar = { BottomNavigationBar() }
+        bottomBar = { AppBottomBar() }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -26,25 +26,25 @@ fun HomeScreen() {
             item { TopHeader() }
 
             item {
-                PaddingWrapper {
+                HomePaddingWrapper {
                     SearchBar()
                 }
             }
 
             item {
-                PaddingWrapper {
+                HomePaddingWrapper {
                     CategorySection()
                 }
             }
 
             item {
-                PaddingWrapper {
+                HomePaddingWrapper {
                     FeaturedDestinationsSection()
                 }
             }
 
             item {
-                PaddingWrapper {
+                HomePaddingWrapper {
                     CulturalArticlesSection()
                 }
             }
@@ -55,7 +55,7 @@ fun HomeScreen() {
 }
 
 @Composable
-fun PaddingWrapper(content: @Composable () -> Unit) {
+fun HomePaddingWrapper(content: @Composable () -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 20.dp)) {
         content()
     }
