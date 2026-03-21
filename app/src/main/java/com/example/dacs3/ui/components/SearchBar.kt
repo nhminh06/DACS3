@@ -1,6 +1,8 @@
 package com.example.dacs3.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -25,11 +27,30 @@ fun SearchBar() {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 20.dp)
+            modifier = Modifier.padding(horizontal = 4.dp)
         ) {
-            Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
-            Spacer(modifier = Modifier.width(10.dp))
-            Text("Tìm kiếm điểm đến hoặc văn hóa...", color = Color.Gray.copy(alpha = 0.6f), fontSize = 14.sp)
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = "Tìm kiếm...",
+                color = Color.Gray.copy(alpha = 0.6f), 
+                fontSize = 14.sp,
+                modifier = Modifier.weight(1f)
+            )
+            
+            // Blue button with white icon
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(Color(0xFF2563EB), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search, 
+                    contentDescription = null, 
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }

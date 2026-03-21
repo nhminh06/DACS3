@@ -11,7 +11,7 @@ import com.example.dacs3.ui.components.*
 
 @Composable
 fun AppHomeScreen() {
-    val backgroundColor = Color(0xFFF1F5F9) 
+    val backgroundColor = Color(0xFFF1F5F9)
     
     Scaffold(
         containerColor = backgroundColor,
@@ -21,35 +21,64 @@ fun AppHomeScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = paddingValues.calculateBottomPadding()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            // 1. Ảnh Header
             item { TopHeader() }
 
+            // 2. Thanh tìm kiếm
             item {
                 HomePaddingWrapper {
                     SearchBar()
                 }
             }
 
+            // 3. Danh mục
             item {
                 HomePaddingWrapper {
                     CategorySection()
                 }
             }
 
+            // 4. Địa điểm nổi bật (hiện 2 mục 1 lần)
             item {
                 HomePaddingWrapper {
                     FeaturedDestinationsSection()
                 }
             }
 
+            // 5. Bài viết văn hóa
             item {
                 HomePaddingWrapper {
                     CulturalArticlesSection()
                 }
             }
-            
-            item { Spacer(modifier = Modifier.height(16.dp)) }
+
+            // 6. Người đồng hành cùng bạn (Hướng dẫn viên - hiện 2 người 1 lần)
+            item {
+                HomePaddingWrapper {
+                    GuidesSection()
+                }
+            }
+
+            // 7. Đánh giá khách hàng (Trải nghiệm thực tế)
+            item {
+                HomePaddingWrapper {
+                    ReviewsSection()
+                }
+            }
+            item {
+                HomePaddingWrapper {
+                    ContactFormSection()
+                }
+            }
+            item {
+                HomePaddingWrapper {
+                    ClosingGreeting()
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(24.dp)) }
         }
     }
 }

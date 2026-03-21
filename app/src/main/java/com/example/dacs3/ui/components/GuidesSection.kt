@@ -1,7 +1,6 @@
 package com.example.dacs3.ui.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -9,7 +8,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,26 +22,32 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dacs3.R
-import com.example.dacs3.data.model.Destination
+import com.example.dacs3.data.model.Guide
+import androidx.compose.foundation.Image
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FeaturedDestinationsSection() {
-    val destinations = listOf(
-        Destination("Phố cổ Hội An", "Quảng Nam", R.drawable.a2),
-        Destination("Thung lũng Sapa", "Lào Cai", R.drawable.a4),
-        Destination("Vịnh Hạ Long", "Quảng Ninh", R.drawable.a7),
-        Destination("Đà Lạt", "Lâm Đồng", R.drawable.a1)
+fun GuidesSection() {
+    val guides = listOf(
+        Guide("Nguyễn Văn An", "Chuyên gia Văn hóa Hội An", R.drawable.a8),
+        Guide("Lê Thị Lan", "Hướng dẫn viên bản địa Sapa", R.drawable.a9),
+        Guide("Trần Hùng", "Hướng dẫn viên du lịch Vịnh Hạ Long", R.drawable.a2),
+        Guide("Phạm Minh Hoàng", "Chuyên gia ẩm thực Huế", R.drawable.a7)
     )
 
-    // Nhóm 2 tour vào 1 trang để lướt một lần ra 2 cái
-    val pages = destinations.chunked(2)
+    // Nhóm 2 người vào 1 trang để lướt một lần ra 2 cái
+    val pages = guides.chunked(2)
     val pagerState = rememberPagerState(pageCount = { pages.size })
 
     Column {
-        Text("Địa điểm nổi bật", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color(0xFF1E293B))
-        Spacer(modifier = Modifier.height(12.dp))
-        
+        Text(
+            text = "Người đồng hành cùng bạn",
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 17.sp,
+            color = Color(0xFF1E293B)
+        )
+        Spacer(modifier = Modifier.height(14.dp))
+
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxWidth(),
@@ -52,12 +57,12 @@ fun FeaturedDestinationsSection() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                pages[pageIndex].forEach { dest ->
+                pages[pageIndex].forEach { guide ->
                     Box(modifier = Modifier.weight(1f)) {
-                        DestinationCard(dest)
+                        GuideCard(guide)
                     }
                 }
-                // Nếu trang cuối chỉ có 1 phần tử, thêm một Box trống để giữ bố cục
+                // Nếu trang cuối chỉ có 1 phần tử, thêm một Box trống để giữ bố cục cân đối
                 if (pages[pageIndex].size < 2) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -67,51 +72,62 @@ fun FeaturedDestinationsSection() {
 }
 
 @Composable
-fun DestinationCard(dest: Destination) {
+fun GuideCard(guide: Guide) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(210.dp),
-        shape = RoundedCornerShape(20.dp),
+            .height(240.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column {
             Image(
-                painter = painterResource(id = dest.imageRes),
-                contentDescription = dest.name,
+                painter = painterResource(id = guide.imageRes),
+                contentDescription = guide.name,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(125.dp)
-                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
+                    .height(140.dp)
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
                 contentScale = ContentScale.Crop
             )
-            Column(modifier = Modifier.padding(10.dp)) {
+            Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    dest.name,
+                    text = guide.name,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
+                    fontSize = 15.sp,
                     color = Color(0xFF0F172A),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = guide.bio,
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    maxLines = 2,
+                    lineHeight = 16.sp,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
                     Box(
                         modifier = Modifier
-                            .size(18.dp)
+                            .size(32.dp)
                             .background(Color(0xFF2563EB), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            Icons.Default.LocationOn, 
-                            contentDescription = null, 
-                            tint = Color.White, 
-                            modifier = Modifier.size(10.dp)
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Xem chi tiết",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(dest.location, color = Color.Gray, fontSize = 11.sp)
                 }
             }
         }
