@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.dacs3.ui.screens.AppHomeScreen
+import com.example.dacs3.ui.MainContainer
 import com.example.dacs3.ui.theme.DACS3Theme
 
 class MainActivity : ComponentActivity() {
@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             DACS3Theme {
-                AppHomeScreen()
+                MainContainer()
             }
         }
     }

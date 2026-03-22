@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.components
+package com.example.dacs3.ui.components.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -30,21 +30,33 @@ import com.example.dacs3.data.model.Destination
 fun FeaturedDestinationsSection() {
     val destinations = listOf(
         Destination("Phố cổ Hội An", "Quảng Nam", R.drawable.a2),
-        Destination("Thung lũng Sapa", "Lào Cai", R.drawable.a4),
-        Destination("Vịnh Hạ Long", "Quảng Ninh", R.drawable.a7),
-        Destination("Đà Lạt", "Lâm Đồng", R.drawable.a1)
+        Destination("Bà Nà Hills", "Đà Nẵng", R.drawable.a4),
+        Destination("Cố đô Huế", "Thừa Thiên Huế", R.drawable.a7),
+        Destination("Đà Lạt", "Lâm Đồng", R.drawable.a1),
+        Destination("Mũi Né", "Bình Thuận", R.drawable.a3),
+        Destination("Nha Trang", "Khánh Hòa", R.drawable.a5),
+        Destination("Phong Nha", "Quảng Bình", R.drawable.a6),
+        Destination("Đảo Lý Sơn", "Quảng Ngãi", R.drawable.a8)
     )
 
-    // Nhóm 2 tour vào 1 trang để lướt một lần ra 2 cái
-    val pages = destinations.chunked(2)
-    val pagerState = rememberPagerState(pageCount = { pages.size })
+    // Chia dữ liệu thành 2 hàng riêng biệt
+    val row1Destinations = destinations.take(4)
+    val row2Destinations = destinations.drop(4)
+
+    // Mỗi hàng sẽ hiển thị 2 item mỗi trang
+    val pagesRow1 = row1Destinations.chunked(2)
+    val pagesRow2 = row2Destinations.chunked(2)
+
+    val pagerState1 = rememberPagerState(pageCount = { pagesRow1.size })
+    val pagerState2 = rememberPagerState(pageCount = { pagesRow2.size })
 
     Column {
         Text("Địa điểm nổi bật", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color(0xFF1E293B))
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         
+        // Hàng thứ nhất
         HorizontalPager(
-            state = pagerState,
+            state = pagerState1,
             modifier = Modifier.fillMaxWidth(),
             pageSpacing = 16.dp
         ) { pageIndex ->
@@ -52,15 +64,33 @@ fun FeaturedDestinationsSection() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                pages[pageIndex].forEach { dest ->
+                pagesRow1[pageIndex].forEach { dest ->
                     Box(modifier = Modifier.weight(1f)) {
                         DestinationCard(dest)
                     }
                 }
-                // Nếu trang cuối chỉ có 1 phần tử, thêm một Box trống để giữ bố cục
-                if (pages[pageIndex].size < 2) {
-                    Spacer(modifier = Modifier.weight(1f))
+                if (pagesRow1[pageIndex].size < 2) Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Hàng thứ hai - Hoạt động độc lập
+        HorizontalPager(
+            state = pagerState2,
+            modifier = Modifier.fillMaxWidth(),
+            pageSpacing = 16.dp
+        ) { pageIndex ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                pagesRow2[pageIndex].forEach { dest ->
+                    Box(modifier = Modifier.weight(1f)) {
+                        DestinationCard(dest)
+                    }
                 }
+                if (pagesRow2[pageIndex].size < 2) Spacer(modifier = Modifier.weight(1f))
             }
         }
     }
@@ -74,7 +104,7 @@ fun DestinationCard(dest: Destination) {
             .height(210.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
             Image(

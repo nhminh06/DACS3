@@ -2,22 +2,34 @@ package com.example.dacs3.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.dacs3.ui.components.*
+import com.example.dacs3.ui.components.AppBottomBar
+import com.example.dacs3.ui.components.home.*
+import kotlinx.coroutines.launch
 
 @Composable
-fun AppHomeScreen() {
+fun AppHomeScreen(onNavigate: (String) -> Unit) {
     val backgroundColor = Color(0xFFF1F5F9)
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
     
     Scaffold(
         containerColor = backgroundColor,
-        bottomBar = { AppBottomBar() }
+        bottomBar = { 
+            AppBottomBar(
+                currentScreen = "home",
+                onNavigate = onNavigate
+            ) 
+        }
     ) { paddingValues ->
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = paddingValues.calculateBottomPadding()),
@@ -33,49 +45,62 @@ fun AppHomeScreen() {
                 }
             }
 
-            // 3. Danh mục
+            // 3. Thanh điều hướng nhanh (Quick Nav)
+            item {
+                HomePaddingWrapper {
+                    QuickNavSection(onItemClick = { index ->
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(index)
+                        }
+                    })
+                }
+            }
+
+            // 4. Danh mục (index: 3)
             item {
                 HomePaddingWrapper {
                     CategorySection()
                 }
             }
 
-            // 4. Địa điểm nổi bật (hiện 2 mục 1 lần)
+            // 5. Địa điểm nổi bật (index: 4)
             item {
                 HomePaddingWrapper {
                     FeaturedDestinationsSection()
                 }
             }
 
-            // 5. Bài viết văn hóa
+            // 6. Bài viết văn hóa (index: 5)
             item {
                 HomePaddingWrapper {
                     CulturalArticlesSection()
                 }
             }
 
-            // 6. Người đồng hành cùng bạn (Hướng dẫn viên - hiện 2 người 1 lần)
+            // 7. Người đồng hành cùng bạn (index: 6)
             item {
                 HomePaddingWrapper {
                     GuidesSection()
                 }
             }
 
-            // 7. Đánh giá khách hàng (Trải nghiệm thực tế)
+            // 8. Đánh giá khách hàng (index: 7)
             item {
                 HomePaddingWrapper {
                     ReviewsSection()
                 }
             }
+
+            // 9. Form Liên hệ (index: 8)
             item {
                 HomePaddingWrapper {
                     ContactFormSection()
                 }
             }
+
+            // 10. Lời chào kết thúc (index: 9)
             item {
-                HomePaddingWrapper {
-                    ClosingGreeting()
-                }
+                ClosingGreeting()
             }
 
             item { Spacer(modifier = Modifier.height(24.dp)) }

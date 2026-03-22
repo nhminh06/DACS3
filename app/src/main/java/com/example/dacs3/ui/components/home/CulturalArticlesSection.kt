@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.components
+package com.example.dacs3.ui.components.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -17,12 +17,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dacs3.R
 import com.example.dacs3.data.model.Article
+import com.example.dacs3.data.model.ArticleCategory
 
 @Composable
 fun CulturalArticlesSection() {
     val articles = listOf(
-        Article("Tinh hoa Phở Việt", "Phở không chỉ là một món ăn, mà còn là linh hồn của ẩm thực Việt Nam...", R.drawable.a5),
-        Article("Nét đẹp Tết truyền thống", "Khám phá những phong tục độc đáo và ý nghĩa của ngày Tết cổ truyền...", R.drawable.a6)
+        Article(
+            "Tinh hoa Phở Việt", 
+            "Phở không chỉ là một món ăn, mà còn là linh hồn của ẩm thực Việt Nam...", 
+            R.drawable.a5,
+            ArticleCategory.CUISINE
+        ),
+        Article(
+            "Nét đẹp Tết truyền thống", 
+            "Khám phá những phong tục độc đáo và ý nghĩa của ngày Tết cổ truyền...", 
+            R.drawable.a6,
+            ArticleCategory.CULTURE
+        )
     )
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Bài viết văn hóa", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color(0xFF1E293B))

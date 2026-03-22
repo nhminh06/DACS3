@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.components
+package com.example.dacs3.ui.components.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,10 +25,9 @@ fun ClosingGreeting() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 24.dp), // Chỉ giữ padding dọc để khớp độ rộng với Form liên hệ
+            .padding(vertical = 24.dp), 
         contentAlignment = Alignment.Center
     ) {
-        // Thiết kế dạng thiệp chúc mừng tinh tế, rộng bằng Form liên hệ
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -51,7 +50,6 @@ fun ClosingGreeting() {
                     .padding(vertical = 40.dp, horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Tên thương hiệu tinh tế
                 Text(
                     text = "WINDTRAVEL",
                     style = MaterialTheme.typography.labelMedium,
@@ -62,7 +60,6 @@ fun ClosingGreeting() {
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Lời chào chân thành
                 Text(
                     text = "Hẹn gặp lại bạn tại\nMiền Trung thân yêu!",
                     style = MaterialTheme.typography.headlineSmall,
@@ -74,7 +71,6 @@ fun ClosingGreeting() {
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Lời chúc viết tay mềm mại
                 Text(
                     text = "Chúc bạn có những hành trình thật ý nghĩa",
                     style = MaterialTheme.typography.titleLarge.copy(
@@ -87,7 +83,6 @@ fun ClosingGreeting() {
                 
                 Spacer(modifier = Modifier.height(32.dp))
                 
-                // Điểm nhấn trang trí tối giản
                 Box(
                     modifier = Modifier
                         .width(48.dp)

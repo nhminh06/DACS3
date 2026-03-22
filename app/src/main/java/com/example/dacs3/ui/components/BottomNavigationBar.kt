@@ -17,7 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun AppBottomBar() {
+fun AppBottomBar(
+    currentScreen: String = "home",
+    onNavigate: (String) -> Unit = {}
+) {
     Surface(
         modifier = Modifier.shadow(12.dp),
         color = Color.White
@@ -30,8 +33,8 @@ fun AppBottomBar() {
             NavigationBarItem(
                 icon = { Icon(Icons.Filled.Home, contentDescription = "Trang chủ", modifier = Modifier.size(24.dp)) },
                 label = { Text("Trang chủ", fontSize = 11.sp) },
-                selected = true,
-                onClick = { },
+                selected = currentScreen == "home",
+                onClick = { onNavigate("home") },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = Color(0xFF2563EB),
                     selectedTextColor = Color(0xFF2563EB),
@@ -43,20 +46,27 @@ fun AppBottomBar() {
             NavigationBarItem(
                 icon = { Icon(Icons.Outlined.Explore, contentDescription = "Khám phá", modifier = Modifier.size(24.dp)) },
                 label = { Text("Khám phá", fontSize = 11.sp) },
-                selected = false,
-                onClick = { }
+                selected = currentScreen == "explore",
+                onClick = { onNavigate("explore") },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color(0xFF2563EB),
+                    selectedTextColor = Color(0xFF2563EB),
+                    unselectedIconColor = Color.Gray.copy(alpha = 0.5f),
+                    unselectedTextColor = Color.Gray.copy(alpha = 0.5f),
+                    indicatorColor = Color(0xFF2563EB).copy(alpha = 0.1f)
+                )
             )
             NavigationBarItem(
                 icon = { Icon(Icons.Outlined.FavoriteBorder, contentDescription = "Yêu thích", modifier = Modifier.size(24.dp)) },
                 label = { Text("Yêu thích", fontSize = 11.sp) },
-                selected = false,
-                onClick = { }
+                selected = currentScreen == "favorites",
+                onClick = { onNavigate("favorites") }
             )
             NavigationBarItem(
                 icon = { Icon(Icons.Outlined.Person, contentDescription = "Cá nhân", modifier = Modifier.size(24.dp)) },
                 label = { Text("Cá nhân", fontSize = 11.sp) },
-                selected = false,
-                onClick = { }
+                selected = currentScreen == "profile",
+                onClick = { onNavigate("profile") }
             )
         }
     }

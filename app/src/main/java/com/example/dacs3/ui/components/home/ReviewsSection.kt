@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.components
+package com.example.dacs3.ui.components.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
