@@ -30,7 +30,10 @@ import com.example.dacs3.ui.components.articles.ArticleCategoryTabs
 import com.example.dacs3.ui.components.articles.ArticleItem
 
 @Composable
-fun ArticleExplorerScreen(onNavigate: (String) -> Unit) {
+fun ArticleExplorerScreen(
+    onNavigate: (String) -> Unit,
+    onArticleClick: (Article) -> Unit
+) {
     var selectedCategory by remember { mutableStateOf(ArticleCategory.CULTURE) }
     
     val allArticles = remember {
@@ -90,12 +93,11 @@ fun ArticleExplorerScreen(onNavigate: (String) -> Unit) {
                 .padding(bottom = padding.calculateBottomPadding())
                 .background(Color(0xFFF8FAFC))
         ) {
-            // Updated Immersive Header with SAME height as Home (280.dp)
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(280.dp) // Matched with Home TopHeader height
+                        .height(280.dp)
                         .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
                 ) {
                     Image(
@@ -105,7 +107,6 @@ fun ArticleExplorerScreen(onNavigate: (String) -> Unit) {
                         contentScale = ContentScale.Crop
                     )
                     
-                    // Stronger Gradient Overlay
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -116,7 +117,6 @@ fun ArticleExplorerScreen(onNavigate: (String) -> Unit) {
                             )
                     )
 
-                    // Top Action: Clear Search Bar
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -155,7 +155,6 @@ fun ArticleExplorerScreen(onNavigate: (String) -> Unit) {
                         }
                     }
 
-                    // Header Text Content - Matching Home Style
                     Column(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
@@ -174,7 +173,6 @@ fun ArticleExplorerScreen(onNavigate: (String) -> Unit) {
                 }
             }
 
-            // Category Tabs with consistent spacing
             item {
                 Surface(
                     color = Color.White,
@@ -187,7 +185,6 @@ fun ArticleExplorerScreen(onNavigate: (String) -> Unit) {
                 }
             }
             
-            // Section Title
             item {
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(
@@ -203,10 +200,12 @@ fun ArticleExplorerScreen(onNavigate: (String) -> Unit) {
                 )
             }
             
-            // Article List
             items(filteredArticles) { article ->
                 Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
-                    ArticleItem(article = article)
+                    ArticleItem(
+                        article = article,
+                        onClick = { onArticleClick(article) }
+                    )
                 }
             }
             
