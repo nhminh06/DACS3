@@ -51,13 +51,14 @@ fun FilterTag(text: String, isSelected: Boolean) {
 }
 
 @Composable
-fun TourCard(tour: Tour) {
+fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+            .clickable { onClick(tour) },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -154,7 +155,7 @@ fun TourCard(tour: Tour) {
                     }
                     
                     IconButton(
-                        onClick = { },
+                        onClick = { onClick(tour) },
                         modifier = Modifier
                             .size(32.dp)
                             .background(Color(0xFF2563EB), CircleShape)

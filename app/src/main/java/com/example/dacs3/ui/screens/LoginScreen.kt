@@ -27,7 +27,11 @@ import androidx.compose.ui.unit.sp
 import com.example.dacs3.R
 
 @Composable
-fun LoginScreen(onNavigateToRegister: () -> Unit, onLoginSuccess: () -> Unit) {
+fun LoginScreen(
+    onNavigateToRegister: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit,
+    onLoginSuccess: () -> Unit
+) {
     val backgroundColor = Color(0xFFF1F5F9)
     val primaryColor = Color(0xFF2563EB)
     val textColor = Color(0xFF1E293B)
@@ -118,9 +122,9 @@ fun LoginScreen(onNavigateToRegister: () -> Unit, onLoginSuccess: () -> Unit) {
             )
 
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                TextButton(onClick = { /* Quên mật khẩu */ }) {
+                TextButton(onClick = { onNavigateToForgotPassword() }) {
                     Text("Quên mật khẩu?", color = primaryColor, fontSize = 13.sp)
                 }
             }

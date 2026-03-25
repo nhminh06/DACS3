@@ -77,11 +77,23 @@ fun ProfileScreen(onNavigate: (String) -> Unit) {
             ) {
                 Column(modifier = Modifier.padding(vertical = 8.dp)) {
                     SectionHeader("HOẠT ĐỘNG")
-                    ProfileOptionItem(title = "Đặt chỗ của tôi", icon = Icons.Default.BookOnline, onClick = {})
+                    ProfileOptionItem(
+                        title = "Đặt chỗ của tôi", 
+                        icon = Icons.Default.BookOnline, 
+                        onClick = { onNavigate("my_bookings") }
+                    )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = Color(0xFFF1F5F9))
-                    ProfileOptionItem(title = "Thông báo", icon = Icons.Default.Notifications, onClick = {})
+                    ProfileOptionItem(
+                        title = "Thông báo", 
+                        icon = Icons.Default.Notifications, 
+                        onClick = { onNavigate("notifications") }
+                    )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = Color(0xFFF1F5F9))
-                    ProfileOptionItem(title = "Mật khẩu & Bảo mật", icon = Icons.Default.Lock, onClick = {})
+                    ProfileOptionItem(
+                        title = "Mật khẩu & Bảo mật", 
+                        icon = Icons.Default.Lock, 
+                        onClick = { onNavigate("change_password") }
+                    )
                 }
             }
 
@@ -108,7 +120,7 @@ fun ProfileScreen(onNavigate: (String) -> Unit) {
 
             // Logout Button
             TextButton(
-                onClick = { },
+                onClick = { onNavigate("login") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 16.dp),

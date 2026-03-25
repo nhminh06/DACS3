@@ -32,7 +32,10 @@ import com.example.dacs3.ui.components.tours.TourCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TourScreen(onNavigate: (String) -> Unit) {
+fun TourScreen(
+    onNavigate: (String) -> Unit,
+    onTourClick: (Tour) -> Unit
+) {
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
     
@@ -58,7 +61,6 @@ fun TourScreen(onNavigate: (String) -> Unit) {
                 .padding(bottom = padding.calculateBottomPadding())
                 .background(Color(0xFFF8FAFC))
         ) {
-            // Header Matched with previous screens
             item {
                 Box(
                     modifier = Modifier
@@ -67,7 +69,7 @@ fun TourScreen(onNavigate: (String) -> Unit) {
                         .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.a2), // Changed from a1 to a2
+                        painter = painterResource(id = R.drawable.a2),
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -82,7 +84,6 @@ fun TourScreen(onNavigate: (String) -> Unit) {
                             )
                     )
 
-                    // Search Bar & Filter
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -109,7 +110,6 @@ fun TourScreen(onNavigate: (String) -> Unit) {
                         }
                     }
 
-                    // Title
                     Column(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
@@ -127,7 +127,6 @@ fun TourScreen(onNavigate: (String) -> Unit) {
                 }
             }
 
-            // Quick Filters Tags
             item {
                 Row(
                     modifier = Modifier
@@ -141,9 +140,11 @@ fun TourScreen(onNavigate: (String) -> Unit) {
                 }
             }
 
-            // Tour List
             items(tours) { tour ->
-                TourCard(tour)
+                TourCard(
+                    tour = tour,
+                    onClick = { onTourClick(tour) }
+                )
             }
             
             item { Spacer(modifier = Modifier.height(32.dp)) }

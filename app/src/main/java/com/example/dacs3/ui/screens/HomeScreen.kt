@@ -18,7 +18,7 @@ fun AppHomeScreen(onNavigate: (String) -> Unit) {
     val backgroundColor = Color(0xFFF1F5F9)
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    
+
     Scaffold(
         containerColor = backgroundColor,
         bottomBar = { 
