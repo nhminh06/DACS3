@@ -1,5 +1,6 @@
 package com.example.dacs3.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -25,6 +27,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dacs3.R
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun LoginScreen(
@@ -32,6 +35,9 @@ fun LoginScreen(
     onNavigateToForgotPassword: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
+    val context = LocalContext.current
+    val firestore = FirebaseFirestore.getInstance()
+
     val backgroundColor = Color(0xFFF1F5F9)
     val primaryColor = Color(0xFF2563EB)
     val textColor = Color(0xFF1E293B)
@@ -39,6 +45,7 @@ fun LoginScreen(
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -92,7 +99,8 @@ fun LoginScreen(
                     focusedLabelColor = primaryColor
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                singleLine = true
+                singleLine = true,
+                enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -118,7 +126,8 @@ fun LoginScreen(
                 ),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                singleLine = true
+                singleLine = true,
+                enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -132,14 +141,43 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { onLoginSuccess() },
+                onClick = {
+                    if (username.isEmpty() || password.isEmpty()) {
+                        Toast.makeText(context, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    isLoading = true
+                    firestore.collection("users")
+                        .whereEqualTo("name", username)
+                        .whereEqualTo("password", password)
+                        .get()
+                        .addOnSuccessListener { documents ->
+                            isLoading = false
+                            if (!documents.isEmpty) {
+                                Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
+                                onLoginSuccess()
+                            } else {
+                                Toast.makeText(context, "Sai tên đăng nhập hoặc mật khẩu", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            isLoading = false
+                            Toast.makeText(context, "Lỗi kết nối: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                enabled = !isLoading
             ) {
-                Text("Đăng Nhập", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Đăng Nhập", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
