@@ -27,17 +27,16 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dacs3.R
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.dacs3.ui.viewmodel.UserViewModel
 
 @Composable
 fun LoginScreen(
+    userViewModel: UserViewModel,
     onNavigateToRegister: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
     val context = LocalContext.current
-    val firestore = FirebaseFirestore.getInstance()
-
     val backgroundColor = Color(0xFFF1F5F9)
     val primaryColor = Color(0xFF2563EB)
     val textColor = Color(0xFF1E293B)
@@ -45,7 +44,8 @@ fun LoginScreen(
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
+    
+    val isLoading by userViewModel.isLoading
 
     Box(
         modifier = Modifier
@@ -147,24 +147,17 @@ fun LoginScreen(
                         return@Button
                     }
 
-                    isLoading = true
-                    firestore.collection("users")
-                        .whereEqualTo("name", username)
-                        .whereEqualTo("password", password)
-                        .get()
-                        .addOnSuccessListener { documents ->
-                            isLoading = false
-                            if (!documents.isEmpty) {
-                                Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
-                                onLoginSuccess()
-                            } else {
-                                Toast.makeText(context, "Sai tên đăng nhập hoặc mật khẩu", Toast.LENGTH_SHORT).show()
-                            }
+                    userViewModel.login(
+                        name = username.trim(),
+                        pass = password.trim(),
+                        onSuccess = {
+                            Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
+                            onLoginSuccess()
+                        },
+                        onError = { error ->
+                            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
                         }
-                        .addOnFailureListener { e ->
-                            isLoading = false
-                            Toast.makeText(context, "Lỗi kết nối: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()

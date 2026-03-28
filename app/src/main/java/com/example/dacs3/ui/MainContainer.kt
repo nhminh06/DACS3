@@ -1,19 +1,32 @@
 package com.example.dacs3.ui
 
 import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dacs3.data.model.Article
 import com.example.dacs3.data.model.Tour
+import com.example.dacs3.data.remote.FirebaseService
+import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.ui.screens.*
+import com.example.dacs3.ui.viewmodel.UserViewModel
+import com.example.dacs3.ui.viewmodel.factory.UserViewModelFactory
 
 @Composable
 fun MainContainer() {
-    var currentScreen by remember { mutableStateOf("home") }
+    var currentScreen by remember { mutableStateOf("home") } // Đã đổi mặc định thành home
     var selectedArticle by remember { mutableStateOf<Article?>(null) }
     var selectedTour by remember { mutableStateOf<Tour?>(null) }
+
+    // Khởi tạo ViewModel (Tạm thời khởi tạo ở đây, sau này có thể dùng DI như Hilt)
+    val firebaseService = FirebaseService()
+    val userRepository = UserRepository(firebaseService)
+    val userViewModel: UserViewModel = viewModel(
+        factory = UserViewModelFactory(userRepository)
+    )
 
     when (currentScreen) {
         "login" -> {
             LoginScreen(
+                userViewModel = userViewModel,
                 onNavigateToRegister = { currentScreen = "register" },
                 onNavigateToForgotPassword = { currentScreen = "forgot_password" },
                 onLoginSuccess = { currentScreen = "home" }
@@ -21,6 +34,7 @@ fun MainContainer() {
         }
         "register" -> {
             RegisterScreen(
+                userViewModel = userViewModel,
                 onNavigateToLogin = { currentScreen = "login" },
                 onRegisterSuccess = { currentScreen = "login" }
             )
