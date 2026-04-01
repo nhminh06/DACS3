@@ -1,15 +1,30 @@
+*.json# IntelliJ IDEA
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+*.iws
+*.ipr
+
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Local configuration
 local.properties
+
+# Secrets & Credentials (Dự án DACS3)
+serviceAccountKey.json
+google-services.json
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Others
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
