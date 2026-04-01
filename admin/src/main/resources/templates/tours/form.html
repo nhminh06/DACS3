@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý Tour - WIND Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/admin-style.css}">
+    <style>
+        .preview-img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #334155; }
+        .banner-previews { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">WIND Admin</div>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="#"><i class="bi bi-person-gear"></i> Tài khoản quản trị</a>
+            <a class="nav-link" href="#"><i class="bi bi-house"></i> Quản lý trang chủ</a>
+            <a class="nav-link active" href="/admin/tours"><i class="bi bi-map"></i> Quản lý Tour</a>
+            <a class="nav-link" href="/admin/bookings"><i class="bi bi-calendar-check"></i> Quản lý đặt Tour</a>
+            <a class="nav-link" href="#"><i class="bi bi-compass"></i> Quản lý khám phá</a>
+            <a class="nav-link" href="#"><i class="bi bi-journal-text"></i> Quản lý bài viết</a>
+            <a class="nav-link" href="#"><i class="bi bi-info-circle"></i> Quản lý thông tin</a>
+            <a class="nav-link" href="/admin/users"><i class="bi bi-people"></i> Quản lý người dùng</a>
+            <a class="nav-link" href="/admin"><i class="bi bi-bar-chart"></i> Thống kê</a>
+            <a class="nav-link" href="/"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a>
+        </nav>
+    </aside>
+
+    <div class="main">
+        <header class="header">
+            <h1 class="h4 mb-0" th:text="${tourId == null ? 'Thêm Tour mới' : 'Chỉnh sửa Tour'}">Thêm Tour mới</h1>
+            <div class="user-info">
+                Xin chào <strong>Admin</strong>
+                <a href="/admin/tours" class="btn-back">Hủy & Quay lại</a>
+            </div>
+        </header>
+
+        <section class="tour-form shadow-sm">
+            <form th:action="@{/admin/tours/save}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="id" th:value="${tourId}">
+
+                <div class="row g-4">
+                    <!-- Basic Info Section -->
+                    <div class="col-12">
+                        <h5 class="text-info border-bottom pb-2 mb-3">Thông tin cơ bản</h5>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Mã Tour</label>
+                        <input type="text" class="form-control" name="maTour" th:value="${tour != null ? tour.get('maTour') : ''}" placeholder="VD: VN001" required>
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label">Tên Tour du lịch</label>
+                        <input type="text" class="form-control" name="tenTour" th:value="${tour != null ? tour.get('title') : ''}" placeholder="VD: Hành trình khám phá Cố đô Huế" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Loại hình Tour</label>
+                        <select name="loaiTour" class="form-select" required>
+                            <option value="1" th:selected="${tour != null && tour.get('type') == 'DAY_TOUR'}">Trong ngày</option>
+                            <option value="2" th:selected="${tour != null && tour.get('type') == 'MULTI_DAY'}">Nhiều ngày</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Ngày khởi hành dự kiến</label>
+                        <input type="date" class="form-control" name="ngayKhoiHanh" th:value="${tour != null ? tour.get('startDate') : ''}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Thời lượng (Số ngày)</label>
+                        <input type="number" class="form-control" name="soNgay" th:value="${tour != null ? (tour.get('duration') != null ? tour.get('duration').split(' ')[0] : 1) : 1}" required>
+                    </div>
+
+                    <!-- Pricing Section -->
+                    <div class="col-12">
+                        <h5 class="text-info border-bottom pb-2 mt-4 mb-3">Thông tin giá vé</h5>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Giá Người lớn (VNĐ)</label>
+                        <input type="text" class="form-control border-info" name="giaNguoiLon" th:value="${tour != null ? tour.get('price') : 0}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Giá Trẻ em (2 - 11 tuổi)</label>
+                        <input type="text" class="form-control" name="giaTreEm" th:value="${tour != null ? tour.get('giaTreEm') : 0}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Giá Trẻ nhỏ (< 2 tuổi)</label>
+                        <input type="text" class="form-control" name="giaTreNho" th:value="${tour != null ? tour.get('giaTreNho') : 0}">
+                    </div>
+
+                    <!-- Locations & Media Section -->
+                    <div class="col-12">
+                        <h5 class="text-info border-bottom pb-2 mt-4 mb-3">Vị trí & Hình ảnh</h5>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Điểm khởi hành</label>
+                        <input type="text" class="form-control" name="diemKhoiHanh" th:value="${tour != null ? tour.get('diemKhoiHanh') : ''}" placeholder="VD: TP. Hồ Chí Minh" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Địa điểm tham quan chính</label>
+                        <input type="text" class="form-control" name="vitri" th:value="${tour != null ? tour.get('location') : ''}" placeholder="VD: Huế, Đà Nẵng" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Ảnh đại diện Tour</label>
+                        <div class="mb-2">
+                            <input type="file" class="form-control" name="mainImageFile" accept="image/*" onchange="previewMain(this)">
+                        </div>
+                        <input type="text" class="form-control mb-2" name="anhDaiDien" id="mainUrl" th:value="${tour != null ? tour.get('imageUrl') : ''}" placeholder="Hoặc dán URL ảnh tại đây">
+                        <div id="mainPreviewContainer">
+                            <img th:if="${tour != null && tour.get('imageUrl') != null}" th:src="${tour.get('imageUrl')}" class="preview-img">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Banner giới thiệu (Chọn tối đa 5 ảnh)</label>
+                        <input type="file" class="form-control mb-2" name="bannerImageFiles" accept="image/*" multiple onchange="previewBanners(this)">
+                        <div class="banner-previews" id="bannerPreviews">
+                            <th:block th:if="${tour != null && tour.get('banners') != null}">
+                                <img th:each="img : ${tour.get('banners')}" th:src="${img}" class="preview-img">
+                            </th:block>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Content Section -->
+                    <div class="col-12">
+                        <h5 class="text-info border-bottom pb-2 mt-4 mb-3">Nội dung chi tiết</h5>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Các dịch vụ bao gồm</label>
+                        <textarea class="form-control" name="dichVu" rows="4" th:text="${tour != null ? tour.get('dichVu') : ''}" placeholder="VD: Khách sạn 4 sao, ăn uống theo chương trình, hướng dẫn viên..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Lộ trình chi tiết theo từng ngày</label>
+                        <textarea class="form-control" name="loTrinh" rows="6" th:text="${tour != null ? tour.get('loTrinh') : ''}" placeholder="VD: Ngày 1: Đón khách tại sân bay... Ngày 2: Tham quan Đại Nội..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Những trải nghiệm nổi bật</label>
+                        <textarea class="form-control" name="traiNghiem" rows="4" th:text="${tour != null ? tour.get('traiNghiem') : ''}" placeholder="VD: Ngắm hoàng hôn trên phá Tam Giang, thưởng thức ẩm thực cung đình..."></textarea>
+                    </div>
+
+                    <div class="col-12 text-center mt-5 mb-4">
+                        <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm">
+                            <i class="bi bi-save me-2"></i> LƯU THÔNG TIN TOUR
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function previewMain(input) {
+            const container = document.getElementById('mainPreviewContainer');
+            container.innerHTML = '';
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'preview-img';
+                    container.appendChild(img);
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function previewBanners(input) {
+            const container = document.getElementById('bannerPreviews');
+            container.innerHTML = '';
+            if (input.files) {
+                Array.from(input.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'preview-img';
+                        container.appendChild(img);
+                    }
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

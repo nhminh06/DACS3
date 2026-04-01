@@ -59,6 +59,16 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
+
+    // Cloudinary
+    implementation(libs.cloudinary.android)
+
+    // Image Loading
+    implementation(libs.coil.compose)
+
+    // JSON Parsing
+    implementation(libs.gson)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

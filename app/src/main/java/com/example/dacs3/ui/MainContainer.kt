@@ -1,7 +1,9 @@
 package com.example.dacs3.ui
 
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.dacs3.data.local.SessionManager
 import com.example.dacs3.data.model.Article
 import com.example.dacs3.data.model.Tour
 import com.example.dacs3.data.remote.FirebaseService
@@ -12,16 +14,20 @@ import com.example.dacs3.ui.viewmodel.factory.UserViewModelFactory
 
 @Composable
 fun MainContainer() {
-    var currentScreen by remember { mutableStateOf("home") } // Đã đổi mặc định thành home
-    var selectedArticle by remember { mutableStateOf<Article?>(null) }
-    var selectedTour by remember { mutableStateOf<Tour?>(null) }
-
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    
     // Khởi tạo ViewModel (Tạm thời khởi tạo ở đây, sau này có thể dùng DI như Hilt)
     val firebaseService = FirebaseService()
     val userRepository = UserRepository(firebaseService)
     val userViewModel: UserViewModel = viewModel(
-        factory = UserViewModelFactory(userRepository)
+        factory = UserViewModelFactory(userRepository, sessionManager)
     )
+
+    // Mặc định vào App là màn hình Home
+    var currentScreen by remember { mutableStateOf("home") }
+    var selectedArticle by remember { mutableStateOf<Article?>(null) }
+    var selectedTour by remember { mutableStateOf<Tour?>(null) }
 
     when (currentScreen) {
         "login" -> {
@@ -87,9 +93,31 @@ fun MainContainer() {
             }
         }
         "profile" -> {
-            ProfileScreen(onNavigate = { screen ->
-                currentScreen = screen
-            })
+            if (userViewModel.isLoggedIn()) {
+                ProfileScreen(
+                    userViewModel = userViewModel,
+                    onNavigate = { screen ->
+                        if (screen == "login") {
+                            userViewModel.logout {
+                                currentScreen = "login"
+                            }
+                        } else {
+                            currentScreen = screen
+                        }
+                    }
+                )
+            } else {
+                // Nếu chưa đăng nhập mà bấm vào Profile, chuyển sang màn hình Login
+                LaunchedEffect(Unit) {
+                    currentScreen = "login"
+                }
+            }
+        }
+        "edit_profile" -> {
+            EditProfileScreen(
+                userViewModel = userViewModel,
+                onBack = { currentScreen = "profile" }
+            )
         }
         "my_bookings" -> {
             MyBookingsScreen(

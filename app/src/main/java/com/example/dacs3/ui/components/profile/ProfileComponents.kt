@@ -1,5 +1,8 @@
 package com.example.dacs3.ui.components.profile
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,10 +26,23 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.dacs3.R
 
 @Composable
-fun ProfileHeader(name: String, email: String, imageRes: Int) {
+fun ProfileHeader(
+    name: String, 
+    email: String, 
+    avatarUrl: String?, 
+    imageRes: Int,
+    onAvatarClick: (Uri) -> Unit
+) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { onAvatarClick(it) }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -34,21 +50,34 @@ fun ProfileHeader(name: String, email: String, imageRes: Int) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(contentAlignment = Alignment.BottomEnd) {
-            Image(
-                painter = painterResource(id = imageRes),
-                contentDescription = "Avatar",
-                modifier = Modifier
-                    .size(110.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, Color.White, CircleShape),
-                contentScale = ContentScale.Crop
-            )
+            if (!avatarUrl.isNullOrEmpty()) {
+                AsyncImage(
+                    model = avatarUrl,
+                    contentDescription = "Avatar",
+                    modifier = Modifier
+                        .size(110.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, Color.White, CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Image(
+                    painter = painterResource(id = imageRes),
+                    contentDescription = "Avatar",
+                    modifier = Modifier
+                        .size(110.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, Color.White, CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            
             Surface(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
                     .border(1.dp, Color.White, CircleShape)
-                    .clickable { },
+                    .clickable { launcher.launch("image/*") },
                 color = Color(0xFF2563EB)
             ) {
                 Icon(

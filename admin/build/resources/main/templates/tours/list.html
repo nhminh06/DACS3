@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý Tour - WIND Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/admin-style.css}">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="logo">WIND Admin</div>
+        <nav class="nav flex-column">
+            <a class="nav-link" href="#"><i class="bi bi-person-gear"></i> Tài khoản quản trị</a>
+            <a class="nav-link" href="#"><i class="bi bi-house"></i> Quản lý trang chủ</a>
+            <a class="nav-link active" href="/admin/tours"><i class="bi bi-map"></i> Quản lý Tour</a>
+            <a class="nav-link" href="/admin/bookings"><i class="bi bi-calendar-check"></i> Quản lý đặt Tour</a>
+            <a class="nav-link" href="#"><i class="bi bi-compass"></i> Quản lý khám phá</a>
+            <a class="nav-link" href="#"><i class="bi bi-journal-text"></i> Quản lý bài viết</a>
+            <a class="nav-link" href="#"><i class="bi bi-info-circle"></i> Quản lý thông tin</a>
+            <a class="nav-link" href="/admin/users"><i class="bi bi-people"></i> Quản lý người dùng</a>
+            <a class="nav-link" href="/admin"><i class="bi bi-bar-chart"></i> Thống kê</a>
+            <a class="nav-link" href="/"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a>
+        </nav>
+    </aside>
+
+    <div class="main">
+        <header class="header">
+            <h1 class="h4 mb-0">Quản lý Tour</h1>
+            <div class="user-info">
+                Xin chào <strong th:text="${admin_user ?: 'admin_user'}">admin_user</strong>
+                <a href="/admin" class="btn-back">Trở lại</a>
+            </div>
+        </header>
+
+        <!-- Statistics -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <h3 th:text="${total}">19</h3>
+                <p>Tổng số tour</p>
+            </div>
+            <div class="stat-card">
+                <h3 th:text="${activeCount}">18</h3>
+                <p>Đang hiển thị</p>
+            </div>
+            <div class="stat-card">
+                <h3 th:text="${hiddenCount}">1</h3>
+                <p>Đang ẩn</p>
+            </div>
+            <div class="stat-card">
+                <h3 th:text="${#numbers.formatDecimal(avgPrice, 0, 'COMMA', 0, 'POINT') + ' ₫'}">660.000 ₫</h3>
+                <p>Giá trung bình</p>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <div class="section-title">Danh sách tour</div>
+            <a href="/admin/tours/add" class="btn btn-add"><i class="bi bi-plus-circle me-2"></i>Thêm tour mới</a>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="controls">
+            <form action="/admin/tours" method="GET" class="search-container">
+                <input type="text" name="search" placeholder="Tìm kiếm tour..." th:value="${search}">
+                <button type="submit" class="btn-search"><i class="bi bi-search"></i></button>
+            </form>
+            <form action="/admin/tours" method="GET">
+                <select name="sort" onchange="this.form.submit()" class="sort-select">
+                    <option value="newest" th:selected="${sort == 'newest'}">Mới nhất</option>
+                    <option value="name" th:selected="${sort == 'name'}">Tên A-Z</option>
+                    <option value="price_asc" th:selected="${sort == 'price_asc'}">Giá tăng dần</option>
+                    <option value="price_desc" th:selected="${sort == 'price_desc'}">Giá giảm dần</option>
+                </select>
+            </form>
+        </div>
+
+        <!-- Tour Table -->
+        <div class="table-container shadow-sm">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th style="width: 100px;">HÌNH ẢNH</th>
+                        <th>TÊN TOUR</th>
+                        <th style="width: 150px;">SỐ NGÀY</th>
+                        <th style="width: 150px;">GIÁ</th>
+                        <th style="width: 150px;">TRẠNG THÁI</th>
+                        <th style="width: 150px;" class="text-end">THAO TÁC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="tour, iterStat : ${tours}">
+                        <td class="id-cell" th:text="'#' + ${tour.get('maTour') ?: iterStat.index + 1}">#054</td>
+                        <td>
+                            <img th:if="${tour.get('imageUrl')}" th:src="${tour.get('imageUrl')}" class="thumbnail-img">
+                            <div th:unless="${tour.get('imageUrl')}" class="thumbnail-img bg-secondary d-flex align-items-center justify-content-center"><i class="bi bi-image"></i></div>
+                        </td>
+                        <td class="tour-title" th:text="${tour.get('title')}">Thành Cổ Quảng Trị - Ký Ức Mùa Hè Đỏ Lửa</td>
+                        <td class="duration-cell">
+                            <i class="bi bi-calendar3"></i>
+                            <span th:text="${tour.get('duration')}">1 ngày</span>
+                        </td>
+                        <td class="price-cell" th:text="${#numbers.formatDecimal(tour.get('price'), 0, 'COMMA', 0, 'POINT') + ' ₫'}">720.000 ₫</td>
+                        <td>
+                            <span th:if="${tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null}" class="badge badge-status status-confirmed">Đang hiển thị</span>
+                            <span th:unless="${tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null}" class="badge badge-status status-cancelled">Đang ẩn</span>
+                        </td>
+                        <td class="text-end">
+                            <a th:href="@{/admin/tours/toggle-status/{id}(id=${tour.id})}" class="btn-action" title="Thay đổi trạng thái">
+                                <i class="bi bi-gear"></i>
+                            </a>
+                            <a th:href="@{/admin/tours/edit/{id}(id=${tour.id})}" class="btn-action" title="Sửa">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a th:href="@{/admin/tours/delete/{id}(id=${tour.id})}" class="btn-action" onclick="return confirm('Xóa tour này?')" title="Xóa">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

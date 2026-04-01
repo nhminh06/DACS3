@@ -1,6 +1,5 @@
 package com.example.dacs3.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +12,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -21,11 +21,13 @@ import androidx.compose.ui.unit.sp
 import com.example.dacs3.R
 import com.example.dacs3.ui.components.AppBottomBar
 import com.example.dacs3.ui.components.profile.*
+import com.example.dacs3.ui.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(onNavigate: (String) -> Unit) {
+fun ProfileScreen(userViewModel: UserViewModel, onNavigate: (String) -> Unit) {
     val scrollState = rememberScrollState()
+    val user by userViewModel.currentUser
 
     Scaffold(
         topBar = {
@@ -61,9 +63,13 @@ fun ProfileScreen(onNavigate: (String) -> Unit) {
         ) {
             // Profile Header
             ProfileHeader(
-                name = "Nguyễn Văn An",
-                email = "an.nguyen@windtravel.com",
-                imageRes = R.drawable.a8
+                name = user?.name ?: "Người dùng",
+                email = user?.email ?: "Chưa có email",
+                avatarUrl = user?.avatar,
+                imageRes = R.drawable.a8,
+                onAvatarClick = { uri ->
+                    userViewModel.updateAvatar(uri, onError = { /* Handle error */ })
+                }
             )
 
             // Activity Section
@@ -108,13 +114,29 @@ fun ProfileScreen(onNavigate: (String) -> Unit) {
             ) {
                 Column(modifier = Modifier.padding(vertical = 8.dp)) {
                     SectionHeader("THÔNG TIN CÁ NHÂN")
-                    ProfileInfoItem(label = "Giới tính", value = "Nam")
+                    ProfileInfoItem(
+                        label = "Giới tính", 
+                        value = user?.gioi_tinh ?: "Chưa cập nhật",
+                        onClick = { onNavigate("edit_profile") }
+                    )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = Color(0xFFF1F5F9))
-                    ProfileInfoItem(label = "Ngày sinh", value = "12/05/1995")
+                    ProfileInfoItem(
+                        label = "Ngày sinh", 
+                        value = user?.ngay_sinh ?: "Chưa cập nhật",
+                        onClick = { onNavigate("edit_profile") }
+                    )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = Color(0xFFF1F5F9))
-                    ProfileInfoItem(label = "Số điện thoại", value = "0987 654 321")
+                    ProfileInfoItem(
+                        label = "Số điện thoại", 
+                        value = user?.sdt ?: "Chưa cập nhật",
+                        onClick = { onNavigate("edit_profile") }
+                    )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = Color(0xFFF1F5F9))
-                    ProfileInfoItem(label = "Địa chỉ", value = "Liên Chiểu, Đà Nẵng")
+                    ProfileInfoItem(
+                        label = "Địa chỉ", 
+                        value = user?.dia_chi ?: "Chưa cập nhật",
+                        onClick = { onNavigate("edit_profile") }
+                    )
                 }
             }
 
