@@ -118,6 +118,22 @@ public class AdminArticleController {
         return "articles/form";
     }
 
+    @GetMapping("/edit/{id}")
+    public String editArticleForm(@PathVariable String id, Model model) {
+        try {
+            var doc = firestore.collection("articles").document(id).get().get();
+            if (doc.exists()) {
+                model.addAttribute("article", doc);
+                ApiFuture<QuerySnapshot> tourFuture = firestore.collection("tours").get();
+                model.addAttribute("tours", tourFuture.get().getDocuments());
+                return "articles/form";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "redirect:/admin/articles";
+    }
+
     @PostMapping("/save")
     public String saveArticle(@RequestParam(required = false) String id,
                               @RequestParam String tieu_de,
@@ -125,7 +141,8 @@ public class AdminArticleController {
                               @RequestParam(required = false) String tour_id,
                               @RequestParam("tieu_de_muc[]") String[] tieuDeMuc,
                               @RequestParam("noi_dung_muc[]") String[] noiDungMuc,
-                              @RequestParam(value = "hinh_anh_muc[]", required = false) MultipartFile[] hinhAnhMuc) throws IOException, ExecutionException, InterruptedException {
+                              @RequestParam(value = "hinh_anh_muc[]", required = false) MultipartFile[] hinhAnhMuc,
+                              @RequestParam(value = "hinh_anh_cu[]", required = false) String[] hinhAnhCu) throws IOException, ExecutionException, InterruptedException {
 
         Map<String, Object> data = new HashMap<>();
         data.put("tieu_de", tieu_de);
@@ -140,12 +157,16 @@ public class AdminArticleController {
         List<Map<String, Object>> mucList = new ArrayList<>();
         for (int i = 0; i < tieuDeMuc.length; i++) {
             Map<String, Object> muc = new HashMap<>();
-            muc.put("tieu_de", tieuDeMuc[i]);
-            muc.put("noi_dung", noiDungMuc[i]);
+            muc.put("tieu_de", tieuDeMuc[indexValid(tieuDeMuc, i)]);
+            muc.put("noi_dung", noiDungMuc[indexValid(noiDungMuc, i)]);
             
+            String currentImageUrl = (hinhAnhCu != null && i < hinhAnhCu.length) ? hinhAnhCu[i] : null;
+
             if (hinhAnhMuc != null && i < hinhAnhMuc.length && !hinhAnhMuc[i].isEmpty()) {
                 Map uploadResult = cloudinary.uploader().upload(hinhAnhMuc[i].getBytes(), ObjectUtils.emptyMap());
                 muc.put("hinh_anh", uploadResult.get("secure_url"));
+            } else {
+                muc.put("hinh_anh", currentImageUrl);
             }
             
             mucList.add(muc);
@@ -156,10 +177,14 @@ public class AdminArticleController {
         if (id == null || id.isEmpty()) {
             firestore.collection("articles").add(data).get();
         } else {
-            firestore.collection("articles").document(id).set(data).get();
+            firestore.collection("articles").document(id).update(data).get();
         }
 
         return "redirect:/admin/articles";
+    }
+    
+    private int indexValid(String[] arr, int i) {
+        return Math.min(i, arr.length - 1);
     }
 
     @GetMapping("/toggle-status/{id}")

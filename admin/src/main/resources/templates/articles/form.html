@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Thêm bài viết mới - WIND Admin</title>
+    <title th:text="${article != null ? 'Sửa bài viết' : 'Thêm bài viết mới'} + ' - WIND Admin'"></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/admin-style.css}">
@@ -136,6 +136,15 @@
             margin-right: 10px;
             cursor: pointer;
         }
+
+        .img-preview {
+            width: 120px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
     </style>
 </head>
 <body>
@@ -143,7 +152,7 @@
 
     <div class="main">
         <header class="header">
-            <h1 class="h4 mb-0">Quản lý bài viết</h1>
+            <h1 class="h4 mb-0" th:text="${article != null ? 'Chỉnh sửa bài viết' : 'Thêm bài viết mới'}">Quản lý bài viết</h1>
             <div class="user-info">
                 Xin chào <strong>Admin</strong>
                 <a href="/admin/articles" class="btn-back">Quay lại</a>
@@ -152,6 +161,7 @@
 
         <div class="form-container shadow-lg">
             <form id="articleForm" action="/admin/articles/save" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="id" th:value="${article != null ? article.id : ''}">
 
                 <div class="section-title"><i class="bi bi-info-circle-fill"></i> Thông tin cơ bản</div>
 
@@ -160,50 +170,79 @@
                         <label class="form-label">Tour liên quan</label>
                         <select name="tour_id" class="form-select">
                             <option value="0">-- Không liên kết tour --</option>
-                            <option th:each="tour : ${tours}" th:value="${tour.id}" th:text="${tour.get('title')}"></option>
+                            <option th:each="tour : ${tours}"
+                                    th:value="${tour.id}"
+                                    th:text="${tour.get('title')}"
+                                    th:selected="${article != null && article.get('tour_id') == tour.id}"></option>
                         </select>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label required">Loại bài viết</label>
                         <select name="loai_id" class="form-select" required>
                             <option value="">-- Chọn loại --</option>
-                            <option value="1">Làng nghề</option>
-                            <option value="2">Ẩm thực</option>
-                            <option value="3">Văn hóa</option>
+                            <option value="1" th:selected="${article != null && article.get('loai_id') == 1}">Làng nghề</option>
+                            <option value="2" th:selected="${article != null && article.get('loai_id') == 2}">Ẩm thực</option>
+                            <option value="3" th:selected="${article != null && article.get('loai_id') == 3}">Văn hóa</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="mb-4">
                     <label class="form-label required">Tiêu đề bài viết</label>
-                    <input type="text" name="tieu_de" class="form-control" placeholder="Nhập tiêu đề chính của bài viết" required>
+                    <input type="text" name="tieu_de" class="form-control" placeholder="Nhập tiêu đề chính của bài viết"
+                           required th:value="${article != null ? article.get('tieu_de') : ''}">
                 </div>
 
                 <div class="section-title"><i class="bi bi-layout-text-sidebar-reverse"></i> Nội dung chi tiết</div>
 
                 <div id="mucContainer">
-                    <div class="muc-section" data-muc="1">
+                    <!-- Default for Add mode -->
+                    <div th:if="${article == null}" class="muc-section" data-muc="1">
                         <div class="muc-header">
                             <h6><i class="bi bi-bookmark-fill me-2 text-primary"></i>Mục 1</h6>
                             <button type="button" class="btn-remove-muc" onclick="removeMuc(this)">
                                 <i class="bi bi-trash3-fill me-1"></i> Xóa mục
                             </button>
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label">Tiêu đề mục</label>
-                            <input type="text" name="tieu_de_muc[]" class="form-control" placeholder="Nhập tiêu đề nhỏ cho đoạn này (có thể để trống)">
+                            <input type="text" name="tieu_de_muc[]" class="form-control" placeholder="Tiêu đề mục">
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label required">Nội dung văn bản</label>
-                            <textarea name="noi_dung_muc[]" class="form-control" rows="5" placeholder="Viết nội dung chi tiết tại đây..." required></textarea>
+                            <textarea name="noi_dung_muc[]" class="form-control" rows="5" required></textarea>
                         </div>
-
                         <div class="mb-0">
                             <label class="form-label">Hình ảnh minh họa</label>
                             <input type="file" name="hinh_anh_muc[]" class="form-control" accept="image/*">
-                            <span class="help-text">Ảnh sẽ được hiển thị ngay bên dưới nội dung mục này</span>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic sections for Edit mode -->
+                    <div th:if="${article != null}" th:each="muc, iter : ${article.get('sections')}"
+                         class="muc-section" th:data-muc="${iter.index + 1}">
+                        <div class="muc-header">
+                            <h6 th:utext="'<i class=\'bi bi-bookmark-fill me-2 text-primary\'></i>Mục ' + ${iter.index + 1}"></h6>
+                            <button type="button" class="btn-remove-muc" onclick="removeMuc(this)">
+                                <i class="bi bi-trash3-fill me-1"></i> Xóa mục
+                            </button>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tiêu đề mục</label>
+                            <input type="text" name="tieu_de_muc[]" class="form-control" th:value="${muc.get('tieu_de')}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label required">Nội dung văn bản</label>
+                            <textarea name="noi_dung_muc[]" class="form-control" rows="5" required th:text="${muc.get('noi_dung')}"></textarea>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label">Hình ảnh minh họa</label>
+                            <input type="file" name="hinh_anh_muc[]" class="form-control" accept="image/*">
+                            <input type="hidden" name="hinh_anh_cu[]" th:value="${muc.get('hinh_anh')}">
+                            <div th:if="${muc.get('hinh_anh') != null && !muc.get('hinh_anh').isEmpty()}">
+                                <img th:src="${muc.get('hinh_anh')}" class="img-preview">
+                                <span class="help-text">Ảnh hiện tại. Tải lên ảnh mới nếu muốn thay đổi.</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -215,15 +254,16 @@
                 <div class="form-actions">
                     <a href="/admin/articles" class="btn-cancel text-center d-flex align-items-center">Hủy bỏ</a>
                     <button type="submit" class="btn-submit">
-                        <i class="bi bi-cloud-arrow-up-fill me-2"></i>Lưu và Xuất bản
+                        <i class="bi bi-cloud-arrow-up-fill me-2"></i>Lưu bài viết
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script>
-        let mucCount = 1;
+    <script th:inline="javascript">
+        let mucCount = /*[[${article != null ? article.get('sections').size() : 1}]]*/ 1;
+
         function addMuc() {
             mucCount++;
             const container = document.getElementById('mucContainer');
@@ -246,12 +286,14 @@
                     <div class="mb-0">
                         <label class="form-label">Hình ảnh minh họa</label>
                         <input type="file" name="hinh_anh_muc[]" class="form-control" accept="image/*">
+                        <input type="hidden" name="hinh_anh_cu[]" value="">
                     </div>
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
+
         function removeMuc(btn) {
             const sections = document.querySelectorAll('.muc-section');
             if (sections.length > 1) {
@@ -268,6 +310,7 @@
                 alert('Bài viết phải có ít nhất một mục nội dung!');
             }
         }
+
         function updateLabels() {
             const sections = document.querySelectorAll('.muc-section');
             sections.forEach((s, i) => {
@@ -276,6 +319,7 @@
             });
             mucCount = sections.length;
         }
+
         document.getElementById('articleForm').onsubmit = function() {
             const btn = this.querySelector('.btn-submit');
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang lưu...';

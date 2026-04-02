@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -26,22 +27,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.dacs3.data.model.Tour
+import com.example.dacs3.ui.viewmodel.MainViewModel
 import java.text.NumberFormat
 import java.util.Locale
 
 @Composable
-fun FilterTag(text: String, isSelected: Boolean) {
+fun FilterTag(text: String, isSelected: Boolean, onClick: () -> Unit = {}) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = if (isSelected) Color(0xFF2563EB).copy(alpha = 0.1f) else Color.White,
         border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) Color(0xFF2563EB) else Color(0xFFE2E8F0)),
-        modifier = Modifier.padding(vertical = 4.dp)
+        modifier = Modifier.padding(vertical = 4.dp).clickable { onClick() }
     ) {
         Text(
             text = text,
@@ -55,7 +58,7 @@ fun FilterTag(text: String, isSelected: Boolean) {
 
 @Composable
 fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
-    val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    val currencyFormatter = remember { NumberFormat.getCurrencyInstance(Locale("vi", "VN")) }
     
     Card(
         modifier = Modifier
@@ -71,7 +74,6 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                 .fillMaxWidth()
                 .height(160.dp)
         ) {
-            // Left Side: Image
             Box(
                 modifier = Modifier
                     .weight(0.4f)
@@ -87,7 +89,6 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                     contentScale = ContentScale.Crop
                 )
                 
-                // Rating Overlay
                 Surface(
                     modifier = Modifier
                         .padding(8.dp)
@@ -111,7 +112,6 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                 }
             }
 
-            // Right Side: Info
             Column(
                 modifier = Modifier
                     .weight(0.6f)
@@ -181,8 +181,22 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FilterContent(onApply: () -> Unit) {
+fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
     val scrollState = rememberScrollState()
+    val selectedTourType by viewModel.selectedTourType.collectAsState()
+    val availableProvinces by viewModel.availableProvinces.collectAsState()
+    val selectedLocations by viewModel.selectedLocations.collectAsState()
+    val priceRange by viewModel.priceRange.collectAsState()
+    val selectedDuration by viewModel.selectedDuration.collectAsState()
+    val selectedRating by viewModel.selectedRating.collectAsState()
+
+    // Internal state for text fields, initialized empty if they are default values
+    var minPriceText by remember { 
+        mutableStateOf(if (priceRange.start == 0f) "" else priceRange.start.toLong().toString()) 
+    }
+    var maxPriceText by remember { 
+        mutableStateOf(if (priceRange.endInclusive >= 1000000000f) "" else priceRange.endInclusive.toLong().toString()) 
+    }
     
     Column(
         modifier = Modifier
@@ -198,62 +212,90 @@ fun FilterContent(onApply: () -> Unit) {
         // 1. Loại tour
         FilterSectionTitle("Loại tour")
         Row(modifier = Modifier.padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterSelectButton("Tất cả", true)
-            FilterSelectButton("Trong ngày", false)
-            FilterSelectButton("Dài ngày", false)
+            FilterSelectButton("Tất cả", selectedTourType == "Tất cả") { viewModel.setTourType("Tất cả") }
+            FilterSelectButton("Trong ngày", selectedTourType == "Trong ngày") { viewModel.setTourType("Trong ngày") }
+            FilterSelectButton("Dài ngày", selectedTourType == "Dài ngày") { viewModel.setTourType("Dài ngày") }
         }
 
         // 2. Địa điểm
         FilterSectionTitle("Địa điểm")
-        val locations = listOf("Đà Nẵng" to 12, "Hội An" to 8, "Huế" to 5, "Quảng Bình" to 3, "Đà Lạt" to 7)
         Column(modifier = Modifier.padding(vertical = 8.dp)) {
-            locations.forEach { (name, count) ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = name == "Đà Nẵng", onCheckedChange = {})
-                        Text(name, fontSize = 15.sp, color = Color(0xFF334155))
+            if (availableProvinces.isEmpty()) {
+                Text("Đang tải địa điểm...", color = Color.Gray, fontSize = 14.sp)
+            } else {
+                availableProvinces.forEach { name ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { viewModel.toggleLocation(name) },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = selectedLocations.contains(name), onCheckedChange = { viewModel.toggleLocation(name) })
+                            Text(name, fontSize = 15.sp, color = Color(0xFF334155))
+                        }
                     }
-                    Text("($count)", fontSize = 14.sp, color = Color.Gray)
                 }
             }
         }
 
         // 3. Khoảng giá
-        FilterSectionTitle("Khoảng giá")
-        var priceRange by remember { mutableStateOf(0f..10000000f) }
-        Column(modifier = Modifier.padding(vertical = 12.dp)) {
-            RangeSlider(
-                value = priceRange,
-                onValueChange = { priceRange = it },
-                valueRange = 0f..10000000f,
-                modifier = Modifier.fillMaxWidth()
+        FilterSectionTitle("Khoảng giá (đ)")
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = minPriceText,
+                onValueChange = { 
+                    if (it.isEmpty() || it.all { char -> char.isDigit() }) {
+                        minPriceText = it
+                        viewModel.setMinPrice(it.toFloatOrNull())
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("0", fontSize = 14.sp, color = Color.LightGray) },
+                label = { Text("Từ", fontSize = 12.sp) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("0đ", fontSize = 12.sp, color = Color.Gray)
-                Text("10tr+ đ", fontSize = 12.sp, color = Color.Gray)
-            }
+            
+            Text("-", fontWeight = FontWeight.Bold, color = Color.Gray)
+
+            OutlinedTextField(
+                value = maxPriceText,
+                onValueChange = { 
+                    if (it.isEmpty() || it.all { char -> char.isDigit() }) {
+                        maxPriceText = it
+                        viewModel.setMaxPrice(it.toFloatOrNull())
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text("Không giới hạn", fontSize = 14.sp, color = Color.LightGray) },
+                label = { Text("Đến", fontSize = 12.sp) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
         }
 
         // 4. Thời gian
         FilterSectionTitle("Thời gian")
-        val durations = listOf("1 ngày", "2-3 ngày", "4-5 ngày", "6+ ngày")
+        val durations = listOf("Tất cả", "1 ngày", "2-3 ngày", "4-5 ngày", "6+ ngày")
         LazyRow(modifier = Modifier.padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(durations) { duration ->
-                FilterSelectButton(duration, duration == "2-3 ngày")
+                FilterSelectButton(duration, selectedDuration == duration) { viewModel.setDuration(duration) }
             }
         }
 
         // 5. Đánh giá
         FilterSectionTitle("Đánh giá")
         val ratings = listOf(
-            Triple("9.0+", "Tuyệt vời", Color(0xFF1E3A8A)),
-            Triple("8.0+", "Rất tốt", Color(0xFF2563EB)),
-            Triple("7.0+", "Tốt", Color(0xFF0EA5E9)),
-            Triple("6.0+", "Khá", Color(0xFFF59E0B))
+            Triple(9.0f, "Tuyệt vời (9.0+)", Color(0xFF1E3A8A)),
+            Triple(8.0f, "Rất tốt (8.0+)", Color(0xFF2563EB)),
+            Triple(7.0f, "Tốt (7.0+)", Color(0xFF0EA5E9)),
+            Triple(6.0f, "Khá (6.0+)", Color(0xFFF59E0B))
         )
         Column(modifier = Modifier.padding(vertical = 12.dp)) {
             ratings.forEach { (score, label, color) ->
@@ -262,14 +304,14 @@ fun FilterContent(onApply: () -> Unit) {
                         .fillMaxWidth()
                         .padding(vertical = 6.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable { }
+                        .clickable { viewModel.setRating(score) }
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    RadioButton(selected = score == "8.0+", onClick = {})
+                    RadioButton(selected = selectedRating == score, onClick = { viewModel.setRating(score) })
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(color = color, shape = RoundedCornerShape(6.dp)) {
-                        Text(score, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        Text(score.toString(), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(label, fontSize = 15.sp, color = Color(0xFF334155))
@@ -279,20 +321,26 @@ fun FilterContent(onApply: () -> Unit) {
 
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Nút hành động
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedButton(
-                onClick = { },
+                onClick = { 
+                    viewModel.resetFilters()
+                    minPriceText = ""
+                    maxPriceText = ""
+                },
                 modifier = Modifier.weight(1f).height(50.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Text("Đặt lại", fontWeight = FontWeight.Bold)
             }
             Button(
-                onClick = onApply,
+                onClick = {
+                    viewModel.applyFilters()
+                    onApply()
+                },
                 modifier = Modifier.weight(1f).height(50.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
@@ -315,12 +363,12 @@ fun FilterSectionTitle(title: String) {
 }
 
 @Composable
-fun FilterSelectButton(text: String, isSelected: Boolean) {
+fun FilterSelectButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = if (isSelected) Color(0xFF2563EB).copy(alpha = 0.1f) else Color.White,
         border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) Color(0xFF2563EB) else Color(0xFFE2E8F0)),
-        modifier = Modifier.clickable { }
+        modifier = Modifier.clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),

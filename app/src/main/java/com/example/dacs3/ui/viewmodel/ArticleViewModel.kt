@@ -77,9 +77,10 @@ class ArticleViewModel(private val repository: ArticleRepository = ArticleReposi
         }
     }
 
-    fun toggleLikeComment(articleId: String, commentId: String, userId: String, isLiked: Boolean) {
+    fun toggleLikeComment(articleId: String, commentId: String, userId: String) {
         viewModelScope.launch {
-            val success = repository.toggleLikeComment(articleId, commentId, userId, isLiked)
+            // The repository now handles the toggle logic internally via transaction
+            val success = repository.toggleLikeComment(articleId, commentId, userId)
             if (success) {
                 fetchComments(articleId)
             }

@@ -76,6 +76,7 @@ class ArticleRepository {
     suspend fun addComment(comment: Comment): Boolean {
         return try {
             val commentData = mapOf(
+                "articleId" to comment.articleId,
                 "userId" to comment.userId,
                 "userName" to comment.userName,
                 "userAvatar" to comment.userAvatar,
@@ -108,24 +109,25 @@ class ArticleRepository {
         }
     }
 
-    suspend fun toggleLikeComment(articleId: String, commentId: String, userId: String, isLiked: Boolean): Boolean {
+    suspend fun toggleLikeComment(articleId: String, commentId: String, userId: String): Boolean {
         return try {
             val commentRef = db.collection("articles").document(articleId)
                 .collection("comments").document(commentId)
             
-            if (isLiked) {
-                // Unlike: Remove userId and decrement count
-                commentRef.update(
-                    "likes", FieldValue.increment(-1),
-                    "likedBy", FieldValue.arrayRemove(userId)
-                ).await()
-            } else {
-                // Like: Add userId and increment count
-                commentRef.update(
-                    "likes", FieldValue.increment(1),
-                    "likedBy", FieldValue.arrayUnion(userId)
-                ).await()
-            }
+            db.runTransaction { transaction ->
+                val snapshot = transaction.get(commentRef)
+                @Suppress("UNCHECKED_CAST")
+                val likedBy = snapshot.get("likedBy") as? List<String> ?: emptyList()
+                val isLiked = likedBy.contains(userId)
+                
+                if (isLiked) {
+                    transaction.update(commentRef, "likes", FieldValue.increment(-1))
+                    transaction.update(commentRef, "likedBy", FieldValue.arrayRemove(userId))
+                } else {
+                    transaction.update(commentRef, "likes", FieldValue.increment(1))
+                    transaction.update(commentRef, "likedBy", FieldValue.arrayUnion(userId))
+                }
+            }.await()
             true
         } catch (e: Exception) {
             e.printStackTrace()

@@ -163,7 +163,10 @@ fun TourScreen(
                 containerColor = Color.White,
                 dragHandle = { BottomSheetDefaults.DragHandle() }
             ) {
-                FilterContent(onApply = { showFilterSheet = false })
+                FilterContent(
+                    viewModel = viewModel,
+                    onApply = { showFilterSheet = false }
+                )
             }
         }
     }

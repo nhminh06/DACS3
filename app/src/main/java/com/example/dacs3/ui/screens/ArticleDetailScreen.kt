@@ -188,7 +188,7 @@ fun ArticleDetailScreen(
                         },
                         onLikeComment = { comment, isLiked ->
                             if (isLoggedIn) {
-                                articleViewModel.toggleLikeComment(article.id, comment.id, currentUser?.id ?: "", isLiked)
+                                articleViewModel.toggleLikeComment(article.id, comment.id, currentUser?.id ?: "")
                             } else {
                                 Toast.makeText(context, "Bạn cần đăng nhập để thả tim", Toast.LENGTH_SHORT).show()
                             }
