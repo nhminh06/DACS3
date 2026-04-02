@@ -23,11 +23,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.dacs3.data.model.Tour
 import java.text.NumberFormat
 import java.util.Locale
@@ -74,8 +77,11 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                     .weight(0.4f)
                     .fillMaxHeight()
             ) {
-                Image(
-                    painter = painterResource(id = tour.imageRes),
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(tour.imageUrl)
+                        .crossfade(true)
+                        .build(),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -129,7 +135,7 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.LocationOn, null, tint = Color(0xFF64748B), modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(tour.location, color = Color(0xFF64748B), fontSize = 11.sp)
+                        Text(tour.location, color = Color(0xFF64748B), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         
                         Spacer(modifier = Modifier.width(12.dp))
                         

@@ -308,8 +308,7 @@ fun BookingCard(booking: Booking, onCancelClick: (Booking) -> Unit, primaryColor
                         .background(Color(0xFFF1F7FF), RoundedCornerShape(12.dp))
                         .padding(12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                    verticalAlignment = Alignment.CenterVertically) {
                     Text("Tổng thanh toán", fontWeight = FontWeight.Bold, color = Color(0xFF475569))
                     Text(
                         String.format(Locale.getDefault(), "%,d VNĐ", booking.totalPrice),
@@ -382,9 +381,9 @@ fun BookingDetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, labe
 
 fun getSampleBookings(): List<Booking> {
     val tours = listOf(
-        Tour("1", "Đà Nẵng - Hội An - Bà Nà Hills", R.drawable.a5, "20/12/2024", 4.8, 120, 4500000, "3 ngày 2 đêm", "Đà Nẵng", TourType.MULTI_DAY),
-        Tour("2", "Khám phá Vịnh Hạ Long", R.drawable.a7, "25/12/2024", 4.9, 85, 3200000, "2 ngày 1 đêm", "Quảng Ninh", TourType.MULTI_DAY),
-        Tour("3", "Tour ẩm thực Sài Gòn đêm", R.drawable.a6, "15/12/2024", 4.7, 50, 800000, "1 ngày", "TP. Hồ Chí Minh", TourType.DAY_TOUR)
+        Tour(id = "1", title = "Đà Nẵng - Hội An - Bà Nà Hills", imageRes = R.drawable.a5, startDate = "20/12/2024", rating = 4.8, reviewCount = 120, price = 4500000L, duration = "3 ngày 2 đêm", location = "Đà Nẵng", type = TourType.MULTI_DAY),
+        Tour(id = "2", title = "Khám phá Vịnh Hạ Long", imageRes = R.drawable.a7, startDate = "25/12/2024", rating = 4.9, reviewCount = 85, price = 3200000L, duration = "2 ngày 1 đêm", location = "Quảng Ninh", type = TourType.MULTI_DAY),
+        Tour(id = "3", title = "Tour ẩm thực Sài Gòn đêm", imageRes = R.drawable.a6, startDate = "15/12/2024", rating = 4.7, reviewCount = 50, price = 800000L, duration = "1 ngày", location = "TP. Hồ Chí Minh", type = TourType.DAY_TOUR)
     )
 
     return listOf(

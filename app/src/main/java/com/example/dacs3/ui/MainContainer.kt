@@ -9,6 +9,7 @@ import com.example.dacs3.data.model.Tour
 import com.example.dacs3.data.remote.FirebaseService
 import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.ui.screens.*
+import com.example.dacs3.ui.viewmodel.MainViewModel
 import com.example.dacs3.ui.viewmodel.UserViewModel
 import com.example.dacs3.ui.viewmodel.factory.UserViewModelFactory
 
@@ -17,12 +18,13 @@ fun MainContainer() {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     
-    // Khởi tạo ViewModel (Tạm thời khởi tạo ở đây, sau này có thể dùng DI như Hilt)
+    // Khởi tạo ViewModels
     val firebaseService = FirebaseService()
     val userRepository = UserRepository(firebaseService)
     val userViewModel: UserViewModel = viewModel(
         factory = UserViewModelFactory(userRepository, sessionManager)
     )
+    val mainViewModel: MainViewModel = viewModel()
 
     // Mặc định vào App là màn hình Home
     var currentScreen by remember { mutableStateOf("home") }
@@ -51,9 +53,14 @@ fun MainContainer() {
             )
         }
         "home" -> {
-            AppHomeScreen(onNavigate = { screen -> 
-                currentScreen = screen 
-            })
+            AppHomeScreen(
+                onNavigate = { screen -> currentScreen = screen },
+                viewModel = mainViewModel,
+                onTourClick = { tour ->
+                    selectedTour = tour
+                    currentScreen = "tour_detail"
+                }
+            )
         }
         "tours" -> {
             TourScreen(
@@ -61,7 +68,8 @@ fun MainContainer() {
                 onTourClick = { tour ->
                     selectedTour = tour
                     currentScreen = "tour_detail"
-                }
+                },
+                viewModel = mainViewModel
             )
         }
         "tour_detail" -> {

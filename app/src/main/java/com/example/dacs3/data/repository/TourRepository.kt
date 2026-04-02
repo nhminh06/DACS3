@@ -2,6 +2,7 @@ package com.example.dacs3.data.repository
 
 import android.net.Uri
 import android.util.Log
+import com.example.dacs3.data.model.Tour
 import com.example.dacs3.data.repository.storage.StorageRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -10,6 +11,41 @@ import kotlinx.coroutines.tasks.await
 class TourRepository {
     private val firestore = FirebaseFirestore.getInstance()
     private val storageRepository = StorageRepository()
+    private val toursCollection = firestore.collection("tours")
+
+    /**
+     * Lấy danh sách tour đang hoạt động
+     */
+    suspend fun getActiveTours(): List<Tour> {
+        return try {
+            val querySnapshot = toursCollection
+                .whereEqualTo("trang_thai", "active")
+                .get()
+                .await()
+            
+            querySnapshot.documents.mapNotNull { doc ->
+                doc.toObject(Tour::class.java)?.copy(id = doc.id)
+            }
+        } catch (e: Exception) {
+            Log.e("TourRepository", "Lỗi lấy danh sách tour: ${e.message}")
+            emptyList()
+        }
+    }
+
+    /**
+     * Lấy thông tin chi tiết một tour theo ID
+     */
+    suspend fun getTourById(tourId: String): Tour? {
+        return try {
+            val doc = toursCollection.document(tourId).get().await()
+            if (doc.exists()) {
+                doc.toObject(Tour::class.java)?.copy(id = doc.id)
+            } else null
+        } catch (e: Exception) {
+            Log.e("TourRepository", "Lỗi lấy chi tiết tour: ${e.message}")
+            null
+        }
+    }
 
     /**
      * Test hàm upload ảnh lên Cloudinary và lưu link vào Firestore
@@ -24,12 +60,10 @@ class TourRepository {
                 Log.d("TourRepository", "Upload Cloudinary thành công: $imageUrl")
                 
                 // 2. Lưu URL vào Firestore
-                // Sử dụng set với merge để tạo mới nếu chưa có document
                 val data = hashMapOf("imageUrl" to imageUrl)
                 
-                firestore.collection("tours")
-                    .document(tourId)
-                    .set(data, SetOptions.merge()) // Thay update bằng set(merge) để tránh lỗi NOT_FOUND
+                toursCollection.document(tourId)
+                    .set(data, SetOptions.merge())
                     .await()
                 
                 Log.d("TourRepository", "Đã lưu URL vào Firestore cho tour: $tourId")

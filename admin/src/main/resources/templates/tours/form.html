@@ -39,7 +39,7 @@
         </header>
 
         <section class="tour-form shadow-sm">
-            <form th:action="@{/admin/tours/save}" method="POST" enctype="multipart/form-data">
+            <form id="tourForm" th:action="@{/admin/tours/save}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="id" th:value="${tourId}">
 
                 <div class="row g-4">
@@ -155,6 +155,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/admin-common.js}"></script>
     <script>
         function previewMain(input) {
             const container = document.getElementById('mainPreviewContainer');
