@@ -3,6 +3,7 @@ package com.example.dacs3.ui.components.home
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,21 +13,34 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.dacs3.R
+import com.example.dacs3.ui.viewmodel.UserViewModel
 
 @Composable
-fun TopHeader() {
+fun TopHeader(
+    userViewModel: UserViewModel = viewModel(),
+    onProfileClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {}
+) {
+    val currentUser by userViewModel.currentUser
+    
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -59,19 +73,35 @@ fun TopHeader() {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable(onClick = onProfileClick)
+            ) {
                 Box(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
                         .border(1.5.dp, Color.White, CircleShape)
+                        .background(Color.LightGray)
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.a8),
-                        contentDescription = "Avatar",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
+                    if (currentUser?.avatar?.isNotEmpty() == true) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(currentUser?.avatar)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "Avatar",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(id = R.drawable.a8),
+                            contentDescription = "Default Avatar",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
@@ -81,16 +111,18 @@ fun TopHeader() {
                         fontSize = 12.sp
                     )
                     Text(
-                        text = "Du khách ơi! 👋",
+                        text = if (currentUser != null) "${currentUser?.name} 👋" else "Du khách ơi! 👋",
                         color = Color.White,
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
             
             IconButton(
-                onClick = { },
+                onClick = onNotificationClick,
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)

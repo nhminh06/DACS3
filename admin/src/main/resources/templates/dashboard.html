@@ -41,21 +41,7 @@
     </style>
 </head>
 <body>
-    <aside class="sidebar">
-        <div class="logo">WIND Admin</div>
-        <nav class="nav flex-column">
-            <a class="nav-link" href="#"><i class="bi bi-person-gear"></i> Tài khoản quản trị</a>
-            <a class="nav-link" href="#"><i class="bi bi-house"></i> Quản lý trang chủ</a>
-            <a class="nav-link" href="/admin/tours"><i class="bi bi-map"></i> Quản lý Tour</a>
-            <a class="nav-link" href="/admin/bookings"><i class="bi bi-calendar-check"></i> Quản lý đặt Tour</a>
-            <a class="nav-link" href="#"><i class="bi bi-compass"></i> Quản lý khám phá</a>
-            <a class="nav-link" href="#"><i class="bi bi-journal-text"></i> Quản lý bài viết</a>
-            <a class="nav-link" href="#"><i class="bi bi-info-circle"></i> Quản lý thông tin</a>
-            <a class="nav-link" href="/admin/users"><i class="bi bi-people"></i> Quản lý người dùng</a>
-            <a class="nav-link active" href="/admin"><i class="bi bi-bar-chart"></i> Thống kê</a>
-            <a class="nav-link" href="/"><i class="bi bi-box-arrow-right"></i> Đăng xuất</a>
-        </nav>
-    </aside>
+    <div th:replace="~{fragments/sidebar :: sidebar('stats')}"></div>
 
     <div class="main">
         <header class="header">

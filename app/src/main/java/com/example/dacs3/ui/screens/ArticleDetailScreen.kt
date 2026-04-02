@@ -1,14 +1,15 @@
 package com.example.dacs3.ui.screens
 
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,32 +18,49 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.dacs3.R
-import com.example.dacs3.data.model.Article
-import com.example.dacs3.data.model.ArticleCategory
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.example.dacs3.data.model.Comment
+import com.example.dacs3.data.repository.ArticleEntity
+import com.example.dacs3.ui.viewmodel.ArticleViewModel
+import com.example.dacs3.ui.viewmodel.UserViewModel
+import com.google.firebase.Timestamp
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticleDetailScreen(
-    article: Article,
+    article: ArticleEntity,
     onBack: () -> Unit,
     onNavigateToTour: () -> Unit,
-    isLoggedIn: Boolean = false
+    userViewModel: UserViewModel,
+    articleViewModel: ArticleViewModel
 ) {
     val scrollState = rememberScrollState()
     val primaryColor = Color(0xFF2563EB)
     var showReportDialog by remember { mutableStateOf(false) }
+    var commentToDelete by remember { mutableStateOf<Comment?>(null) }
+    
+    val comments by articleViewModel.comments.collectAsState()
+    val isCommenting by articleViewModel.isCommenting.collectAsState()
+    val currentUser by userViewModel.currentUser
+    val isLoggedIn = userViewModel.isLoggedIn()
+    val context = LocalContext.current
+
+    LaunchedEffect(article.id) {
+        articleViewModel.fetchComments(article.id)
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(article.title, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+                title = { Text(article.tieu_de, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -51,6 +69,9 @@ fun ArticleDetailScreen(
                 actions = {
                     IconButton(onClick = { /* Share */ }) {
                         Icon(Icons.Default.Share, contentDescription = "Share")
+                    }
+                    IconButton(onClick = { showReportDialog = true }) {
+                        Icon(Icons.Outlined.Flag, contentDescription = "Report Article")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -80,7 +101,7 @@ fun ArticleDetailScreen(
     ) { paddingValues ->
         Box(modifier = Modifier
             .fillMaxSize()
-            .background(Color.White) // Đổi sang nền trắng để hòa hợp với nội dung phẳng
+            .background(Color.White)
             .padding(paddingValues)
         ) {
             Column(
@@ -88,10 +109,14 @@ fun ArticleDetailScreen(
                     .fillMaxSize()
                     .verticalScroll(scrollState)
             ) {
-                // 1. Header Image with Title overlay
+                // Header Image
+                val firstImage = article.sections.firstOrNull { it["hinh_anh"] != null }?.get("hinh_anh")
                 Box(modifier = Modifier.height(280.dp).fillMaxWidth()) {
-                    Image(
-                        painter = painterResource(id = article.imageRes),
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(firstImage)
+                            .crossfade(true)
+                            .build(),
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -106,7 +131,7 @@ fun ArticleDetailScreen(
                             )
                     )
                     Text(
-                        text = article.title,
+                        text = article.tieu_de,
                         modifier = Modifier
                             .align(Alignment.BottomStart)
                             .padding(24.dp),
@@ -118,44 +143,57 @@ fun ArticleDetailScreen(
                 }
 
                 Column(modifier = Modifier.padding(24.dp)) {
-                    // 2. Main Content Sections - Flat style
-                    ContentSection(
-                        title = "Giới thiệu",
-                        description = "Khám phá vẻ đẹp truyền thống và những nét đặc sắc chỉ có tại ${article.title}. Một hành trình mang đậm giá trị văn hóa lịch sử, nơi mỗi góc nhỏ đều kể lên một câu chuyện riêng biệt về đất và người.",
-                        imageRes = article.imageRes
-                    )
-                    
-                    ContentSection(
-                        title = "Trải nghiệm đặc sắc",
-                        description = "Đến đây, du khách sẽ được tận mắt chứng kiến quy trình tạo ra các sản phẩm độc đáo, tham gia các hoạt động cộng đồng và thưởng thức ẩm thực địa phương phong phú.",
-                        imageRes = R.drawable.a4
-                    )
+                    // Dynamic Content Sections
+                    article.sections.forEach { section ->
+                        val tieuDe = section["tieu_de"]
+                        val noiDung = section["noi_dung"]
+                        val hinhAnh = section["hinh_anh"]
 
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // 4. "Có thể bạn quan tâm" - Flat Horizontal Scroll
-                    Text(
-                        "Có thể bạn quan tâm",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF1E293B)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(bottom = 8.dp)
-                    ) {
-                        items(getSampleArticles()) { item ->
-                            RecommendedItem(item)
+                        if (!tieuDe.isNullOrEmpty() || !noiDung.isNullOrEmpty()) {
+                            ContentSection(
+                                title = tieuDe ?: "",
+                                description = noiDung ?: "",
+                                imageUrl = hinhAnh
+                            )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(40.dp))
 
-                    // 5. Comment Section - Flat style
+                    // Comment Section
                     CommentSection(
                         isLoggedIn = isLoggedIn,
-                        onReportClick = { showReportDialog = true }
+                        onReportClick = { showReportDialog = true },
+                        comments = comments,
+                        currentUserId = currentUser?.id ?: "",
+                        onPostComment = { content ->
+                            val newComment = Comment(
+                                articleId = article.id,
+                                userId = currentUser?.id ?: "",
+                                userName = currentUser?.name ?: "Người dùng",
+                                userAvatar = currentUser?.avatar ?: "",
+                                content = content,
+                                createdAt = Timestamp.now()
+                            )
+                            articleViewModel.postComment(newComment) { success ->
+                                if (success) {
+                                    Toast.makeText(context, "Đã gửi bình luận", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "Lỗi khi gửi bình luận", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        onDeleteComment = { comment ->
+                            commentToDelete = comment
+                        },
+                        onLikeComment = { comment, isLiked ->
+                            if (isLoggedIn) {
+                                articleViewModel.toggleLikeComment(article.id, comment.id, currentUser?.id ?: "", isLiked)
+                            } else {
+                                Toast.makeText(context, "Bạn cần đăng nhập để thả tim", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        isCommenting = isCommenting
                     )
                 }
             }
@@ -165,7 +203,7 @@ fun ArticleDetailScreen(
     if (showReportDialog) {
         AlertDialog(
             onDismissRequest = { showReportDialog = false },
-            title = { Text("Báo cáo bình luận") },
+            title = { Text("Báo cáo") },
             text = { Text("Bạn có chắc chắn muốn báo cáo nội dung này là không phù hợp?") },
             confirmButton = {
                 TextButton(onClick = { showReportDialog = false }) {
@@ -180,38 +218,77 @@ fun ArticleDetailScreen(
             shape = RoundedCornerShape(20.dp)
         )
     }
+
+    if (commentToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { commentToDelete = null },
+            title = { Text("Xóa bình luận") },
+            text = { Text("Bạn có chắc chắn muốn xóa bình luận này không?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    commentToDelete?.let {
+                        articleViewModel.deleteComment(article.id, it.id) { success ->
+                            if (success) {
+                                Toast.makeText(context, "Đã xóa bình luận", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "Lỗi khi xóa bình luận", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                    commentToDelete = null
+                }) {
+                    Text("Xóa", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { commentToDelete = null }) {
+                    Text("Hủy")
+                }
+            },
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
 }
 
 @Composable
-fun ContentSection(title: String, description: String, imageRes: Int?) {
+fun ContentSection(title: String, description: String, imageUrl: String?) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 12.dp)
     ) {
-        Text(
-            text = title,
-            fontSize = 19.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1E293B)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = description,
-            fontSize = 15.sp,
-            color = Color(0xFF475569),
-            lineHeight = 24.sp
-        )
-        if (imageRes != null) {
+        if (title.isNotEmpty()) {
+            Text(
+                text = title,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1E293B)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        
+        if (description.isNotEmpty()) {
+            Text(
+                text = description,
+                fontSize = 15.sp,
+                color = Color(0xFF475569),
+                lineHeight = 24.sp
+            )
+        }
+        
+        if (!imageUrl.isNullOrEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-            Image(
-                painter = painterResource(id = imageRes),
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(220.dp)
+                    .heightIn(min = 200.dp, max = 400.dp)
                     .clip(RoundedCornerShape(16.dp)),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.FillWidth
             )
         }
         Spacer(modifier = Modifier.height(24.dp))
@@ -220,37 +297,24 @@ fun ContentSection(title: String, description: String, imageRes: Int?) {
 }
 
 @Composable
-fun RecommendedItem(article: Article) {
-    Column(modifier = Modifier.width(160.dp)) {
-        Image(
-            painter = painterResource(id = article.imageRes),
-            contentDescription = null,
-            modifier = Modifier
-                .height(110.dp)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp)),
-            contentScale = ContentScale.Crop
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            article.title,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF1E293B)
-        )
-    }
-}
+fun CommentSection(
+    isLoggedIn: Boolean,
+    onReportClick: () -> Unit,
+    comments: List<Comment>,
+    currentUserId: String,
+    onPostComment: (String) -> Unit,
+    onDeleteComment: (Comment) -> Unit,
+    onLikeComment: (Comment, Boolean) -> Unit,
+    isCommenting: Boolean
+) {
+    var commentText by remember { mutableStateOf("") }
 
-@Composable
-fun CommentSection(isLoggedIn: Boolean, onReportClick: () -> Unit) {
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Bình luận", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                "(10)",
+                "(${comments.size})",
                 color = Color.Gray,
                 fontSize = 16.sp
             )
@@ -258,11 +322,10 @@ fun CommentSection(isLoggedIn: Boolean, onReportClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Form nhập bình luận phẳng
         OutlinedTextField(
-            value = "",
-            onValueChange = {},
-            enabled = isLoggedIn,
+            value = commentText,
+            onValueChange = { commentText = it },
+            enabled = isLoggedIn && !isCommenting,
             placeholder = { Text(if (isLoggedIn) "Chia sẻ cảm nghĩ của bạn..." else "Bạn cần đăng nhập để bình luận", fontSize = 14.sp) },
             modifier = Modifier.fillMaxWidth().height(120.dp),
             shape = RoundedCornerShape(16.dp),
@@ -275,76 +338,152 @@ fun CommentSection(isLoggedIn: Boolean, onReportClick: () -> Unit) {
         Spacer(modifier = Modifier.height(12.dp))
         
         Button(
-            onClick = {},
-            enabled = isLoggedIn,
+            onClick = {
+                if (commentText.isNotBlank()) {
+                    onPostComment(commentText)
+                    commentText = ""
+                }
+            },
+            enabled = isLoggedIn && !isCommenting && commentText.isNotBlank(),
             modifier = Modifier.align(Alignment.End),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
         ) {
-            Text("Gửi bình luận", fontWeight = FontWeight.Bold)
+            if (isCommenting) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+            } else {
+                Text("Gửi bình luận", fontWeight = FontWeight.Bold)
+            }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Danh sách bình luận phẳng
-        repeat(3) {
-            CommentItem(onReportClick = onReportClick)
-            if (it < 2) {
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 16.dp),
-                    color = Color.LightGray.copy(alpha = 0.2f)
+        if (comments.isEmpty()) {
+            Text(
+                "Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ cảm nghĩ!",
+                modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                color = Color.Gray,
+                fontSize = 14.sp
+            )
+        } else {
+            comments.forEachIndexed { index, comment ->
+                CommentItem(
+                    comment = comment,
+                    currentUserId = currentUserId,
+                    onReportClick = onReportClick,
+                    onDeleteClick = { onDeleteComment(comment) },
+                    onLikeClick = { isLiked -> onLikeComment(comment, isLiked) }
                 )
+                if (index < comments.size - 1) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 16.dp),
+                        color = Color.LightGray.copy(alpha = 0.2f)
+                    )
+                }
             }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
-        
-        TextButton(
-            onClick = {},
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Xem thêm bình luận", color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
-        }
     }
 }
 
 @Composable
-fun CommentItem(onReportClick: () -> Unit) {
+fun CommentItem(
+    comment: Comment,
+    currentUserId: String,
+    onReportClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onLikeClick: (Boolean) -> Unit
+) {
+    val sdf = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()) }
+    val dateStr = comment.createdAt?.let { sdf.format(it.toDate()) } ?: ""
+    val isLikedByMe = comment.likedBy.contains(currentUserId)
+    val isOwnComment = comment.userId == currentUserId
+
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(modifier = Modifier.size(40.dp), shape = CircleShape, color = Color(0xFFF1F5F9)) {
-                Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.padding(8.dp), tint = Color.Gray)
+            Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFF1F5F9))) {
+                if (comment.userAvatar.isNotEmpty()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(comment.userAvatar)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.padding(8.dp).fillMaxSize(), tint = Color.Gray)
+                }
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
-                Text("Người dùng", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1E293B))
-                Text("2 giờ trước", fontSize = 12.sp, color = Color.Gray)
+                Text(comment.userName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                Text(dateStr, fontSize = 12.sp, color = Color.Gray)
             }
             Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = onReportClick) { 
-                Icon(Icons.Default.MoreVert, null, tint = Color.Gray) 
+            
+            var showMenu by remember { mutableStateOf(false) }
+            Box {
+                IconButton(onClick = { showMenu = true }) { 
+                    Icon(Icons.Default.MoreVert, null, tint = Color.Gray) 
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    if (isOwnComment) {
+                        DropdownMenuItem(
+                            text = { Text("Xóa bình luận", color = Color.Red) },
+                            onClick = {
+                                showMenu = false
+                                onDeleteClick()
+                            },
+                            leadingIcon = { Icon(Icons.Default.Delete, null, tint = Color.Red) }
+                        )
+                    } else {
+                        DropdownMenuItem(
+                            text = { Text("Báo cáo") },
+                            onClick = {
+                                showMenu = false
+                                onReportClick()
+                            },
+                            leadingIcon = { Icon(Icons.Default.Report, null) }
+                        )
+                    }
+                }
             }
         }
         Spacer(modifier = Modifier.height(10.dp))
         Text(
-            "Bài viết rất hay và bổ ích, tôi sẽ sớm ghé thăm địa điểm này cùng gia đình vào mùa hè tới!",
+            text = comment.content,
             fontSize = 14.sp,
             color = Color(0xFF475569),
             lineHeight = 22.sp
         )
         
         Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.FavoriteBorder, null, modifier = Modifier.size(16.dp), tint = Color.Gray)
+            IconButton(
+                onClick = { onLikeClick(isLikedByMe) },
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = if (isLikedByMe) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = null,
+                    tint = if (isLikedByMe) Color.Red else Color.Gray,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
             Spacer(modifier = Modifier.width(4.dp))
-            Text("12", fontSize = 12.sp, color = Color.Gray)
+            Text(
+                text = comment.likes.toString(),
+                fontSize = 12.sp, 
+                color = if (isLikedByMe) Color.Red else Color.Gray
+            )
             Spacer(modifier = Modifier.width(20.dp))
             Text("Trả lời", fontSize = 13.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
         }
     }
 }
-
-fun getSampleArticles() = listOf(
-    Article("Cố đô Huế", "Khám phá kinh thành", R.drawable.a5, ArticleCategory.CULTURE),
-    Article("Phố cổ Hội An", "Nét đẹp hoài cổ", R.drawable.a6, ArticleCategory.CULTURE),
-    Article("Vịnh Hạ Long", "Kỳ quan thiên nhiên", R.drawable.a7, ArticleCategory.CULTURE)
-)

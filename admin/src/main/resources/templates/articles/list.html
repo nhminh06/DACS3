@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý bài viết - WIND Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/admin-style.css}">
+    <style>
+        .badge-vanhoa { background: #f43f5e; color: white; }
+        .badge-langnghe { background: #06b6d4; color: white; }
+        .badge-amthuc { background: #eab308; color: white; }
+        .status-hienthi { background: #22c55e; color: white; }
+        .status-daan { background: #ef4444; color: white; }
+        .article-title { max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar :: sidebar('articles')}"></div>
+
+    <div class="main">
+        <header class="header">
+            <h1 class="h4 mb-0">Quản lý bài viết</h1>
+            <div class="user-info">
+                Xin chào <strong>Admin</strong>
+                <a href="/admin" class="btn-back">Trở lại</a>
+            </div>
+        </header>
+
+        <!-- Statistics -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <h3 th:text="${total}">0</h3>
+                <p>Tổng bài viết</p>
+            </div>
+            <div class="stat-card">
+                <h3 th:text="${langNheCount}">0</h3>
+                <p>Làng nghề</p>
+            </div>
+            <div class="stat-card">
+                <h3 th:text="${amThucCount}">0</h3>
+                <p>Ẩm thực</p>
+            </div>
+            <div class="stat-card">
+                <h3 th:text="${vanHoaCount}">0</h3>
+                <p>Văn hóa</p>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <div class="section-title">Danh sách bài viết</div>
+            <a href="/admin/articles/add" class="btn btn-add"><i class="bi bi-plus-circle me-2"></i>Thêm bài viết mới</a>
+        </div>
+
+        <div class="controls">
+            <form action="/admin/articles" method="GET" class="search-container">
+                <input type="text" name="search" placeholder="Tìm kiếm bài viết..." th:value="${search}">
+                <button type="submit" class="btn-search"><i class="bi bi-search"></i></button>
+            </form>
+            <form action="/admin/articles" method="GET" class="d-flex gap-2">
+                <select name="loai" onchange="this.form.submit()" class="sort-select">
+                    <option value="">Tất cả loại</option>
+                    <option value="1" th:selected="${loai == 1}">Làng nghề</option>
+                    <option value="2" th:selected="${loai == 2}">Ẩm thực</option>
+                    <option value="3" th:selected="${loai == 3}">Văn hóa</option>
+                </select>
+                <select name="sort" onchange="this.form.submit()" class="sort-select">
+                    <option value="newest" th:selected="${sort == 'newest'}">Mới nhất</option>
+                    <option value="oldest" th:selected="${sort == 'oldest'}">Cũ nhất</option>
+                    <option value="name" th:selected="${sort == 'name'}">Tên A-Z</option>
+                </select>
+            </form>
+        </div>
+
+        <div class="table-container shadow-sm">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>TIÊU ĐỀ BÀI VIẾT</th>
+                        <th style="width: 120px;">LOẠI</th>
+                        <th style="width: 100px;">SỐ MỤC</th>
+                        <th style="width: 120px;">NGÀY TẠO</th>
+                        <th style="width: 120px;">TRẠNG THÁI</th>
+                        <th style="width: 150px;" class="text-end">THAO TÁC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="article, iterStat : ${articles}">
+                        <td class="id-cell" th:text="'#' + ${article.get('ma_bv') ?: #strings.prepend(#numbers.formatInteger(iterStat.count, 3), '0')}">#018</td>
+                        <td><div class="article-title" th:text="${article.get('tieu_de')}" th:title="${article.get('tieu_de')}"></div></td>
+                        <td>
+                            <span th:if="${article.get('loai_id') == 1}" class="badge badge-status badge-langnghe">Làng nghề</span>
+                            <span th:if="${article.get('loai_id') == 2}" class="badge badge-status badge-amthuc">Ẩm thực</span>
+                            <span th:if="${article.get('loai_id') == 3}" class="badge badge-status badge-vanhoa">Văn hóa</span>
+                        </td>
+                        <td th:text="${(article.get('so_muc') ?: 0) + ' mục'}"></td>
+                        <td th:text="${article.get('ngay_tao') ?: '11/12/2025'}"></td>
+                        <td>
+                            <span th:if="${article.get('trang_thai') == 1 || article.get('trang_thai') == null}" class="badge badge-status status-hienthi">HIỂN THỊ</span>
+                            <span th:unless="${article.get('trang_thai') == 1 || article.get('trang_thai') == null}" class="badge badge-status status-daan">ĐÃ ẨN</span>
+                        </td>
+                        <td class="text-end">
+                            <a th:href="@{/admin/articles/toggle-status/{id}(id=${article.id})}" class="btn-action"><i class="bi bi-eye"></i></a>
+                            <a th:href="@{/admin/articles/edit/{id}(id=${article.id})}" class="btn-action"><i class="bi bi-pencil"></i></a>
+                            <a th:href="@{/admin/articles/delete/{id}(id=${article.id})}" class="btn-action" onclick="return confirm('Xóa bài viết?')"><i class="bi bi-trash"></i></a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script th:src="@{/js/admin-common.js}"></script>
+</body>
+</html>

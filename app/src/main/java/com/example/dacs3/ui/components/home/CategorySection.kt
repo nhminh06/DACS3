@@ -28,12 +28,12 @@ import androidx.compose.ui.unit.sp
 data class CategoryData(val name: String, val icon: ImageVector)
 
 @Composable
-fun CategorySection() {
+fun CategorySection(onCategoryClick: (String) -> Unit = {}) {
     val categories = listOf(
         CategoryData("Du lịch", Icons.Default.Flight),
         CategoryData("Văn hóa", Icons.Default.Museum),
         CategoryData("Ẩm thực", Icons.Default.Restaurant),
-        CategoryData("Lễ hội", Icons.Default.Celebration)
+        CategoryData("Làng nghề", Icons.Default.Celebration)
     )
     
     Column {
@@ -54,7 +54,7 @@ fun CategorySection() {
                     color = Color.White,
                     modifier = Modifier
                         .shadow(2.dp, RoundedCornerShape(24.dp))
-                        .clickable { }
+                        .clickable { onCategoryClick(category.name) }
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

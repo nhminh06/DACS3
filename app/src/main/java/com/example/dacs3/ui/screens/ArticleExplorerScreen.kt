@@ -2,11 +2,13 @@ package com.example.dacs3.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -17,67 +19,43 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.dacs3.R
-import com.example.dacs3.data.model.Article
 import com.example.dacs3.data.model.ArticleCategory
+import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.ui.components.AppBottomBar
 import com.example.dacs3.ui.components.articles.ArticleCategoryTabs
-import com.example.dacs3.ui.components.articles.ArticleItem
+import com.example.dacs3.ui.viewmodel.ArticleViewModel
 
 @Composable
 fun ArticleExplorerScreen(
     onNavigate: (String) -> Unit,
-    onArticleClick: (Article) -> Unit
+    onArticleClick: (ArticleEntity) -> Unit,
+    articleViewModel: ArticleViewModel = viewModel(),
+    initialCategory: ArticleCategory = ArticleCategory.CULTURE
 ) {
-    var selectedCategory by remember { mutableStateOf(ArticleCategory.CULTURE) }
+    var selectedCategory by remember { mutableStateOf(initialCategory) }
+    val allArticles by articleViewModel.explorerArticles.collectAsState()
+    val isLoading by articleViewModel.isLoading.collectAsState()
     
-    val allArticles = remember {
-        listOf(
-            Article(
-                "Nghệ thuật Tuồng cổ Quảng Nam",
-                "Khám phá nét đặc sắc của bộ môn nghệ thuật sân khấu truyền thống với những mặt nạ vẽ cầu kỳ và điệu bộ ước lệ.",
-                R.drawable.a5,
-                ArticleCategory.CULTURE
-            ),
-            Article(
-                "Lễ hội Cầu Ngư ven biển",
-                "Tìm hiểu về tín ngưỡng thờ cá Ông của ngư dân miền Trung qua lễ hội cầu ngư linh thiêng và sôi động.",
-                R.drawable.a6,
-                ArticleCategory.CULTURE
-            ),
-            Article(
-                "Làng gốm Thanh Hà 500 năm tuổi",
-                "Trải nghiệm quy trình làm gốm thủ công từ đất sét sông Thu Bồn tại ngôi làng cổ bên dòng sông Hoài.",
-                R.drawable.a7,
-                ArticleCategory.CRAFT_VILLAGE
-            ),
-            Article(
-                "Làng lụa Mã Châu danh tiếng",
-                "Dòng lụa tiến vua nổi tiếng với sự mềm mại, tinh xảo được tạo ra từ bàn tay tài hoa của các nghệ nhân.",
-                R.drawable.a2,
-                ArticleCategory.CRAFT_VILLAGE
-            ),
-            Article(
-                "Mì Quảng - Hồn đất Quảng",
-                "Bí quyết tạo nên sợi mì dai ngon và nước lèo đậm đà đặc trưng của món ăn nổi tiếng nhất vùng đất này.",
-                R.drawable.a1,
-                ArticleCategory.CUISINE
-            ),
-            Article(
-                "Cao lầu Hội An - Hương vị xưa",
-                "Món ăn đặc sản with sợi mì vàng óng được làm từ nước giếng Bá Lễ và tro củi cù lao Chàm.",
-                R.drawable.a3,
-                ArticleCategory.CUISINE
-            )
-        )
+    val filteredArticles = allArticles.filter { article ->
+        val category = when(article.loai_id) {
+            1 -> ArticleCategory.CRAFT_VILLAGE
+            2 -> ArticleCategory.CUISINE
+            3 -> ArticleCategory.CULTURE
+            else -> ArticleCategory.CULTURE
+        }
+        category == selectedCategory
     }
-    
-    val filteredArticles = allArticles.filter { it.category == selectedCategory }
 
     Scaffold(
         bottomBar = {
@@ -198,19 +176,141 @@ fun ArticleExplorerScreen(
                     color = Color(0xFF1E293B),
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
+                Spacer(modifier = Modifier.height(16.dp))
             }
             
-            items(filteredArticles) { article ->
-                Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
-                    ArticleItem(
-                        article = article,
-                        onClick = { onArticleClick(article) }
-                    )
+            if (isLoading) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+            } else {
+                items(filteredArticles) { article ->
+                    Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
+                        ExplorerArticleItem(
+                            article = article,
+                            onClick = { onArticleClick(article) }
+                        )
+                    }
                 }
             }
             
             item {
                 Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun ExplorerArticleItem(article: ArticleEntity, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column {
+            val firstImage = article.sections.firstOrNull { it["hinh_anh"] != null }?.get("hinh_anh")
+            
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(firstImage)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentScale = ContentScale.Crop
+            )
+            
+            Column(modifier = Modifier.padding(20.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        color = Color(0xFF10B981).copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "Khám phá",
+                            color = Color(0xFF10B981),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Mới nhất",
+                            color = Color.Gray,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text(
+                    text = article.tieu_de,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F172A),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 24.sp
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                val firstContent = article.sections.firstOrNull()?.get("noi_dung") ?: ""
+                Text(
+                    text = firstContent,
+                    color = Color(0xFF64748B),
+                    fontSize = 14.sp,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = 20.sp
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                HorizontalDivider(color = Color(0xFFF1F5F9))
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Đọc thêm",
+                        color = Color(0xFF2563EB),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    
+                    Text(
+                        text = "3 phút đọc",
+                        color = Color.Gray,
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
     }

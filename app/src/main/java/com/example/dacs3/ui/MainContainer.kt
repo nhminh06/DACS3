@@ -4,14 +4,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dacs3.data.local.SessionManager
-import com.example.dacs3.data.model.Article
 import com.example.dacs3.data.model.Tour
 import com.example.dacs3.data.remote.FirebaseService
+import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.ui.screens.*
+import com.example.dacs3.ui.viewmodel.ArticleViewModel
 import com.example.dacs3.ui.viewmodel.MainViewModel
 import com.example.dacs3.ui.viewmodel.UserViewModel
 import com.example.dacs3.ui.viewmodel.factory.UserViewModelFactory
+import com.example.dacs3.data.model.ArticleCategory
 
 @Composable
 fun MainContainer() {
@@ -25,11 +27,13 @@ fun MainContainer() {
         factory = UserViewModelFactory(userRepository, sessionManager)
     )
     val mainViewModel: MainViewModel = viewModel()
+    val articleViewModel: ArticleViewModel = viewModel()
 
     // Mặc định vào App là màn hình Home
     var currentScreen by remember { mutableStateOf("home") }
-    var selectedArticle by remember { mutableStateOf<Article?>(null) }
+    var selectedArticle by remember { mutableStateOf<ArticleEntity?>(null) }
     var selectedTour by remember { mutableStateOf<Tour?>(null) }
+    var initialArticleCategory by remember { mutableStateOf(ArticleCategory.CULTURE) }
 
     when (currentScreen) {
         "login" -> {
@@ -56,9 +60,31 @@ fun MainContainer() {
             AppHomeScreen(
                 onNavigate = { screen -> currentScreen = screen },
                 viewModel = mainViewModel,
+                articleViewModel = articleViewModel,
                 onTourClick = { tour ->
                     selectedTour = tour
                     currentScreen = "tour_detail"
+                },
+                onArticleClick = { article ->
+                    selectedArticle = article
+                    currentScreen = "article_detail"
+                },
+                onCategoryClick = { category ->
+                    when (category) {
+                        "Du lịch" -> currentScreen = "tours"
+                        "Văn hóa" -> {
+                            initialArticleCategory = ArticleCategory.CULTURE
+                            currentScreen = "explore"
+                        }
+                        "Ẩm thực" -> {
+                            initialArticleCategory = ArticleCategory.CUISINE
+                            currentScreen = "explore"
+                        }
+                        "Làng nghề" -> {
+                            initialArticleCategory = ArticleCategory.CRAFT_VILLAGE
+                            currentScreen = "explore"
+                        }
+                    }
                 }
             )
         }
@@ -87,7 +113,9 @@ fun MainContainer() {
                 onArticleClick = { article ->
                     selectedArticle = article
                     currentScreen = "article_detail"
-                }
+                },
+                articleViewModel = articleViewModel,
+                initialCategory = initialArticleCategory
             )
         }
         "article_detail" -> {
@@ -96,7 +124,8 @@ fun MainContainer() {
                     article = article,
                     onBack = { currentScreen = "explore" },
                     onNavigateToTour = { currentScreen = "tours" },
-                    isLoggedIn = true
+                    userViewModel = userViewModel,
+                    articleViewModel = articleViewModel
                 )
             }
         }
@@ -115,7 +144,6 @@ fun MainContainer() {
                     }
                 )
             } else {
-                // Nếu chưa đăng nhập mà bấm vào Profile, chuyển sang màn hình Login
                 LaunchedEffect(Unit) {
                     currentScreen = "login"
                 }

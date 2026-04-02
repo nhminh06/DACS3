@@ -20,7 +20,7 @@ public class FirebaseDataInitializer {
 
     @EventListener(ApplicationReadyEvent.class)
     public void initializeData() {
-        System.out.println("---- Đang kiểm tra cấu trúc dữ liệu Firebase ----");
+        System.out.println("---- Check Firebase data ----");
         
         createCollectionIfEmpty("users", "sample_user", Map.of(
             "name", "Quản trị viên",
@@ -44,7 +44,7 @@ public class FirebaseDataInitializer {
             "status", "PENDING"
         ));
         
-        System.out.println("---- Hoàn tất kiểm tra dữ liệu ----");
+        System.out.println("---- done:) ----");
     }
 
     private void createCollectionIfEmpty(String collectionName, String sampleId, Map<String, Object> data) {
