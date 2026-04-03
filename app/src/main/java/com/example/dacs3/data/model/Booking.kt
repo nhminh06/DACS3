@@ -3,19 +3,23 @@ package com.example.dacs3.data.model
 import java.time.LocalDate
 
 data class Booking(
-    val id: String,
-    val tour: Tour,
-    val status: BookingStatus,
-    val startDate: LocalDate,
-    val adults: Int,
-    val children: Int = 0, // Trẻ em
-    val infants: Int = 0,  // Trẻ sơ sinh
-    val totalPrice: Long,
+    val id: String = "",
+    val tour: Tour = Tour(),
+    val status: BookingStatus = BookingStatus.PENDING,
+    val startDate: LocalDate = LocalDate.now(),
+    val adults: Int = 1,
+    val children: Int = 0,
+    val infants: Int = 0,
+    val totalPrice: Long = 0,
     val note: String? = null,
     val customerName: String = "",
     val email: String = "",
     val phone: String = "",
-    val address: String = ""
+    val address: String = "",
+    val paymentMethod: String = "CASH",
+    val receiptUrl: String? = null,
+    val createdAt: Long = System.currentTimeMillis(),
+    val tripStatus: String = "preparing" // preparing, started, completed, cancelled
 ) {
     val totalPeople: Int get() = adults + children + infants
     

@@ -34,7 +34,6 @@ fun QuickNavSection(onItemClick: (Int) -> Unit) {
         NavItem("Văn hóa", 5, Icons.AutoMirrored.Filled.MenuBook),
         NavItem("Hướng dẫn", 6, Icons.Default.Groups),
         NavItem("Đánh giá", 7, Icons.Default.Star),
-        NavItem("Liên hệ", 8, Icons.AutoMirrored.Filled.Chat)
     )
 
     // Tính toán độ rộng để hiển thị khoảng 3.2 mục trên màn hình

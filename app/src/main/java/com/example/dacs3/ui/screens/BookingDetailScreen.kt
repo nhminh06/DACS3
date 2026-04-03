@@ -9,7 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,8 +22,10 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.dacs3.data.model.Booking
 import com.example.dacs3.data.model.BookingStatus
-import com.example.dacs3.ui.viewmodel.MainViewModel
+import com.example.dacs3.data.model.Tour
+import com.example.dacs3.ui.viewmodel.BookingViewModel
 import java.text.NumberFormat
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
 
@@ -32,10 +34,17 @@ import java.util.*
 fun BookingDetailScreen(
     bookingId: String,
     onNavigateBack: () -> Unit,
-    viewModel: MainViewModel
+    bookingViewModel: BookingViewModel
 ) {
-    // Để demo, chúng ta sẽ lấy dữ liệu mẫu nếu không tìm thấy trong database thực tế
-    val booking = getSampleBookings().find { it.id == bookingId } ?: getSampleBookings().first()
+    val booking by bookingViewModel.currentBooking.collectAsState()
+    val isLoading by bookingViewModel.isLoading.collectAsState()
+    
+    var showCancelDialog by remember { mutableStateOf(false) }
+
+    // Tải dữ liệu từ Firestore khi màn hình được mở
+    LaunchedEffect(bookingId) {
+        bookingViewModel.loadBookingById(bookingId)
+    }
 
     Scaffold(
         topBar = {
@@ -47,7 +56,7 @@ fun BookingDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* In hoặc ⋮ */ }) {
+                    IconButton(onClick = { /* More actions */ }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Thêm")
                     }
                 },
@@ -55,22 +64,75 @@ fun BookingDetailScreen(
             )
         },
         bottomBar = {
-            ActionButtons(booking)
+            booking?.let { 
+                if (it.status != BookingStatus.CANCELLED) {
+                    ActionButtons(it, onCancelClick = { showCancelDialog = true }) 
+                }
+            }
         }
     ) { padding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .background(Color(0xFFF8FAFC))
         ) {
-            item { TourHeader(booking) }
-            item { TourQuickInfo(booking) }
-            item { BookingTimeline(booking) }
-            item { BookingCustomerInfo(booking) }
-            item { PaymentSummary(booking) }
-            item { Spacer(modifier = Modifier.height(24.dp)) }
+            if (isLoading && booking == null) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Color(0xFF2563EB)
+                )
+            } else if (booking != null) {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    item { TourHeader(booking!!) }
+                    item { TourQuickInfo(booking!!) }
+                    item { BookingTimeline(booking!!) }
+                    item { BookingCustomerInfo(booking!!) }
+                    item { PaymentSummary(booking!!) }
+                    item { Spacer(modifier = Modifier.height(24.dp)) }
+                }
+            } else if (!isLoading) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(Icons.Default.SearchOff, null, modifier = Modifier.size(64.dp), tint = Color.Gray)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Không tìm thấy thông tin đặt chỗ", color = Color.Gray)
+                    Button(onClick = onNavigateBack, modifier = Modifier.padding(16.dp)) {
+                        Text("Quay lại")
+                    }
+                }
+            }
         }
+    }
+
+    // Dialog xác nhận hủy tour
+    if (showCancelDialog && booking != null) {
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = false },
+            title = { Text("Hủy đặt tour", fontWeight = FontWeight.Bold) },
+            text = { Text("Bạn có chắc chắn muốn hủy tour '${booking?.tour?.title}' không? Hành động này không thể hoàn tác.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        bookingViewModel.cancelBooking(booking!!.id, booking!!.email)
+                        showCancelDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                ) {
+                    Text("Xác nhận hủy")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelDialog = false }) {
+                    Text("Quay lại")
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
+        )
     }
 }
 
@@ -87,7 +149,7 @@ fun TourHeader(booking: Booking) {
         Column {
             Box {
                 AsyncImage(
-                    model = booking.tour.imageUrl.ifEmpty { booking.tour.imageRes },
+                    model = if (booking.tour.imageUrl.isNotEmpty()) booking.tour.imageUrl else booking.tour.imageRes,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -144,7 +206,7 @@ fun TourHeader(booking: Booking) {
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = "#${booking.id.uppercase()}",
+                            text = "#${if(booking.id.length > 6) booking.id.takeLast(6).uppercase() else booking.id.uppercase()}",
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             color = Color(0xFF2563EB),
                             fontSize = 12.sp,
@@ -195,13 +257,13 @@ fun BookingTimeline(booking: Booking) {
         
         TimelineItem(
             title = "Đặt tour thành công",
-            date = "01/01/2026",
+            date = "Hoàn tất",
             isCompleted = true,
             isLast = false
         )
         TimelineItem(
-            title = if (booking.status == BookingStatus.CONFIRMED) "Đã xác nhận" else "Đang xử lý",
-            date = "02/01/2026",
+            title = if (booking.status == BookingStatus.CONFIRMED) "Đã xác nhận" else if (booking.status == BookingStatus.CANCELLED) "Đã hủy" else "Đang xử lý",
+            date = if (booking.status == BookingStatus.CONFIRMED) "Admin đã phê duyệt" else if (booking.status == BookingStatus.CANCELLED) "Yêu cầu đã bị hủy" else "Chờ Admin xác nhận",
             isCompleted = booking.status == BookingStatus.CONFIRMED,
             isLast = false,
             color = if (booking.status == BookingStatus.CANCELLED) Color.Red else Color(0xFF2563EB)
@@ -258,7 +320,7 @@ fun BookingCustomerInfo(booking: Booking) {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Chi tiết đặt chỗ", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
+            Text("Chi tiết khách hàng", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
             Spacer(modifier = Modifier.height(16.dp))
             
             DetailInfoRow(Icons.Default.FlightTakeoff, "Khởi hành", booking.startDate.format(dateFormatter))
@@ -266,9 +328,9 @@ fun BookingCustomerInfo(booking: Booking) {
             
             HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = Color(0xFFF1F5F9))
             
-            DetailInfoRow(Icons.Default.Person, "Hành khách", booking.customerName.ifEmpty { "Nguyễn Hoàng Nhật Minh" })
-            DetailInfoRow(Icons.Default.Email, "Email", booking.email.ifEmpty { "mnhat0034@gmail.com" })
-            DetailInfoRow(Icons.Default.Phone, "Số điện thoại", booking.phone.ifEmpty { "0899883653" })
+            DetailInfoRow(Icons.Default.Person, "Hành khách", booking.customerName)
+            DetailInfoRow(Icons.Default.Email, "Email", booking.email)
+            DetailInfoRow(Icons.Default.Phone, "Số điện thoại", booking.phone)
             
             HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = Color(0xFFF1F5F9))
             
@@ -353,7 +415,7 @@ fun PaymentRow(label: String, value: String) {
 }
 
 @Composable
-fun ActionButtons(booking: Booking) {
+fun ActionButtons(booking: Booking, onCancelClick: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shadowElevation = 16.dp,
@@ -367,16 +429,16 @@ fun ActionButtons(booking: Booking) {
         ) {
             if (booking.canCancel) {
                 Button(
-                    onClick = { /* Hủy tour */ },
+                    onClick = onCancelClick,
                     modifier = Modifier.weight(1f).height(54.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFEE2E2), contentColor = Color(0xFFEF4444))
                 ) {
                     Text("HỦY ĐẶT TOUR", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
                 }
-            } else {
+            } else if (booking.status == BookingStatus.CONFIRMED) {
                 Button(
-                    onClick = { /* Đánh giá */ },
+                    onClick = { /* Navigate to Review Screen */ },
                     modifier = Modifier.weight(1f).height(54.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
@@ -401,4 +463,28 @@ fun ActionButtons(booking: Booking) {
             }
         }
     }
+}
+
+fun getSampleBookings(): List<Booking> {
+    return listOf(
+        Booking(
+            id = "BK001",
+            tour = Tour(
+                id = "1",
+                title = "Tour Đà Nẵng - Hội An - Bà Nà Hills",
+                location = "Đà Nẵng",
+                duration = "3 ngày 2 đêm",
+                price = 3500000,
+                maTour = "DAN001"
+            ),
+            status = BookingStatus.CONFIRMED,
+            startDate = LocalDate.of(2026, 1, 10),
+            adults = 2,
+            children = 1,
+            totalPrice = 8750000,
+            customerName = "Nguyễn Hoàng Nhật Minh",
+            email = "mnhat0034@gmail.com",
+            phone = "0899883653"
+        )
+    )
 }

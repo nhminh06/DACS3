@@ -3,162 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Chi tiết Booking Chuyến Đi - WIND Admin</title>
+    <title>Chi tiết Chuyến Đi - WIND Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/admin-style.css}">
     <style>
-        body {
-            background-color: #0f172a;
-            color: #cbd5e1; /* Text màu xám sáng dịu */
-        }
-
-        /* Tour Header Card - Muted Navy */
-        .tour-detail-card {
-            background: #1e3a8a;
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 30px;
-            display: flex;
-            gap: 25px;
-            align-items: center;
-            border: 1px solid #334155;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-        }
-        .tour-detail-img {
-            width: 140px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 12px;
-            border: 1px solid #475569;
-        }
-        .tour-detail-info h2 {
-            font-size: 22px;
-            font-weight: 700;
-            color: #f8fafc;
-            margin-bottom: 8px;
-        }
-        .tour-detail-meta {
-            display: flex;
-            gap: 20px;
-            font-size: 13px;
-            color: #94a3b8;
-        }
-        .btn-return-v3 {
-            background: #334155;
-            color: #f1f5f9;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 13px;
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 15px;
-            transition: 0.3s;
-        }
-        .btn-return-v3:hover { background: #475569; color: white; }
-
-        /* Stats Row - Professional Dark Slate */
-        .stats-grid-v3 {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        .stat-card-v3 {
-            background: #111827; /* Tối hơn Slate một chút để bớt chói */
-            border-radius: 12px;
-            padding: 20px 10px;
-            text-align: center;
-            color: #cbd5e1;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
-            border: 1px solid #1e293b;
-        }
-        .stat-icon-box {
-            display: inline-flex;
-            width: 42px;
-            height: 42px;
-            background: #1e293b;
-            color: #3b82f6;
-            border-radius: 10px;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            margin-bottom: 12px;
-        }
-        .stat-card-v3 .val { font-size: 20px; font-weight: 700; display: block; color: #3b82f6; }
-        .stat-card-v3 .lab { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-top: 4px; }
-
-        /* Booking Section */
-        .list-header-v3 {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .list-header-v3 h3 { font-size: 18px; font-weight: 700; border-left: 4px solid #3b82f6; padding-left: 12px; color: #f1f5f9; }
-        .btn-excel-v3 { background: #064e3b; color: #d1fae5; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; transition: 0.3s; }
-        .btn-excel-v3:hover { background: #065f46; }
-
-        /* Booking Card Layout - Dark Neutral */
-        .booking-card-item {
-            background: #111827;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            color: #cbd5e1;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            border: 1px solid #1e293b;
-        }
-        .bk-item-top {
-            padding: 15px 20px;
-            background: #0f172a;
-            border-bottom: 1px solid #1e293b;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .bk-main-id { color: #60a5fa; font-weight: 700; font-size: 14px; font-family: 'Consolas', monospace; }
-        .bk-main-time { font-size: 11px; color: #64748b; margin-top: 2px; }
-        .status-badge-muted-red { background: #7c2d12; color: #ffedd5; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-
-        .bk-item-content {
-            padding: 20px;
-            display: grid;
-            grid-template-columns: 1.2fr 1fr 1fr;
-            gap: 25px;
-        }
-        .sec-title-v3 { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 0.5px; }
-
-        .c-info-line { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; font-size: 13px; color: #94a3b8; }
-        .c-info-line strong { color: #e2e8f0; }
-        .c-info-line i { color: #3b82f6; margin-top: 2px; }
-
-        .pax-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; border-bottom: 1px dashed #1e293b; color: #94a3b8; }
+        body { background-color: #0f172a; color: #cbd5e1; }
+        .tour-detail-card { background: #1e3a8a; border-radius: 16px; padding: 25px; margin-bottom: 30px; display: flex; gap: 25px; align-items: center; border: 1px solid #334155; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .tour-detail-img { width: 140px; height: 100px; object-fit: cover; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        .stats-grid-v3 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 30px; }
+        .stat-card-v3 { background: #111827; border-radius: 12px; padding: 20px 10px; text-align: center; border: 1px solid #1e293b; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
+        .stat-icon-box { display: inline-flex; width: 40px; height: 40px; background: #1e293b; color: #3b82f6; border-radius: 10px; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 10px; }
+        .stat-card-v3 .val { font-size: 20px; font-weight: 700; color: #3b82f6; display: block; }
+        .stat-card-v3 .lab { font-size: 11px; color: #fff; font-weight: 700; text-transform: uppercase; margin-top: 4px; }
+        .booking-card-item { background: #111827; border-radius: 12px; margin-bottom: 20px; border: 1px solid #1e293b; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+        .bk-item-top { padding: 12px 20px; background: #0f172a; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
+        .bk-main-id { color: #60a5fa; font-weight: 700; font-family: 'Consolas', monospace; font-size: 14px; }
+        .bk-item-content { padding: 20px; display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 25px; }
+        .sec-title-v3 { font-size: 11px; font-weight: 700; color: #fff; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
+        .c-info-line { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; font-size: 13px; }
+        .c-info-line strong { color: #f1f5f9; }
+        .pax-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; color: #94a3b8; }
         .pax-row strong { color: #e2e8f0; }
-        .pax-row:last-child { border-bottom: none; }
-        .pax-total { border-top: 2px solid #3b82f6 !important; padding-top: 8px; margin-top: 8px; color: #3b82f6 !important; font-weight: 700; }
-        .pax-total strong { color: #3b82f6; }
-
+        .pax-total { border-top: 1px solid #334155; margin-top: 5px; padding-top: 5px; color: #3b82f6 !important; font-weight: 700; }
         .payment-val { font-size: 20px; font-weight: 800; color: #10b981; }
-        .payment-note { font-size: 12px; color: #64748b; background: #0f172a; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid #1e293b; }
-
-        .bk-item-btns {
-            padding: 12px 20px;
-            background: #0f172a;
-            display: flex;
-            gap: 10px;
-        }
-        .btn-muted-cyan { background: #0e7490; color: #cffafe; border: none; padding: 6px 15px; border-radius: 6px; font-size: 12px; font-weight: 700; transition: 0.3s; }
-        .btn-muted-gray { background: #1e293b; color: #94a3b8; border: none; padding: 6px 15px; border-radius: 6px; font-size: 12px; font-weight: 700; transition: 0.3s; }
+        .bk-item-btns { padding: 12px 20px; background: #0f172a; display: flex; gap: 10px; }
+        .btn-muted-cyan { background: #0e7490; color: #cffafe; border: none; padding: 6px 15px; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none; }
         .btn-muted-cyan:hover { background: #155e75; color: white; }
-        .btn-muted-gray:hover { background: #334155; color: white; }
     </style>
 </head>
 <body>
     <div th:replace="~{fragments/sidebar :: sidebar('bookings')}"></div>
-
     <div class="main">
         <header class="header">
             <h1 class="h4 mb-0">Chi tiết Booking Chuyến Đi</h1>
@@ -168,90 +43,87 @@
             </div>
         </header>
 
-        <!-- Banner - Muted Navy Blue -->
-        <div class="tour-detail-card">
-            <img src="https://placehold.co/600x400?text=Thien+Mu" class="tour-detail-img">
+        <div th:if="${booking != null}" class="tour-detail-card">
+            <img th:src="${booking.tour != null ? booking.tour['imageUrl'] : 'https://placehold.co/600x400'}" class="tour-detail-img">
             <div class="tour-detail-info">
-                <h2>Khám Phá Chùa Thiên Mụ - Biểu Tượng Cố Đô Huế</h2>
+                <h2 th:text="${booking.tour != null ? booking.tour['title'] : 'N/A'}"></h2>
                 <div class="tour-detail-meta">
-                    <span><i class="bi bi-calendar-event me-2"></i>Khởi hành: 06/12/2025</span>
-                    <span><i class="bi bi-clock me-2"></i>Thời gian: 1 ngày</span>
+                    <span><i class="bi bi-calendar-event me-2"></i>Khởi hành: <strong class="text-info" th:text="${booking.startDate}"></strong></span>
+                    <span><i class="bi bi-clock me-2"></i>Thời gian: <strong th:text="${booking.tour != null ? booking.tour['duration'] : 'N/A'}"></strong></span>
                 </div>
-                <a href="/admin/bookings/schedule" class="btn-return-v3">Quay lại danh sách chuyến đi</a>
             </div>
         </div>
 
-        <!-- Stats Grid - Deep Neutral Dark -->
         <div class="stats-grid-v3">
             <div class="stat-card-v3">
                 <div class="stat-icon-box"><i class="bi bi-journal-text"></i></div>
-                <span class="val">5</span>
+                <span class="val" th:text="${bookings.size()}">0</span>
                 <span class="lab">Booking</span>
             </div>
             <div class="stat-card-v3">
                 <div class="stat-icon-box"><i class="bi bi-people"></i></div>
-                <span class="val">7</span>
-                <span class="lab">Khách</span>
+                <span class="val" th:text="${totalPassengers}">0</span>
+                <span class="lab">Tổng Khách</span>
             </div>
             <div class="stat-card-v3">
                 <div class="stat-icon-box"><i class="bi bi-check-circle"></i></div>
-                <span class="val">2</span>
+                <span class="val" th:text="${bookings.size()}">0</span>
                 <span class="lab">Đã Xác Nhận</span>
             </div>
             <div class="stat-card-v3">
                 <div class="stat-icon-box"><i class="bi bi-clock-history"></i></div>
-                <span class="val">2</span>
+                <span class="val">0</span>
                 <span class="lab">Chờ Duyệt</span>
             </div>
             <div class="stat-card-v3">
                 <div class="stat-icon-box"><i class="bi bi-cash-stack"></i></div>
-                <span class="val">1.600k</span>
+                <span class="val" th:text="${#numbers.formatDecimal(totalRevenue / 1000, 0, 'COMMA', 0, 'POINT') + 'k'}"></span>
                 <span class="lab">Doanh Thu</span>
             </div>
         </div>
 
-        <!-- List Header -->
-        <div class="list-header-v3">
-            <h3>Danh sách Booking chi tiết</h3>
-            <button class="btn-excel-v3"><i class="bi bi-file-earmark-excel me-2"></i>Xuất Excel</button>
-        </div>
+        <h5 class="mb-4 border-start border-info ps-3">Danh sách đoàn chi tiết</h5>
 
-        <!-- Booking Item Card - Muted Colors -->
-        <div class="booking-card-item">
+        <div th:each="bk : ${bookings}" class="booking-card-item">
             <div class="bk-item-top">
                 <div>
-                    <div class="bk-main-id">DT20251206024500647</div>
-                    <div class="bk-main-time">Đặt lúc: 06/12/2025 08:45</div>
+                    <div class="bk-main-id" th:text="${bk.id}"></div>
+                    <div class="small text-white" style="font-size: 10px;">Đặt tour ngày: <span th:text="${bk.createdAt != null ? #dates.format(bk.createdAt, 'dd/MM/yyyy') : 'N/A'}"></span></div>
                 </div>
-                <span class="status-badge-muted-red">Đã hủy</span>
+                <span class="badge bg-success px-3 py-2" style="font-size: 10px;">XÁC NHẬN</span>
             </div>
             <div class="bk-item-content">
                 <div class="info-sec-v3">
                     <div class="sec-title-v3">Khách hàng</div>
-                    <div class="c-info-line"><i class="bi bi-person-circle"></i> <strong>Nguyễn Nhật Minh</strong></div>
-                    <div class="c-info-line"><i class="bi bi-envelope"></i> mnhat@gmail.com</div>
-                    <div class="c-info-line"><i class="bi bi-telephone"></i> 0899683653</div>
+                    <div class="c-info-line"><i class="bi bi-person-circle text-info"></i> <strong th:text="${bk.customerName}"></strong></div>
+                    <div class="c-info-line"><i class="bi bi-telephone text-info"></i> <span th:text="${bk.phone}"></span></div>
+                    <div class="c-info-line"><i class="bi bi-envelope text-info"></i> <span th:text="${bk.email}" class="small"></span></div>
                 </div>
                 <div class="info-sec-v3">
-                    <div class="sec-title-v3">Số lượng</div>
-                    <div class="pax-row"><span>Người lớn:</span> <strong>1</strong></div>
-                    <div class="pax-row"><span>Trẻ em:</span> <strong>0</strong></div>
-                    <div class="pax-row pax-total"><span>Tổng:</span> <strong>1</strong></div>
+                    <div class="sec-title-v3">Chi tiết số lượng</div>
+                    <div class="pax-row"><span>Người lớn:</span> <strong th:text="${bk.adults ?: 0}"></strong></div>
+                    <div class="pax-row"><span>Trẻ em:</span> <strong th:text="${bk.children ?: 0}"></strong></div>
+                    <div class="pax-row"><span>Trẻ sơ sinh:</span> <strong th:text="${bk.infants ?: 0}"></strong></div>
+                    <div class="pax-row pax-total"><span>Tổng:</span> <strong th:text="${(bk.adults ?: 0) + (bk.children ?: 0) + (bk.infants ?: 0)}"></strong></div>
                 </div>
                 <div class="info-sec-v3">
                     <div class="sec-title-v3">Thanh toán</div>
-                    <div class="payment-val">400.000 đ</div>
-                    <div class="payment-note"><i class="bi bi-chat-dots me-2"></i>Không có yêu cầu đặc biệt.</div>
+                    <div class="payment-val" th:text="${#numbers.formatDecimal(bk.totalPrice, 0, 'COMMA', 0, 'POINT') + ' đ'}"></div>
+                    <div class="mt-2 small text-white italic">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <span th:text="${bk.paymentMethod == 'QR' ? 'Chuyển khoản QR' : 'Tiền mặt'}"></span>
+                    </div>
                 </div>
             </div>
             <div class="bk-item-btns">
-                <button class="btn-muted-cyan"><i class="bi bi-search me-1"></i>Chi tiết</button>
-                <button class="btn-muted-gray"><i class="bi bi-trash3 me-1"></i>Xóa đơn</button>
+                <a th:href="@{/admin/bookings/booking-detail/{id}(id=${bk.id})}" class="btn-muted-cyan">
+                    <i class="bi bi-gear-fill me-1"></i> Quản lý đơn
+                </a>
+                <div class="ms-auto small text-white-50 italic">
+                    Ghi chú: <span th:text="${bk.note != null && !bk.note.isEmpty() ? bk.note : 'Không có'}"></span>
+                </div>
             </div>
         </div>
-
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

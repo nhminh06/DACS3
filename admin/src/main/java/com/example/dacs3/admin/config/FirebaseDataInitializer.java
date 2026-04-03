@@ -38,10 +38,11 @@ public class FirebaseDataInitializer {
         ));
 
         createCollectionIfEmpty("bookings", "sample_booking", Map.of(
-            "userName", "Khách hàng mẫu",
+            "customerName", "Khách hàng mẫu",
             "tourTitle", "Tour mẫu Đà Nẵng",
             "totalPrice", 1000000L,
-            "status", "PENDING"
+            "status", "PENDING",
+            "createdAt", System.currentTimeMillis()
         ));
 
         System.out.println("---- done:) ----");

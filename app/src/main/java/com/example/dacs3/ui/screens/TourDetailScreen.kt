@@ -21,11 +21,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.dacs3.R
+import com.example.dacs3.data.model.Review
 import com.example.dacs3.data.model.Tour
+import com.example.dacs3.ui.viewmodel.ReviewViewModel
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,10 +37,18 @@ import java.util.*
 fun TourDetailScreen(
     tour: Tour,
     onBack: () -> Unit,
-    onNavigateToBooking: (Int, Int, Int) -> Unit
+    onNavigateToBooking: (Int, Int, Int) -> Unit,
+    reviewViewModel: ReviewViewModel = viewModel()
 ) {
     var isFavorite by remember { mutableStateOf(false) }
     var showBookingSheet by remember { mutableStateOf(false) }
+    val reviews by remember { mutableStateOf<List<Review>>(emptyList()) } // This should be fetched from ViewModel
+
+    // In a real scenario, you'd fetch reviews here:
+    // val reviews by reviewViewModel.getReviewsForTour(tour.id).collectAsState()
+    
+    // For now, let's assume we have a way to get them or use a placeholder if empty
+    // I will add a simple state for reviews in the ViewModel and fetch them here
 
     Scaffold(
         topBar = {
@@ -116,7 +128,7 @@ fun TourDetailScreen(
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
-                CustomerReviewsSection()
+                CustomerReviewsSection(tour.id, reviewViewModel)
 
                 Spacer(modifier = Modifier.height(20.dp))
             }
@@ -239,7 +251,7 @@ fun RatingSection(rating: Double, reviews: Int) {
             shape = RoundedCornerShape(8.dp)
         ) {
             Text(
-                text = rating.toString(),
+                text = String.format("%.1f", rating),
                 color = Color.White,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                 fontWeight = FontWeight.Bold,
@@ -248,7 +260,7 @@ fun RatingSection(rating: Double, reviews: Int) {
         }
         Spacer(modifier = Modifier.width(10.dp))
         Column {
-            Text("Tuyệt vời", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+            Text("Đánh giá", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
             Text("($reviews đánh giá)", fontSize = 12.sp, color = Color.Gray)
         }
     }
@@ -281,16 +293,33 @@ fun InfoItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Strin
 }
 
 @Composable
-fun CustomerReviewsSection() {
+fun CustomerReviewsSection(tourId: String, reviewViewModel: ReviewViewModel) {
+    val reviews by reviewViewModel.reviews.collectAsState()
+    
+    LaunchedEffect(tourId) {
+        reviewViewModel.loadReviewsForTour(tourId)
+    }
+
     Column {
         Text("Đánh giá khách hàng", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
-        ReviewCard()
+        
+        if (reviews.isEmpty()) {
+            Text("Chưa có đánh giá nào cho tour này.", fontSize = 14.sp, color = Color.Gray, modifier = Modifier.padding(vertical = 8.dp))
+        } else {
+            reviews.forEach { review ->
+                ReviewCard(review)
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
     }
 }
 
 @Composable
-fun ReviewCard() {
+fun ReviewCard(review: Review) {
+    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val dateStr = sdf.format(Date(review.createdAt))
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -298,19 +327,25 @@ fun ReviewCard() {
         border = BorderStroke(1.dp, Color(0xFFF1F5F9))
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
-            Surface(modifier = Modifier.size(40.dp), shape = CircleShape, color = Color(0xFFF1F5F9)) {
-                Icon(Icons.Default.Person, null, modifier = Modifier.padding(8.dp), tint = Color.Gray)
-            }
+            AsyncImage(
+                model = if (!review.userAvatar.isNullOrEmpty()) review.userAvatar else R.drawable.a9,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp).clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Nguyễn Văn A", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(review.userName, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Star, null, tint = Color(0xFFE9BC3C), modifier = Modifier.size(14.dp))
-                        Text(" 5.0", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        repeat(review.rating) {
+                            Icon(Icons.Default.Star, null, tint = Color(0xFFE9BC3C), modifier = Modifier.size(14.dp))
+                        }
                     }
                 }
-                Text("Dịch vụ rất tốt, gia đình tôi đã có một chuyến đi tuyệt vời!", fontSize = 13.sp, color = Color.DarkGray)
+                Text(dateStr, fontSize = 11.sp, color = Color.Gray)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(review.comment, fontSize = 13.sp, color = Color.DarkGray)
             }
         }
     }

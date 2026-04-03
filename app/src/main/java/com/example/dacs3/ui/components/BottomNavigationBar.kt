@@ -4,14 +4,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocalActivity
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.outlined.Explore
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.LocalActivity
-import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -84,6 +78,21 @@ fun AppBottomBar(
                 label = { Text("Bài viết", fontSize = 11.sp) },
                 selected = currentScreen == "explore",
                 onClick = { onNavigate("explore") },
+                colors = commonColors
+            )
+
+            // Liên hệ
+            NavigationBarItem(
+                icon = { 
+                    Icon(
+                        imageVector = if (currentScreen == "contact") Icons.Filled.SupportAgent else Icons.Outlined.SupportAgent, 
+                        contentDescription = "Liên hệ", 
+                        modifier = Modifier.size(24.dp)
+                    ) 
+                },
+                label = { Text("Liên hệ", fontSize = 11.sp) },
+                selected = currentScreen == "contact",
+                onClick = { onNavigate("contact") },
                 colors = commonColors
             )
 

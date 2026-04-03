@@ -5,6 +5,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -15,6 +16,7 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -23,12 +25,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.dacs3.R
 import com.example.dacs3.data.model.Booking
 import com.example.dacs3.data.model.BookingStatus
-import com.example.dacs3.data.model.Tour
-import com.example.dacs3.data.model.TourType
-import java.time.LocalDate
+import com.example.dacs3.data.model.Review
+import com.example.dacs3.ui.viewmodel.UserViewModel
+import com.example.dacs3.ui.viewmodel.BookingViewModel
+import com.example.dacs3.ui.viewmodel.ReviewViewModel
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlinx.coroutines.delay
@@ -37,17 +42,32 @@ import kotlinx.coroutines.delay
 @Composable
 fun MyBookingsScreen(
     onBack: () -> Unit,
-    onBookingClick: (String) -> Unit
+    onBookingClick: (String) -> Unit,
+    userViewModel: UserViewModel,
+    bookingViewModel: BookingViewModel,
+    reviewViewModel: ReviewViewModel = viewModel()
 ) {
     val primaryColor = Color(0xFF2563EB)
     val backgroundColor = Color(0xFFF8FAFC)
     
-    var selectedTab by remember { mutableStateOf("Tất cả") }
-    val tabs = listOf("Tất cả", "Chờ xác nhận", "Đã xác nhận", "Đã hủy")
+    val user = userViewModel.currentUser.value
+    val bookings by bookingViewModel.bookings.collectAsState()
+    val isLoading by bookingViewModel.isLoading.collectAsState()
+    val submitSuccess by reviewViewModel.submitSuccess.collectAsState()
     
-    var bookings by remember { mutableStateOf(getSampleBookings()) }
+    var selectedTab by remember { mutableStateOf("Tất cả") }
+    val tabs = listOf("Tất cả", "Chờ xác nhận", "Đã xác nhận", "Hoàn thành", "Đã hủy")
+    
     var showAlert by remember { mutableStateOf<Pair<Boolean, String>?>(null) } // Pair(isSuccess, message)
     var bookingToCancel by remember { mutableStateOf<Booking?>(null) }
+    var bookingToReview by remember { mutableStateOf<Booking?>(null) }
+
+    // Load real bookings when screen opens
+    LaunchedEffect(user) {
+        user?.email?.let { email ->
+            bookingViewModel.loadUserBookings(email)
+        }
+    }
 
     LaunchedEffect(showAlert) {
         if (showAlert != null) {
@@ -56,9 +76,21 @@ fun MyBookingsScreen(
         }
     }
 
+    LaunchedEffect(submitSuccess) {
+        if (submitSuccess == true) {
+            showAlert = Pair(true, "Cảm ơn bạn đã đánh giá chuyến đi!")
+            reviewViewModel.resetSubmitStatus()
+            bookingToReview = null
+        } else if (submitSuccess == false) {
+            showAlert = Pair(false, "Gửi đánh giá thất bại. Vui lòng thử lại.")
+            reviewViewModel.resetSubmitStatus()
+        }
+    }
+
     val filteredBookings = when (selectedTab) {
         "Chờ xác nhận" -> bookings.filter { it.status == BookingStatus.PENDING }
-        "Đã xác nhận" -> bookings.filter { it.status == BookingStatus.CONFIRMED }
+        "Đã xác nhận" -> bookings.filter { it.status == BookingStatus.CONFIRMED && it.tripStatus != "completed" }
+        "Hoàn thành" -> bookings.filter { it.tripStatus == "completed" }
         "Đã hủy" -> bookings.filter { it.status == BookingStatus.CANCELLED }
         else -> bookings
     }
@@ -160,7 +192,11 @@ fun MyBookingsScreen(
             }
 
             // Booking List
-            if (filteredBookings.isEmpty()) {
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = primaryColor)
+                }
+            } else if (filteredBookings.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Default.Inbox, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
@@ -178,6 +214,7 @@ fun MyBookingsScreen(
                         BookingCard(
                             booking = booking,
                             onCancelClick = { bookingToCancel = it },
+                            onReviewClick = { bookingToReview = it },
                             onDetailClick = { onBookingClick(booking.id) },
                             primaryColor = primaryColor
                         )
@@ -193,16 +230,16 @@ fun MyBookingsScreen(
             onDismissRequest = { bookingToCancel = null },
             icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFEF4444)) },
             title = { Text("Hủy đặt chỗ", fontWeight = FontWeight.Bold) },
-            text = { Text("Bạn có chắc chắn muốn hủy đặt chỗ for tour '${bookingToCancel?.tour?.title}' không? Hành động này không thể hoàn tác.") },
+            text = { Text("Bạn có chắc chắn muốn hủy đặt chỗ cho tour '${bookingToCancel?.tour?.title}' không? Hành động này không thể hoàn tác.") },
             confirmButton = {
                 Button(
                     onClick = {
                         val booking = bookingToCancel!!
                         if (booking.canCancel) {
-                            bookings = bookings.map { 
-                                if (it.id == booking.id) it.copy(status = BookingStatus.CANCELLED) else it 
+                            user?.email?.let { email ->
+                                bookingViewModel.cancelBooking(booking.id, email)
+                                showAlert = Pair(true, "Yêu cầu hủy đã được gửi!")
                             }
-                            showAlert = Pair(true, "Hủy đặt chỗ thành công!")
                         } else {
                             showAlert = Pair(false, "Không đủ điều kiện hủy (phải trước 3 ngày khởi hành)")
                         }
@@ -223,10 +260,104 @@ fun MyBookingsScreen(
             containerColor = Color.White
         )
     }
+
+    // Review Dialog
+    if (bookingToReview != null) {
+        ReviewDialog(
+            booking = bookingToReview!!,
+            onDismiss = { bookingToReview = null },
+            onSubmit = { rating, comment ->
+                user?.let { u ->
+                    val review = Review(
+                        userId = u.id,
+                        userName = u.name,
+                        userAvatar = u.avatar,
+                        tourId = bookingToReview!!.tour.id,
+                        bookingId = bookingToReview!!.id,
+                        rating = rating,
+                        comment = comment
+                    )
+                    reviewViewModel.submitReview(review)
+                }
+            },
+            isSubmitting = reviewViewModel.isSubmitting.collectAsState().value
+        )
+    }
 }
 
 @Composable
-fun BookingCard(booking: Booking, onCancelClick: (Booking) -> Unit, onDetailClick: () -> Unit, primaryColor: Color) {
+fun ReviewDialog(
+    booking: Booking,
+    onDismiss: () -> Unit,
+    onSubmit: (Int, String) -> Unit,
+    isSubmitting: Boolean
+) {
+    var rating by remember { mutableStateOf(5) }
+    var comment by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Đánh giá chuyến đi", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(booking.tour.title, fontWeight = FontWeight.Medium, color = Color.Gray)
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text("Bạn đánh giá thế nào?", fontSize = 14.sp)
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    repeat(5) { index ->
+                        val starIndex = index + 1
+                        IconButton(onClick = { rating = starIndex }) {
+                            Icon(
+                                if (starIndex <= rating) Icons.Default.Star else Icons.Default.StarBorder,
+                                contentDescription = null,
+                                tint = if (starIndex <= rating) Color(0xFFFACC15) else Color.Gray,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+                }
+                
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it },
+                    label = { Text("Lời bình luận của bạn") },
+                    modifier = Modifier.fillMaxWidth().height(120.dp),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSubmit(rating, comment) },
+                enabled = !isSubmitting && comment.isNotBlank(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                if (isSubmitting) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                else Text("Gửi đánh giá")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !isSubmitting) {
+                Text("Hủy")
+            }
+        },
+        shape = RoundedCornerShape(24.dp),
+        containerColor = Color.White
+    )
+}
+
+@Composable
+fun BookingCard(
+    booking: Booking, 
+    onCancelClick: (Booking) -> Unit, 
+    onReviewClick: (Booking) -> Unit,
+    onDetailClick: () -> Unit, 
+    primaryColor: Color
+) {
     val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     
     Card(
@@ -238,14 +369,14 @@ fun BookingCard(booking: Booking, onCancelClick: (Booking) -> Unit, onDetailClic
         Column {
             // Tour Image and Status Badge
             Box(modifier = Modifier.height(200.dp).fillMaxWidth()) {
-                Image(
-                    painter = painterResource(id = booking.tour.imageRes),
+                AsyncImage(
+                    model = if (booking.tour.imageUrl.isNotEmpty()) booking.tour.imageUrl else booking.tour.imageRes,
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
                     contentScale = ContentScale.Crop
                 )
                 
-                // Gradient Overlay for better text visibility
+                // Gradient Overlay
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -257,10 +388,11 @@ fun BookingCard(booking: Booking, onCancelClick: (Booking) -> Unit, onDetailClic
                 )
                 
                 // Status Badge
-                val (statusColor, statusText) = when (booking.status) {
-                    BookingStatus.CONFIRMED -> Color(0xFF10B981) to "Đã xác nhận"
-                    BookingStatus.PENDING -> Color(0xFFF59E0B) to "Chờ xác nhận"
-                    BookingStatus.CANCELLED -> Color(0xFFEF4444) to "Đã hủy"
+                val (statusColor, statusText) = when {
+                    booking.status == BookingStatus.CANCELLED -> Color(0xFFEF4444) to "Đã hủy"
+                    booking.tripStatus == "completed" -> Color(0xFF10B981) to "Đã hoàn thành"
+                    booking.status == BookingStatus.CONFIRMED -> Color(0xFF2563EB) to "Đã xác nhận"
+                    else -> Color(0xFFF59E0B) to "Chờ xác nhận"
                 }
                 
                 Surface(
@@ -348,17 +480,28 @@ fun BookingCard(booking: Booking, onCancelClick: (Booking) -> Unit, onDetailClic
                     }
                     
                     if (booking.status != BookingStatus.CANCELLED) {
-                        Button(
-                            onClick = { onCancelClick(booking) },
-                            modifier = Modifier.weight(1f).height(48.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (booking.canCancel) Color(0xFFFEE2E2) else Color(0xFFF1F5F9),
-                                contentColor = if (booking.canCancel) Color(0xFFEF4444) else Color(0xFF94A3B8)
-                            ),
-                            enabled = booking.canCancel
-                        ) {
-                            Text("Hủy đặt chỗ", fontWeight = FontWeight.Bold)
+                        if (booking.tripStatus == "completed") {
+                            Button(
+                                onClick = { onReviewClick(booking) },
+                                modifier = Modifier.weight(1f).height(48.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                            ) {
+                                Text("Đánh giá ngay", fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            Button(
+                                onClick = { onCancelClick(booking) },
+                                modifier = Modifier.weight(1f).height(48.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (booking.canCancel) Color(0xFFFEE2E2) else Color(0xFFF1F5F9),
+                                    contentColor = if (booking.canCancel) Color(0xFFEF4444) else Color(0xFF94A3B8)
+                                ),
+                                enabled = booking.canCancel
+                            ) {
+                                Text("Hủy đặt chỗ", fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -384,18 +527,4 @@ fun BookingDetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, labe
             Text(value, fontSize = 14.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.Bold)
         }
     }
-}
-
-fun getSampleBookings(): List<Booking> {
-    val tours = listOf(
-        Tour(id = "1", title = "Đà Nẵng - Hội An - Bà Nà Hills", imageRes = R.drawable.a5, startDate = "20/12/2024", rating = 4.8, reviewCount = 120, price = 4500000L, duration = "3 ngày 2 đêm", location = "Đà Nẵng", type = TourType.MULTI_DAY),
-        Tour(id = "2", title = "Khám phá Vịnh Hạ Long", imageRes = R.drawable.a7, startDate = "25/12/2024", rating = 4.9, reviewCount = 85, price = 3200000L, duration = "2 ngày 1 đêm", location = "Quảng Ninh", type = TourType.MULTI_DAY),
-        Tour(id = "3", title = "Tour ẩm thực Sài Gòn đêm", imageRes = R.drawable.a6, startDate = "15/12/2024", rating = 4.7, reviewCount = 50, price = 800000L, duration = "1 ngày", location = "TP. Hồ Chí Minh", type = TourType.DAY_TOUR)
-    )
-
-    return listOf(
-        Booking("BK001", tours[0], BookingStatus.CONFIRMED, LocalDate.of(2024, 12, 20), adults = 2, children = 1, infants = 0, totalPrice = 10000000L, note = "Phòng view biển, yêu cầu thêm giường phụ"),
-        Booking("BK002", tours[1], BookingStatus.PENDING, LocalDate.of(2024, 12, 25), adults = 4, children = 0, infants = 0, totalPrice = 12800000L),
-        Booking("BK003", tours[2], BookingStatus.CANCELLED, LocalDate.of(2024, 12, 15), adults = 1, children = 0, infants = 0, totalPrice = 800000L)
-    )
 }

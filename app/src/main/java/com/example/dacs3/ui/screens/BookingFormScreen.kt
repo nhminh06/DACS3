@@ -1,15 +1,21 @@
 package com.example.dacs3.ui.screens
 
 import android.app.DatePickerDialog
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Note
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,55 +29,63 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.dacs3.data.model.Booking
+import com.example.dacs3.data.model.BookingStatus
 import com.example.dacs3.data.model.Tour
-import com.example.dacs3.ui.viewmodel.MainViewModel
+import com.example.dacs3.ui.viewmodel.UserViewModel
+import com.example.dacs3.ui.viewmodel.BookingViewModel
 import java.text.NumberFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingFormScreen(
-    tourId: String,
+    tour: Tour,
     initialAdults: Int = 1,
     initialChildren: Int = 0,
     initialInfants: Int = 0,
     onNavigateBack: () -> Unit,
     onBookingSuccess: () -> Unit,
-    viewModel: MainViewModel
+    userViewModel: UserViewModel,
+    bookingViewModel: BookingViewModel
 ) {
-    // Demo data - In real app, fetch from viewModel
-    val tour = remember { 
-        Tour(
-            id = tourId,
-            title = "Khám Phá Chùa Thiên Mụ - Biểu Tượng Cố Đô Huế",
-            price = 2000000L,
-            giaTreEm = 1500000L, // Giá cho trẻ em
-            giaTreNho = 800000L,  // Giá cho trẻ sơ sinh
-            location = "Huế",
-            duration = "1 ngày",
-            imageUrl = "https://placehold.co/600x400?text=Hue+City"
-        )
-    }
-
-    // Form State
-    var name by remember { mutableStateOf("Nguyễn Hoàng Nhật Minh") }
-    var email by remember { mutableStateOf("mnhat0034@gmail.com") }
-    var phone by remember { mutableStateOf("0899883653") }
-    var address by remember { mutableStateOf("Liên Chiểu, Đà Nẵng") }
+    val context = LocalContext.current
+    val user = userViewModel.currentUser.value
+    val bookingSuccess by bookingViewModel.bookingSuccess.collectAsState()
+    val isLoading by bookingViewModel.isLoading.collectAsState()
     
-    var selectedDate by remember { mutableStateOf("10/04/2026") }
+    // Form State
+    var name by remember { mutableStateOf(user?.name ?: "") }
+    var email by remember { mutableStateOf(user?.email ?: "") }
+    var phone by remember { mutableStateOf(user?.sdt ?: "") }
+    var address by remember { mutableStateOf(user?.dia_chi ?: "") }
+    var note by remember { mutableStateOf("") }
+    
+    var selectedDate by remember { 
+        mutableStateOf(LocalDate.now().plusDays(7).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))) 
+    }
     
     var adults by remember { mutableIntStateOf(initialAdults) }
-    var children by remember { mutableIntStateOf(initialChildren) } // Trẻ em
-    var infants by remember { mutableIntStateOf(initialInfants) }   // Trẻ sơ sinh
+    var children by remember { mutableIntStateOf(initialChildren) }
+    var infants by remember { mutableIntStateOf(initialInfants) }
     
     var paymentMethod by remember { mutableStateOf("QR") }
+    var receiptUri by remember { mutableStateOf<Uri?>(null) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
     val priceTreEm = if (tour.giaTreEm > 0) tour.giaTreEm else (tour.price * 0.7).toLong()
     val priceTreSoSinh = if (tour.giaTreNho > 0) tour.giaTreNho else (tour.price * 0.5).toLong()
     val totalPrice = (adults * tour.price) + (children * priceTreEm) + (infants * priceTreSoSinh)
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+
+    LaunchedEffect(bookingSuccess) {
+        if (bookingSuccess == true) {
+            showSuccessDialog = true
+            bookingViewModel.resetBookingStatus()
+        }
+    }
 
     if (showSuccessDialog) {
         AlertDialog(
@@ -123,12 +137,51 @@ fun BookingFormScreen(
                         Text(currencyFormatter.format(totalPrice), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF2563EB))
                     }
                     Button(
-                        onClick = { showSuccessDialog = true },
+                        onClick = {
+                            if (paymentMethod == "QR" && receiptUri == null) {
+                                Toast.makeText(context, "Vui lòng tải ảnh biên lai chuyển khoản", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+                            
+                            try {
+                                val date = LocalDate.parse(selectedDate, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                                val bookingId = "BK${System.currentTimeMillis()}"
+                                
+                                val newBooking = Booking(
+                                    id = bookingId,
+                                    tour = tour,
+                                    status = BookingStatus.PENDING,
+                                    startDate = date,
+                                    adults = adults,
+                                    children = children,
+                                    infants = infants,
+                                    totalPrice = totalPrice,
+                                    customerName = name,
+                                    email = email,
+                                    phone = phone,
+                                    address = address,
+                                    note = note.ifBlank { null },
+                                    paymentMethod = paymentMethod
+                                )
+                                
+                                bookingViewModel.createBooking(
+                                    newBooking, 
+                                    if (paymentMethod == "QR") receiptUri else null
+                                )
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Lỗi định dạng ngày", Toast.LENGTH_SHORT).show()
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                        enabled = !isLoading && name.isNotBlank() && email.isNotBlank() && phone.isNotBlank()
                     ) {
-                        Text("XÁC NHẬN ĐẶT TOUR", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        if (isLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        } else {
+                            Text("XÁC NHẬN ĐẶT TOUR", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
                     }
                 }
             }
@@ -144,7 +197,13 @@ fun BookingFormScreen(
             
             item { 
                 SectionTitle("THÔNG TIN KHÁCH HÀNG")
-                CustomerFormSection(name, {name = it}, email, {email = it}, phone, {phone = it}, address, {address = it})
+                CustomerFormSection(
+                    name = name, onNameChange = { name = it },
+                    email = email, onEmailChange = { email = it },
+                    phone = phone, onPhoneChange = { phone = it },
+                    address = address, onAddressChange = { address = it },
+                    note = note, onNoteChange = { note = it }
+                )
             }
             
             item {
@@ -168,7 +227,7 @@ fun BookingFormScreen(
             
             item {
                 SectionTitle("PHƯƠNG THỨC THANH TOÁN")
-                PaymentMethodSection(paymentMethod, { paymentMethod = it }, totalPrice, name)
+                PaymentMethodSection(paymentMethod, { paymentMethod = it }, totalPrice, name, receiptUri) { receiptUri = it }
             }
             
             item { Spacer(modifier = Modifier.height(32.dp)) }
@@ -226,7 +285,8 @@ fun CustomerFormSection(
     name: String, onNameChange: (String) -> Unit,
     email: String, onEmailChange: (String) -> Unit,
     phone: String, onPhoneChange: (String) -> Unit,
-    address: String, onAddressChange: (String) -> Unit
+    address: String, onAddressChange: (String) -> Unit,
+    note: String, onNoteChange: (String) -> Unit
 ) {
     Card(
         modifier = Modifier.padding(horizontal = 16.dp),
@@ -266,6 +326,15 @@ fun CustomerFormSection(
                 minLines = 2,
                 leadingIcon = { Icon(Icons.Default.Home, null, tint = Color(0xFF2563EB)) }
             )
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = note, onValueChange = onNoteChange,
+                label = { Text("Ghi chú (Không bắt buộc)") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                minLines = 3,
+                leadingIcon = { Icon(Icons.AutoMirrored.Filled.Note, null, tint = Color(0xFF2563EB)) }
+            )
         }
     }
 }
@@ -285,7 +354,9 @@ fun DatePickerSection(selectedDate: String, onDateSelected: (String) -> Unit) {
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
-            ).show()
+            ).apply {
+                datePicker.minDate = System.currentTimeMillis() + (24 * 60 * 60 * 1000 * 3)
+            }.show()
         },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(20.dp)
@@ -389,7 +460,20 @@ fun PriceRow(label: String, value: String) {
 }
 
 @Composable
-fun PaymentMethodSection(selected: String, onSelect: (String) -> Unit, amount: Long, name: String) {
+fun PaymentMethodSection(
+    selected: String, 
+    onSelect: (String) -> Unit, 
+    amount: Long, 
+    name: String,
+    receiptUri: Uri?,
+    onReceiptSelected: (Uri) -> Unit
+) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { onReceiptSelected(it) }
+    }
+
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             PaymentTab("Chuyển khoản QR", selected == "QR", Modifier.weight(1f)) { onSelect("QR") }
@@ -409,7 +493,6 @@ fun PaymentMethodSection(selected: String, onSelect: (String) -> Unit, amount: L
                         Text("QUÉT MÃ THANH TOÁN VIETQR", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color(0xFF1E40AF))
                         Spacer(modifier = Modifier.height(16.dp))
                         
-                        // VietQR Image
                         Box(modifier = Modifier.background(Color.White, RoundedCornerShape(16.dp)).padding(12.dp)) {
                             AsyncImage(
                                 model = "https://img.vietqr.io/image/vcb-7899883653-compact2.jpg?amount=$amount&addInfo=DATTOUR%20${name}&accountName=WIND%20Travel",
@@ -433,8 +516,26 @@ fun PaymentMethodSection(selected: String, onSelect: (String) -> Unit, amount: L
                         
                         Spacer(modifier = Modifier.height(20.dp))
                         
+                        if (receiptUri != null) {
+                            Box(modifier = Modifier.size(100.dp).clip(RoundedCornerShape(8.dp))) {
+                                AsyncImage(
+                                    model = receiptUri,
+                                    contentDescription = "Selected Receipt",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                                IconButton(
+                                    onClick = { launcher.launch("image/*") },
+                                    modifier = Modifier.align(Alignment.BottomEnd).background(Color.Black.copy(0.5f), CircleShape).size(30.dp)
+                                ) {
+                                    Icon(Icons.Default.Edit, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+
                         Button(
-                            onClick = { /* Pick Image */ },
+                            onClick = { launcher.launch("image/*") },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF2563EB)),
@@ -442,7 +543,7 @@ fun PaymentMethodSection(selected: String, onSelect: (String) -> Unit, amount: L
                         ) {
                             Icon(Icons.Default.CloudUpload, null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Tải ảnh biên lai lên", fontWeight = FontWeight.Bold)
+                            Text(if (receiptUri == null) "Tải ảnh biên lai lên" else "Thay đổi ảnh biên lai", fontWeight = FontWeight.Bold)
                         }
                     }
                 }

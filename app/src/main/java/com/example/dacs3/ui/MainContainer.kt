@@ -12,6 +12,7 @@ import com.example.dacs3.ui.screens.*
 import com.example.dacs3.ui.viewmodel.ArticleViewModel
 import com.example.dacs3.ui.viewmodel.MainViewModel
 import com.example.dacs3.ui.viewmodel.UserViewModel
+import com.example.dacs3.ui.viewmodel.BookingViewModel
 import com.example.dacs3.ui.viewmodel.factory.UserViewModelFactory
 import com.example.dacs3.data.model.ArticleCategory
 
@@ -28,6 +29,7 @@ fun MainContainer() {
     )
     val mainViewModel: MainViewModel = viewModel()
     val articleViewModel: ArticleViewModel = viewModel()
+    val bookingViewModel: BookingViewModel = viewModel()
 
     // Mặc định vào App là màn hình Home
     var currentScreen by remember { mutableStateOf("home") }
@@ -121,7 +123,7 @@ fun MainContainer() {
         "booking_form" -> {
             selectedTour?.let { tour ->
                 BookingFormScreen(
-                    tourId = tour.id,
+                    tour = tour,
                     initialAdults = adultCount,
                     initialChildren = childCount,
                     initialInfants = infantCount,
@@ -130,7 +132,8 @@ fun MainContainer() {
                         // Sau khi đặt thành công, chuyển đến danh sách đơn hàng
                         currentScreen = "my_bookings"
                     },
-                    viewModel = mainViewModel
+                    userViewModel = userViewModel,
+                    bookingViewModel = bookingViewModel
                 )
             }
         }
@@ -155,6 +158,11 @@ fun MainContainer() {
                     articleViewModel = articleViewModel
                 )
             }
+        }
+        "contact" -> {
+            ContactScreen(
+                onNavigate = { screen -> currentScreen = screen }
+            )
         }
         "profile" -> {
             if (userViewModel.isLoggedIn()) {
@@ -188,7 +196,9 @@ fun MainContainer() {
                 onBookingClick = { bookingId ->
                     selectedBookingId = bookingId
                     currentScreen = "booking_detail"
-                }
+                },
+                userViewModel = userViewModel,
+                bookingViewModel = bookingViewModel
             )
         }
         "booking_detail" -> {
@@ -196,7 +206,7 @@ fun MainContainer() {
                 BookingDetailScreen(
                     bookingId = id,
                     onNavigateBack = { currentScreen = "my_bookings" },
-                    viewModel = mainViewModel
+                    bookingViewModel = bookingViewModel
                 )
             }
         }

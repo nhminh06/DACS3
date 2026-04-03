@@ -110,8 +110,10 @@
             font-size: 11px;
             font-weight: 600;
         }
-        .badge-confirmed { background: #064e3b; color: #d1fae5; }
-        .badge-pending { background: #78350f; color: #fef9c3; }
+        .badge-preparing { background: #78350f; color: #fef9c3; }
+        .badge-started { background: #1e40af; color: #dbeafe; }
+        .badge-completed { background: #064e3b; color: #d1fae5; }
+        .badge-cancelled { background: #7c2d12; color: #fee2e2; }
 
         .status-badge-top {
             position: absolute;
@@ -122,8 +124,10 @@
             font-size: 12px;
             font-weight: 600;
         }
-        .status-waiting { background: #78350f; color: #fef9c3; }
-        .status-cancelled { background: #7c2d12; color: #ffedd5; }
+        .status-preparing { background: #78350f; color: #fef9c3; }
+        .status-started { background: #1e40af; color: #dbeafe; }
+        .status-completed { background: #064e3b; color: #d1fae5; }
+        .status-cancelled { background: #7c2d12; color: #fee2e2; }
 
         .trip-stats-grid {
             display: grid;
@@ -193,7 +197,7 @@
         <!-- Stats Section -->
         <div class="stats-cards-custom">
             <div class="stat-card-custom">
-                <div class="value">17</div>
+                <div class="value" th:text="${totalTrips}">0</div>
                 <div class="label">Tổng chuyến đi</div>
             </div>
             <div class="stat-card-custom">
@@ -201,11 +205,11 @@
                 <div class="label">Sắp khởi hành</div>
             </div>
             <div class="stat-card-custom">
-                <div class="value">7</div>
+                <div class="value">0</div>
                 <div class="label">Đã hoàn thành</div>
             </div>
             <div class="stat-card-custom" style="min-width: 180px;">
-                <div class="value">10</div>
+                <div class="value" th:text="${trips.size()}">0</div>
                 <div class="label">Hiển thị</div>
             </div>
         </div>
@@ -226,82 +230,65 @@
             </select>
         </div>
 
-        <!-- Trip Card 1 -->
-        <div class="trip-card">
+        <!-- Duyệt danh sách CHUYẾN ĐI (đã gộp) thực tế từ CSDL -->
+        <div th:each="trip : ${trips}" class="trip-card">
             <div class="trip-header">
-                <img src="https://placehold.co/600x400?text=Chua+Thien+Mu" class="trip-img">
+                <img th:src="${trip.tour != null ? trip.tour['imageUrl'] : 'https://placehold.co/600x400?text=No+Image'}" class="trip-img">
                 <div class="trip-info">
-                    <h3>Khám Phá Chùa Thiên Mụ - Biểu Tượng Cố Đô Huế</h3>
+                    <h3 th:text="${trip.tour != null ? trip.tour['title'] : 'Chuyến đi ' + trip.startDate}">Tên Chuyến Đi</h3>
                     <div class="trip-meta">
-                        <span class="meta-item"><i class="bi bi-calendar-event"></i> Khởi hành: 06/12/2025</span>
-                        <span class="meta-item"><i class="bi bi-journal-check"></i> Booking: 5</span>
-                        <span class="badge-info-pill badge-confirmed">2 Đã xác nhận</span>
-                        <span class="badge-info-pill badge-pending">2 Chờ xác nhận</span>
+                        <span class="meta-item"><i class="bi bi-calendar-event"></i> Khởi hành: <span th:text="${trip.startDate}"></span></span>
+                        <span class="meta-item"><i class="bi bi-journal-check"></i> Đơn hàng: <span th:text="${trip.bookingCount}"></span></span>
+
+                        <!-- Hiển thị trạng thái đoàn -->
+                        <span th:if="${trip.tripStatus == 'preparing' || trip.tripStatus == null}" class="badge-info-pill badge-preparing">Đang chuẩn bị</span>
+                        <span th:if="${trip.tripStatus == 'started'}" class="badge-info-pill badge-started">Đang diễn ra</span>
+                        <span th:if="${trip.tripStatus == 'completed'}" class="badge-info-pill badge-completed">Đã hoàn thành</span>
+                        <span th:if="${trip.tripStatus == 'cancelled'}" class="badge-info-pill badge-cancelled">Đã hủy</span>
                     </div>
                 </div>
-                <div class="status-badge-top status-waiting">Chờ bắt đầu</div>
+
+                <!-- Badge góc phải -->
+                <div class="status-badge-top"
+                     th:classappend="${'status-' + (trip.tripStatus != null ? trip.tripStatus : 'preparing')}"
+                     th:text="${trip.tripStatus == 'preparing' || trip.tripStatus == null ? 'Chờ bắt đầu' :
+                               (trip.tripStatus == 'started' ? 'Đang chạy' :
+                               (trip.tripStatus == 'completed' ? 'Kết thúc' : 'Đã hủy'))}">
+                    Trạng thái
+                </div>
             </div>
             <div class="trip-stats-grid">
                 <div class="trip-stat-item">
-                    <div class="stat-value">7</div>
+                    <div class="stat-value" th:text="${trip.totalPassengers}">0</div>
                     <div class="stat-label">Tổng khách</div>
                 </div>
                 <div class="trip-stat-item">
-                    <div class="stat-value">2.800.000 đ</div>
+                    <div class="stat-value" th:text="${#numbers.formatDecimal(trip.totalRevenue, 0, 'COMMA', 0, 'POINT') + ' đ'}">0 đ</div>
                     <div class="stat-label">Doanh thu</div>
                 </div>
                 <div class="trip-stat-item">
-                    <div class="stat-value">02/12/2025</div>
-                    <div class="stat-label">Booking đầu</div>
+                    <div class="stat-value" th:text="${trip.bookings[0].paymentMethod}"></div>
+                    <div class="stat-label">Phương thức</div>
                 </div>
                 <div class="trip-stat-item">
-                    <div class="stat-value">06/12/2025</div>
-                    <div class="stat-label">Booking cuối</div>
+                    <div class="stat-value" th:text="${trip.id.length() >= 8 ? #strings.substring(trip.id, trip.id.length() - 8).toUpperCase() : trip.id.toUpperCase()}">ID</div>
+                    <div class="stat-label">Mã đại diện</div>
                 </div>
             </div>
             <div class="trip-footer">
-                <a href="/admin/bookings/detail" class="btn-trip-cyan"><i class="bi bi-list-ul me-2"></i>Xem danh sách booking</a>
-                <a href="/admin/bookings/trip-schedule" class="btn-trip-green"><i class="bi bi-calendar-range me-2"></i>Quản lý lịch trình</a>
+                <!-- Nút xem chi tiết cho cả chuyến đi -->
+                <a th:href="@{/admin/bookings/detail/{id}(id=${trip.id})}" class="btn-trip-cyan">
+                    <i class="bi bi-list-ul me-2"></i>Xem danh sách booking
+                </a>
+                <a th:href="@{/admin/bookings/trip-schedule/{id}(id=${trip.id})}" class="btn-trip-green">
+                    <i class="bi bi-calendar-range me-2"></i>Quản lý lịch trình
+                </a>
             </div>
         </div>
 
-        <!-- Trip Card 2 -->
-        <div class="trip-card">
-            <div class="trip-header">
-                <img src="https://placehold.co/600x400?text=My+Son" class="trip-img">
-                <div class="trip-info">
-                    <h3>Khám phá Thánh địa Mỹ Sơn - Huyền Thoại Vương Quốc Chămpa</h3>
-                    <div class="trip-meta">
-                        <span class="meta-item"><i class="bi bi-calendar-event"></i> Khởi hành: 10/12/2025</span>
-                        <span class="meta-item"><i class="bi bi-journal-check"></i> Booking: 1</span>
-                        <span class="badge-info-pill badge-confirmed">0 Đã xác nhận</span>
-                        <span class="badge-info-pill badge-pending">1 Chờ xác nhận</span>
-                    </div>
-                </div>
-                <div class="status-badge-top status-cancelled">Đã hủy</div>
-            </div>
-            <div class="trip-stats-grid">
-                <div class="trip-stat-item">
-                    <div class="stat-value">1</div>
-                    <div class="stat-label">Tổng khách</div>
-                </div>
-                <div class="trip-stat-item">
-                    <div class="stat-value">28.900.000 đ</div>
-                    <div class="stat-label">Doanh thu</div>
-                </div>
-                <div class="trip-stat-item">
-                    <div class="stat-value">01/12/2025</div>
-                    <div class="stat-label">Booking đầu</div>
-                </div>
-                <div class="trip-stat-item">
-                    <div class="stat-value">01/12/2025</div>
-                    <div class="stat-label">Booking cuối</div>
-                </div>
-            </div>
-            <div class="trip-footer">
-                <a href="/admin/bookings/detail" class="btn-trip-cyan"><i class="bi bi-list-ul me-2"></i>Xem danh sách booking</a>
-                <a href="/admin/bookings/trip-schedule" class="btn-trip-green"><i class="bi bi-calendar-range me-2"></i>Quản lý lịch trình</a>
-            </div>
+        <!-- Hiển thị thông báo nếu không có dữ liệu -->
+        <div th:if="${trips.empty}" class="alert alert-info border-0 bg-opacity-10 bg-info text-info">
+            <i class="bi bi-info-circle me-2"></i> Hiện chưa có chuyến đi nào được xác nhận trong hệ thống.
         </div>
 
     </div>

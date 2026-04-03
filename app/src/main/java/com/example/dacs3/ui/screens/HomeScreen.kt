@@ -60,7 +60,6 @@ fun AppHomeScreen(
                         QuickNavSection(onItemClick = { index ->
                             coroutineScope.launch {
                                 // Cuộn đến các vị trí tương ứng trong LazyColumn
-                                // 4: Địa điểm/Tour, 5: Văn hóa, 6: Hướng dẫn, 7: Đánh giá, 8: Liên hệ
                                 listState.animateScrollToItem(index)
                             }
                         }) 
@@ -98,8 +97,6 @@ fun AppHomeScreen(
 
                 item { HomePaddingWrapper { GuidesSection() } }
                 item { HomePaddingWrapper { ReviewsSection() } }
-                item { HomePaddingWrapper { ContactFormSection() } }
-                item { ClosingGreeting() }
                 item { Spacer(modifier = Modifier.height(24.dp)) }
             }
             
