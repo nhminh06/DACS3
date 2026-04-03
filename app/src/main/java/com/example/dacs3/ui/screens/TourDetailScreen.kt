@@ -33,7 +33,7 @@ import java.util.*
 fun TourDetailScreen(
     tour: Tour,
     onBack: () -> Unit,
-    onNavigateToBooking: () -> Unit
+    onNavigateToBooking: (Int, Int, Int) -> Unit
 ) {
     var isFavorite by remember { mutableStateOf(false) }
     var showBookingSheet by remember { mutableStateOf(false) }
@@ -69,7 +69,6 @@ fun TourDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .background(Color.White)
         ) {
-            // Slider ảnh (Sử dụng HorizontalPager để kéo được 5 ảnh)
             ImageCarousel(tour)
 
             Column(modifier = Modifier.padding(20.dp)) {
@@ -128,7 +127,10 @@ fun TourDetailScreen(
                 tourPrice = tour.price,
                 tour = tour,
                 onDismiss = { showBookingSheet = false },
-                onConfirm = { /* Handle Booking */ }
+                onConfirm = { adults, children, infants ->
+                    showBookingSheet = false
+                    onNavigateToBooking(adults, children, infants) 
+                }
             )
         }
     }
@@ -137,13 +139,12 @@ fun TourDetailScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ImageCarousel(tour: Tour) {
-    // Kết hợp ảnh đại diện và các banner để có danh sách ảnh đầy đủ
     val images = remember(tour) {
         val list = mutableListOf<String>()
         if (tour.imageUrl.isNotEmpty()) list.add(tour.imageUrl)
         list.addAll(tour.banners)
-        if (list.isEmpty()) list.add("") // Placeholder
-        list.take(5) // Lấy tối đa 5 ảnh như yêu cầu
+        if (list.isEmpty()) list.add("") 
+        list.take(5)
     }
     
     val pagerState = rememberPagerState(pageCount = { images.size })
@@ -166,7 +167,6 @@ fun ImageCarousel(tour: Tour) {
             )
         }
         
-        // Chỉ số trang (Dots)
         if (images.size > 1) {
             Row(
                 modifier = Modifier
@@ -200,7 +200,6 @@ fun SectionTitleWithIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, 
 
 @Composable
 fun DetailTextWithTicks(text: String) {
-    // Tách văn bản theo dòng và thêm dấu tích cho mỗi ý
     val lines = text.split("\n", "- ", "* ").filter { it.isNotBlank() }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (lines.isEmpty() && text.isNotBlank()) {
@@ -352,27 +351,32 @@ fun BookingBottomSheet(
     tourPrice: Long,
     tour: Tour,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: (Int, Int, Int) -> Unit
 ) {
     var adultCount by remember { mutableIntStateOf(1) }
     var childCount by remember { mutableIntStateOf(0) }
+    var infantCount by remember { mutableIntStateOf(0) }
+    
     val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     
     val priceTreEm = if (tour.giaTreEm > 0) tour.giaTreEm else (tourPrice * 0.7).toLong()
-    val totalPrice = (adultCount * tourPrice) + (childCount * priceTreEm)
+    val priceTreSoSinh = if (tour.giaTreNho > 0) tour.giaTreNho else (tourPrice * 0.5).toLong()
+    val totalPrice = (adultCount * tourPrice) + (childCount * priceTreEm) + (infantCount * priceTreSoSinh)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
-        Column(modifier = Modifier.padding(24.dp).fillMaxWidth()) {
+        Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp).fillMaxWidth().verticalScroll(rememberScrollState())) {
             Text("Chọn số lượng khách", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(24.dp))
             
             CounterItem("Người lớn", "Giá: ${formatter.format(tourPrice)}", adultCount) { adultCount = it }
             Spacer(modifier = Modifier.height(16.dp))
             CounterItem("Trẻ em", "Giá: ${formatter.format(priceTreEm)}", childCount) { childCount = it }
+            Spacer(modifier = Modifier.height(16.dp))
+            CounterItem("Trẻ sơ sinh", "Giá: ${formatter.format(priceTreSoSinh)}", infantCount) { infantCount = it }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -388,14 +392,13 @@ fun BookingBottomSheet(
             }
             
             Button(
-                onClick = onConfirm,
+                onClick = { onConfirm(adultCount, childCount, infantCount) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
             ) {
                 Text("Xác nhận đặt tour", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

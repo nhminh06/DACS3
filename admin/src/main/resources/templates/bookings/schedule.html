@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý Chuyến Đi - WIND Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/admin-style.css}">
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
+
+        .stats-cards-custom {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card-custom {
+            background: white; /* Giữ nguyên màu trắng cho ô thống kê */
+            border-radius: 12px;
+            padding: 30px 20px;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .stat-card-custom .value { font-size: 32px; font-weight: 700; margin-right: 15px; color: #1e293b; }
+        .stat-card-custom .label { color: #64748b; font-size: 14px; flex: 1; margin-left: 10px; }
+
+        .section-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: white; }
+
+        .filters-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            display: flex;
+            background: white; /* Giữ nguyên màu trắng cho ô tìm kiếm */
+            border-radius: 8px;
+            overflow: hidden;
+            max-width: 400px;
+        }
+        .search-box input { border: none; padding: 10px 15px; flex: 1; outline: none; background: white; color: #1e293b; }
+        .btn-search { background: #3b82f6; color: white; border: none; padding: 0 15px; }
+
+        .filter-select {
+            background: white; /* Giữ nguyên màu trắng cho ô lọc */
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            color: #1e293b;
+            font-weight: 500;
+            min-width: 180px;
+        }
+
+        /* Trip Card Styles */
+        .trip-card {
+            background: #1e293b;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 1px solid #334155;
+        }
+
+        .trip-header {
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid #334155;
+            position: relative;
+        }
+
+        .trip-img {
+            width: 120px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #475569;
+        }
+
+        .trip-info h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 12px;
+        }
+
+        .trip-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .meta-item { display: flex; align-items: center; gap: 6px; }
+
+        .badge-info-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-confirmed { background: #064e3b; color: #d1fae5; }
+        .badge-pending { background: #78350f; color: #fef9c3; }
+
+        .status-badge-top {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-waiting { background: #78350f; color: #fef9c3; }
+        .status-cancelled { background: #7c2d12; color: #ffedd5; }
+
+        .trip-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: #0f172a;
+            padding: 15px 0;
+        }
+
+        .trip-stat-item {
+            text-align: center;
+            border-right: 1px solid #334155;
+        }
+        .trip-stat-item:last-child { border-right: none; }
+        .trip-stat-item .stat-value { font-size: 17px; font-weight: 700; color: #3b82f6; }
+        .trip-stat-item .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 2px; }
+
+        .trip-footer {
+            padding: 15px 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Adjusted Colors for Buttons */
+        .btn-trip-cyan {
+            background: #0ea5e9; /* Muted cyan */
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: 0.3s;
+        }
+        .btn-trip-cyan:hover { background: #0284c7; color: white; }
+
+        .btn-trip-green {
+            background: #10b981; /* Professional green */
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: 0.3s;
+        }
+        .btn-trip-green:hover { background: #059669; color: white; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar :: sidebar('bookings')}"></div>
+
+    <div class="main">
+        <header class="header">
+            <h1 class="h4 mb-0">Quản lý Chuyến Đi</h1>
+            <div class="user-info">
+                Xin chào <strong>minhadmin</strong>
+                <a href="/admin/bookings" class="btn-back">Trở lại</a>
+            </div>
+        </header>
+
+        <!-- Stats Section -->
+        <div class="stats-cards-custom">
+            <div class="stat-card-custom">
+                <div class="value">17</div>
+                <div class="label">Tổng chuyến đi</div>
+            </div>
+            <div class="stat-card-custom">
+                <div class="value">0</div>
+                <div class="label">Sắp khởi hành</div>
+            </div>
+            <div class="stat-card-custom">
+                <div class="value">7</div>
+                <div class="label">Đã hoàn thành</div>
+            </div>
+            <div class="stat-card-custom" style="min-width: 180px;">
+                <div class="value">10</div>
+                <div class="label">Hiển thị</div>
+            </div>
+        </div>
+
+        <div class="section-title">Danh sách chuyến đi</div>
+
+        <!-- Filters Row -->
+        <div class="filters-row">
+            <div class="search-box">
+                <input type="text" placeholder="Tìm kiếm tour...">
+                <button class="btn-search"><i class="bi bi-search"></i></button>
+            </div>
+            <select class="filter-select">
+                <option>Tất cả tour</option>
+            </select>
+            <select class="filter-select">
+                <option>Trạng thái</option>
+            </select>
+        </div>
+
+        <!-- Trip Card 1 -->
+        <div class="trip-card">
+            <div class="trip-header">
+                <img src="https://placehold.co/600x400?text=Chua+Thien+Mu" class="trip-img">
+                <div class="trip-info">
+                    <h3>Khám Phá Chùa Thiên Mụ - Biểu Tượng Cố Đô Huế</h3>
+                    <div class="trip-meta">
+                        <span class="meta-item"><i class="bi bi-calendar-event"></i> Khởi hành: 06/12/2025</span>
+                        <span class="meta-item"><i class="bi bi-journal-check"></i> Booking: 5</span>
+                        <span class="badge-info-pill badge-confirmed">2 Đã xác nhận</span>
+                        <span class="badge-info-pill badge-pending">2 Chờ xác nhận</span>
+                    </div>
+                </div>
+                <div class="status-badge-top status-waiting">Chờ bắt đầu</div>
+            </div>
+            <div class="trip-stats-grid">
+                <div class="trip-stat-item">
+                    <div class="stat-value">7</div>
+                    <div class="stat-label">Tổng khách</div>
+                </div>
+                <div class="trip-stat-item">
+                    <div class="stat-value">2.800.000 đ</div>
+                    <div class="stat-label">Doanh thu</div>
+                </div>
+                <div class="trip-stat-item">
+                    <div class="stat-value">02/12/2025</div>
+                    <div class="stat-label">Booking đầu</div>
+                </div>
+                <div class="trip-stat-item">
+                    <div class="stat-value">06/12/2025</div>
+                    <div class="stat-label">Booking cuối</div>
+                </div>
+            </div>
+            <div class="trip-footer">
+                <a href="/admin/bookings/detail" class="btn-trip-cyan"><i class="bi bi-list-ul me-2"></i>Xem danh sách booking</a>
+                <a href="/admin/bookings/trip-schedule" class="btn-trip-green"><i class="bi bi-calendar-range me-2"></i>Quản lý lịch trình</a>
+            </div>
+        </div>
+
+        <!-- Trip Card 2 -->
+        <div class="trip-card">
+            <div class="trip-header">
+                <img src="https://placehold.co/600x400?text=My+Son" class="trip-img">
+                <div class="trip-info">
+                    <h3>Khám phá Thánh địa Mỹ Sơn - Huyền Thoại Vương Quốc Chămpa</h3>
+                    <div class="trip-meta">
+                        <span class="meta-item"><i class="bi bi-calendar-event"></i> Khởi hành: 10/12/2025</span>
+                        <span class="meta-item"><i class="bi bi-journal-check"></i> Booking: 1</span>
+                        <span class="badge-info-pill badge-confirmed">0 Đã xác nhận</span>
+                        <span class="badge-info-pill badge-pending">1 Chờ xác nhận</span>
+                    </div>
+                </div>
+                <div class="status-badge-top status-cancelled">Đã hủy</div>
+            </div>
+            <div class="trip-stats-grid">
+                <div class="trip-stat-item">
+                    <div class="stat-value">1</div>
+                    <div class="stat-label">Tổng khách</div>
+                </div>
+                <div class="trip-stat-item">
+                    <div class="stat-value">28.900.000 đ</div>
+                    <div class="stat-label">Doanh thu</div>
+                </div>
+                <div class="trip-stat-item">
+                    <div class="stat-value">01/12/2025</div>
+                    <div class="stat-label">Booking đầu</div>
+                </div>
+                <div class="trip-stat-item">
+                    <div class="stat-value">01/12/2025</div>
+                    <div class="stat-label">Booking cuối</div>
+                </div>
+            </div>
+            <div class="trip-footer">
+                <a href="/admin/bookings/detail" class="btn-trip-cyan"><i class="bi bi-list-ul me-2"></i>Xem danh sách booking</a>
+                <a href="/admin/bookings/trip-schedule" class="btn-trip-green"><i class="bi bi-calendar-range me-2"></i>Quản lý lịch trình</a>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

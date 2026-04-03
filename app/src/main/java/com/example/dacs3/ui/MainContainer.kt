@@ -33,7 +33,13 @@ fun MainContainer() {
     var currentScreen by remember { mutableStateOf("home") }
     var selectedArticle by remember { mutableStateOf<ArticleEntity?>(null) }
     var selectedTour by remember { mutableStateOf<Tour?>(null) }
+    var selectedBookingId by remember { mutableStateOf<String?>(null) }
     var initialArticleCategory by remember { mutableStateOf(ArticleCategory.CULTURE) }
+    
+    // Passenger State for Navigation
+    var adultCount by remember { mutableIntStateOf(1) }
+    var childCount by remember { mutableIntStateOf(0) }
+    var infantCount by remember { mutableIntStateOf(0) }
 
     when (currentScreen) {
         "login" -> {
@@ -103,7 +109,28 @@ fun MainContainer() {
                 TourDetailScreen(
                     tour = tour,
                     onBack = { currentScreen = "tours" },
-                    onNavigateToBooking = { /* Handle booking navigation if needed */ }
+                    onNavigateToBooking = { a, c, i ->
+                        adultCount = a
+                        childCount = c
+                        infantCount = i
+                        currentScreen = "booking_form" 
+                    }
+                )
+            }
+        }
+        "booking_form" -> {
+            selectedTour?.let { tour ->
+                BookingFormScreen(
+                    tourId = tour.id,
+                    initialAdults = adultCount,
+                    initialChildren = childCount,
+                    initialInfants = infantCount,
+                    onNavigateBack = { currentScreen = "tour_detail" },
+                    onBookingSuccess = {
+                        // Sau khi đặt thành công, chuyển đến danh sách đơn hàng
+                        currentScreen = "my_bookings"
+                    },
+                    viewModel = mainViewModel
                 )
             }
         }
@@ -157,8 +184,21 @@ fun MainContainer() {
         }
         "my_bookings" -> {
             MyBookingsScreen(
-                onBack = { currentScreen = "profile" }
+                onBack = { currentScreen = "profile" },
+                onBookingClick = { bookingId ->
+                    selectedBookingId = bookingId
+                    currentScreen = "booking_detail"
+                }
             )
+        }
+        "booking_detail" -> {
+            selectedBookingId?.let { id ->
+                BookingDetailScreen(
+                    bookingId = id,
+                    onNavigateBack = { currentScreen = "my_bookings" },
+                    viewModel = mainViewModel
+                )
+            }
         }
         "notifications" -> {
             NotificationsScreen(

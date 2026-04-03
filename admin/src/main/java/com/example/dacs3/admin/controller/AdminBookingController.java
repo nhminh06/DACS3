@@ -25,36 +25,27 @@ public class AdminBookingController {
 
     @GetMapping
     public String listBookings(Model model, @RequestParam(required = false) String status) {
-        try {
-            ApiFuture<QuerySnapshot> future = firestore.collection("bookings").get();
-            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
-
-            // Thống kê
-            long total = documents.size();
-            long confirmedCount = documents.stream().filter(d -> "CONFIRMED".equals(d.getString("status"))).count();
-            long pendingCount = documents.stream().filter(d -> "PENDING".equals(d.getString("status"))).count();
-            long cancelledCount = documents.stream().filter(d -> "CANCELLED".equals(d.getString("status"))).count();
-
-            model.addAttribute("totalCount", total);
-            model.addAttribute("confirmedCount", confirmedCount);
-            model.addAttribute("pendingCount", pendingCount);
-            model.addAttribute("cancelledCount", cancelledCount);
-
-            // Lọc theo trạng thái
-            List<QueryDocumentSnapshot> filteredBookings = documents;
-            if (status != null && !status.isEmpty()) {
-                filteredBookings = documents.stream()
-                        .filter(d -> status.equals(d.getString("status")))
-                        .collect(Collectors.toList());
-            }
-
-            model.addAttribute("bookings", filteredBookings);
-            model.addAttribute("statusFilter", status);
-
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
         return "bookings/list";
+    }
+
+    @GetMapping("/schedule")
+    public String manageSchedule(Model model) {
+        return "bookings/schedule";
+    }
+
+    @GetMapping("/detail")
+    public String tripDetail(Model model) {
+        return "bookings/detail";
+    }
+
+    @GetMapping("/booking-detail")
+    public String bookingDetail(Model model) {
+        return "bookings/booking_detail";
+    }
+
+    @GetMapping("/trip-schedule")
+    public String tripSchedule(Model model) {
+        return "bookings/trip_schedule";
     }
 
     @GetMapping("/confirm/{id}")

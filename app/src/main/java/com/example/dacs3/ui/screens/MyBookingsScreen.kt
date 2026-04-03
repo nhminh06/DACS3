@@ -15,7 +15,6 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -36,7 +35,10 @@ import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyBookingsScreen(onBack: () -> Unit) {
+fun MyBookingsScreen(
+    onBack: () -> Unit,
+    onBookingClick: (String) -> Unit
+) {
     val primaryColor = Color(0xFF2563EB)
     val backgroundColor = Color(0xFFF8FAFC)
     
@@ -176,6 +178,7 @@ fun MyBookingsScreen(onBack: () -> Unit) {
                         BookingCard(
                             booking = booking,
                             onCancelClick = { bookingToCancel = it },
+                            onDetailClick = { onBookingClick(booking.id) },
                             primaryColor = primaryColor
                         )
                     }
@@ -190,7 +193,7 @@ fun MyBookingsScreen(onBack: () -> Unit) {
             onDismissRequest = { bookingToCancel = null },
             icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFEF4444)) },
             title = { Text("Hủy đặt chỗ", fontWeight = FontWeight.Bold) },
-            text = { Text("Bạn có chắc chắn muốn hủy đặt chỗ cho tour '${bookingToCancel?.tour?.title}' không? Hành động này không thể hoàn tác.") },
+            text = { Text("Bạn có chắc chắn muốn hủy đặt chỗ for tour '${bookingToCancel?.tour?.title}' không? Hành động này không thể hoàn tác.") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -223,11 +226,11 @@ fun MyBookingsScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun BookingCard(booking: Booking, onCancelClick: (Booking) -> Unit, primaryColor: Color) {
+fun BookingCard(booking: Booking, onCancelClick: (Booking) -> Unit, onDetailClick: () -> Unit, primaryColor: Color) {
     val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onDetailClick() },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -297,7 +300,11 @@ fun BookingCard(booking: Booking, onCancelClick: (Booking) -> Unit, primaryColor
 
                 // Details
                 BookingDetailRow(Icons.Default.CalendarMonth, "Thời gian", "${booking.startDate.format(dateFormatter)} - ${booking.endDate.format(dateFormatter)}")
-                BookingDetailRow(Icons.Default.Groups, "Hành khách", "${booking.totalPeople} người (NL: ${booking.adults}, TE: ${booking.children}, TN: ${booking.infants})")
+                BookingDetailRow(
+                    Icons.Default.Groups, 
+                    "Hành khách", 
+                    "${booking.totalPeople} người (NL: ${booking.adults}, TE: ${booking.children}, SS: ${booking.infants})"
+                )
                 BookingDetailRow(Icons.Default.HistoryToggleOff, "Độ dài", booking.tour.duration)
                 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -331,7 +338,7 @@ fun BookingCard(booking: Booking, onCancelClick: (Booking) -> Unit, primaryColor
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(
-                        onClick = { /* View Detail */ },
+                        onClick = onDetailClick,
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(14.dp),
                         border = BorderStroke(1.5.dp, primaryColor),
@@ -387,8 +394,8 @@ fun getSampleBookings(): List<Booking> {
     )
 
     return listOf(
-        Booking("BK001", tours[0], BookingStatus.CONFIRMED, LocalDate.of(2024, 12, 20), 2, 1, 0, 10000000, "Phòng view biển, yêu cầu thêm giường phụ"),
-        Booking("BK002", tours[1], BookingStatus.PENDING, LocalDate.of(2024, 12, 25), 4, 0, 0, 12800000),
-        Booking("BK003", tours[2], BookingStatus.CANCELLED, LocalDate.of(2024, 12, 15), 1, 0, 0, 800000)
+        Booking("BK001", tours[0], BookingStatus.CONFIRMED, LocalDate.of(2024, 12, 20), adults = 2, children = 1, infants = 0, totalPrice = 10000000L, note = "Phòng view biển, yêu cầu thêm giường phụ"),
+        Booking("BK002", tours[1], BookingStatus.PENDING, LocalDate.of(2024, 12, 25), adults = 4, children = 0, infants = 0, totalPrice = 12800000L),
+        Booking("BK003", tours[2], BookingStatus.CANCELLED, LocalDate.of(2024, 12, 15), adults = 1, children = 0, infants = 0, totalPrice = 800000L)
     )
 }

@@ -14,6 +14,7 @@
             padding: 40px;
             margin-bottom: 30px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            color: white;
         }
         .welcome-section h2 { font-weight: 700; margin-bottom: 10px; }
         .welcome-section p { opacity: 0.9; font-size: 16px; }
@@ -24,19 +25,35 @@
             gap: 20px;
         }
 
-        .stat-card {
+        .stat-card-dash {
             position: relative;
             overflow: hidden;
             transition: transform 0.3s ease;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            color: #1e293b;
         }
-        .stat-card:hover { transform: translateY(-5px); }
-        .stat-card i.card-icon {
+        .stat-card-dash:hover { transform: translateY(-5px); }
+        .stat-card-dash i.card-icon {
             position: absolute;
             right: 20px;
             top: 50%;
             transform: translateY(-50%);
             font-size: 48px;
             color: rgba(59, 130, 246, 0.1);
+        }
+        .stat-card-dash h3 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .stat-card-dash p {
+            margin: 0;
+            color: #64748b;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -54,11 +71,11 @@
 
         <div class="welcome-section">
             <h2>Chào mừng quay trở lại, Admin!</h2>
-            <p>Hệ thống đang hoạt động ổn định. Bạn có 3 thông báo mới cần xử lý.</p>
+            <p>Hệ thống đang hoạt động ổn định. Chúc bạn một ngày làm việc hiệu quả.</p>
         </div>
 
         <div class="dashboard-grid">
-            <div class="stat-card">
+            <div class="stat-card-dash">
                 <div>
                     <h3 th:text="${totalUsers}">0</h3>
                     <p>Người dùng hệ thống</p>
@@ -66,7 +83,7 @@
                 <i class="bi bi-people card-icon"></i>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card-dash">
                 <div>
                     <h3 th:text="${totalTours}">0</h3>
                     <p>Tour đang hoạt động</p>
@@ -74,7 +91,7 @@
                 <i class="bi bi-map card-icon"></i>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card-dash">
                 <div>
                     <h3 th:text="${totalBookings}">0</h3>
                     <p>Đơn đặt Tour mới</p>
@@ -82,7 +99,7 @@
                 <i class="bi bi-calendar-check card-icon"></i>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card-dash">
                 <div>
                     <h3>1.2M</h3>
                     <p>Lượt truy cập tháng</p>

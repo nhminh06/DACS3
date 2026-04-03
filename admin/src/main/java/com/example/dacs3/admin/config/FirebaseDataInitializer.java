@@ -43,7 +43,7 @@ public class FirebaseDataInitializer {
             "totalPrice", 1000000L,
             "status", "PENDING"
         ));
-        
+
         System.out.println("---- done:) ----");
     }
 

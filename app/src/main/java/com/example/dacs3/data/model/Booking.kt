@@ -8,15 +8,17 @@ data class Booking(
     val status: BookingStatus,
     val startDate: LocalDate,
     val adults: Int,
-    val children: Int = 0,
-    val infants: Int = 0,
+    val children: Int = 0, // Trẻ em
+    val infants: Int = 0,  // Trẻ sơ sinh
     val totalPrice: Long,
-    val note: String? = null
+    val note: String? = null,
+    val customerName: String = "",
+    val email: String = "",
+    val phone: String = "",
+    val address: String = ""
 ) {
     val totalPeople: Int get() = adults + children + infants
     
-    // Giả sử duration từ Tour có dạng "X ngày Y đêm" hoặc "X ngày"
-    // Để đơn giản, ta sẽ lấy số ngày từ duration của Tour hoặc mặc định 1 ngày nếu không parse được
     val durationDays: Int get() {
         val regex = "(\\d+)\\s*ngày".toRegex()
         val match = regex.find(tour.duration)
