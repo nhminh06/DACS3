@@ -25,9 +25,15 @@ class StaffViewModel(private val repository: GuideRepository) : ViewModel() {
     fun loadGuideProfile(userId: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            _guideProfile.value = repository.getGuideByUserId(userId)
-            _guideProfile.value?.id?.let { loadTours(it) }
-            _isLoading.value = false
+            try {
+                val profile = repository.getGuideByUserId(userId)
+                _guideProfile.value = profile
+                loadTours(userId)
+            } catch (e: Exception) {
+                // Handle error
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
@@ -45,42 +51,61 @@ class StaffViewModel(private val repository: GuideRepository) : ViewModel() {
         }
     }
 
-    fun updateBio(newBio: String, onSuccess: () -> Unit) {
-        val currentGuide = _guideProfile.value ?: return
+    fun updateBio(newBio: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val currentGuide = _guideProfile.value
+        if (currentGuide == null) {
+            onError("Chưa tải được hồ sơ, vui lòng đợi giây lát.")
+            return
+        }
         viewModelScope.launch {
             _isLoading.value = true
             val updated = currentGuide.copy(bio = newBio)
             repository.updateGuide(updated).onSuccess {
                 _guideProfile.value = updated
                 onSuccess()
+            }.onFailure {
+                onError("Lỗi khi cập nhật giới thiệu: ${it.message}")
             }
             _isLoading.value = false
         }
     }
 
-    fun updateSkills(newSkills: List<String>, onSuccess: () -> Unit) {
-        val currentGuide = _guideProfile.value ?: return
+    fun updateSkills(newSkills: List<String>, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val currentGuide = _guideProfile.value
+        if (currentGuide == null) {
+            onError("Chưa tải được hồ sơ, vui lòng đợi giây lát.")
+            return
+        }
         viewModelScope.launch {
             _isLoading.value = true
             val updated = currentGuide.copy(skills = newSkills)
             repository.updateGuide(updated).onSuccess {
                 _guideProfile.value = updated
                 onSuccess()
+            }.onFailure {
+                onError("Lỗi khi cập nhật kỹ năng: ${it.message}")
             }
             _isLoading.value = false
         }
     }
 
     fun addExperience(experience: Experience, onSuccess: () -> Unit, onError: (String) -> Unit) {
-        val guideId = _guideProfile.value?.id ?: return
+        val currentProfile = _guideProfile.value
+        if (currentProfile == null) {
+            onError("Chưa tải được hồ sơ, vui lòng đợi giây lát.")
+            return
+        }
         if (experience.title.isEmpty() || experience.startTime.isEmpty() || experience.description.isEmpty()) {
             onError("Vui lòng điền đầy đủ thông tin bắt buộc (Chức danh, Thời gian, Mô tả)")
             return
         }
         viewModelScope.launch {
             _isLoading.value = true
-            repository.addExperience(guideId, experience).onSuccess {
-                loadGuideProfile(_guideProfile.value?.userId ?: "")
+            val newExp = experience.copy(id = java.util.UUID.randomUUID().toString())
+            repository.addExperience(currentProfile.id, newExp).onSuccess {
+                // Update local state directly to ensure UI reflects changes immediately
+                val updatedExps = (currentProfile.experiences) + newExp
+                _guideProfile.value = currentProfile.copy(experiences = updatedExps)
                 onSuccess()
             }.onFailure {
                 onError(it.message ?: "Lỗi khi thêm kinh nghiệm")
@@ -89,8 +114,12 @@ class StaffViewModel(private val repository: GuideRepository) : ViewModel() {
         }
     }
     
-    fun deleteExperience(expId: String, onSuccess: () -> Unit) {
-        val currentGuide = _guideProfile.value ?: return
+    fun deleteExperience(expId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val currentGuide = _guideProfile.value
+        if (currentGuide == null) {
+            onError("Chưa tải được hồ sơ.")
+            return
+        }
         val updatedExps = currentGuide.experiences.filter { it.id != expId }
         viewModelScope.launch {
             _isLoading.value = true
@@ -98,6 +127,8 @@ class StaffViewModel(private val repository: GuideRepository) : ViewModel() {
             repository.updateGuide(updated).onSuccess {
                 _guideProfile.value = updated
                 onSuccess()
+            }.onFailure {
+                onError("Lỗi khi xóa kinh nghiệm: ${it.message}")
             }
             _isLoading.value = false
         }

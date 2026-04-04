@@ -1,5 +1,6 @@
 package com.example.dacs3.data.repository
 
+import android.util.Log
 import com.example.dacs3.data.model.Experience
 import com.example.dacs3.data.model.Guide
 import com.example.dacs3.data.remote.FirebaseService
@@ -11,17 +12,64 @@ class GuideRepository(private val firebaseService: FirebaseService) {
     private val guidesCollection = firestore.collection("guides")
     private val toursCollection = firestore.collection("tours")
     private val bookingsCollection = firestore.collection("bookings")
+    private val usersCollection = firestore.collection("users")
+
+    suspend fun getAllGuides(): List<Guide> {
+        return try {
+            // 1. Lấy tất cả user có role là 'guide'
+            val userSnapshot = usersCollection.whereEqualTo("role", "guide").get().await()
+            // 2. Lấy tất cả thông tin bổ sung từ collection 'guides'
+            val guideSnapshot = guidesCollection.get().await()
+            
+            val guideDocs = guideSnapshot.documents
+            
+            userSnapshot.documents.mapNotNull { userDoc ->
+                val userId = userDoc.id
+                // Tìm guide document tương ứng với userId này
+                val guideDetailDoc = guideDocs.find { it.getString("userId") == userId }
+                
+                val guide = if (guideDetailDoc != null) {
+                    guideDetailDoc.toObject(Guide::class.java)?.copy(id = guideDetailDoc.id)
+                } else {
+                    Guide(userId = userId)
+                }
+                
+                guide?.copy(
+                    name = userDoc.getString("name") ?: "",
+                    email = userDoc.getString("email") ?: "",
+                    sdt = userDoc.getString("sdt") ?: "",
+                    imageUrl = userDoc.getString("avatar") ?: ""
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("GuideRepository", "Lỗi lấy danh sách HDV: ${e.message}")
+            emptyList()
+        }
+    }
 
     suspend fun getGuideByUserId(userId: String): Guide? {
-        val snapshot = guidesCollection.whereEqualTo("userId", userId).get().await()
-        return if (!snapshot.isEmpty) {
-            val doc = snapshot.documents[0]
-            doc.toObject(Guide::class.java)?.copy(id = doc.id)
-        } else {
-            // Create a new guide profile if not exists
-            val newGuide = Guide(userId = userId)
-            val docRef = guidesCollection.add(newGuide).await()
-            newGuide.copy(id = docRef.id)
+        return try {
+            val userDoc = usersCollection.document(userId).get().await()
+            if (!userDoc.exists()) return null
+            
+            val snapshot = guidesCollection.whereEqualTo("userId", userId).get().await()
+            val guide = if (!snapshot.isEmpty) {
+                val doc = snapshot.documents[0]
+                doc.toObject(Guide::class.java)?.copy(id = doc.id)
+            } else {
+                val newGuide = Guide(userId = userId)
+                val docRef = guidesCollection.add(newGuide).await()
+                newGuide.copy(id = docRef.id)
+            }
+            
+            guide?.copy(
+                name = userDoc.getString("name") ?: "",
+                email = userDoc.getString("email") ?: "",
+                sdt = userDoc.getString("sdt") ?: "",
+                imageUrl = userDoc.getString("avatar") ?: ""
+            )
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -35,10 +83,33 @@ class GuideRepository(private val firebaseService: FirebaseService) {
     }
 
     suspend fun getToursForGuide(guideId: String): List<Map<String, Any>> {
-        // In a real scenario, tours would have a guideId field or a mapping table
-        // For now, let's assume tours are assigned to guides
-        val snapshot = toursCollection.whereEqualTo("guideId", guideId).get().await()
-        return snapshot.documents.map { (it.data ?: emptyMap()) + ("id" to it.id) }
+        return try {
+            val snapshot = bookingsCollection.whereEqualTo("guideId", guideId).get().await()
+            val toursWithDetails = mutableListOf<Map<String, Any>>()
+            
+            for (doc in snapshot.documents) {
+                val tourId = doc.getString("tourId") ?: continue
+                val tourDoc = toursCollection.document(tourId).get().await()
+                if (tourDoc.exists()) {
+                    val tourData = tourDoc.data ?: continue
+                    val bookingData = doc.data ?: emptyMap()
+                    
+                    val combinedData = tourData.toMutableMap()
+                    combinedData["id"] = doc.id 
+                    combinedData["bookingId"] = doc.id
+                    combinedData["tourId"] = tourId
+                    combinedData["startDate"] = bookingData["startDate"] ?: "N/A"
+                    combinedData["status"] = bookingData["tripStatus"] ?: "preparing"
+                    combinedData["tripNote"] = bookingData["tripNote"] ?: ""
+                    
+                    toursWithDetails.add(combinedData)
+                }
+            }
+            toursWithDetails.sortByDescending { it["startDate"] as? String }
+            toursWithDetails
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
     
     suspend fun getBookingsForTour(tourId: String): List<Map<String, Any>> {

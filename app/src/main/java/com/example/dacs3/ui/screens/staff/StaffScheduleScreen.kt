@@ -70,7 +70,6 @@ fun StaffScheduleScreen(
             }
 
             if (selectedTab == 1) {
-                // Filter UI for History Tab
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -86,29 +85,35 @@ fun StaffScheduleScreen(
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(onClick = { /* Open Filter Dialog */ }) {
-                        Icon(Icons.Default.FilterList, null, tint = Color(0xFF2563EB))
-                    }
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                val filteredTours = if (selectedTab == 0) {
-                    tours.filter { (it["status"] as? String) != "completed" && (it["status"] as? String) != "cancelled" }
-                } else {
-                    tours.filter { 
-                        ((it["status"] as? String) == "completed" || (it["status"] as? String) == "cancelled") &&
-                        (it["title"] as? String ?: "").contains(searchQuery, ignoreCase = true)
-                    }
+            if (tours.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Hiện chưa có lịch trình nào được gán cho bạn", color = Color.Gray)
                 }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    val filteredTours = if (selectedTab == 0) {
+                        tours.filter { 
+                            val status = it["status"] as? String ?: "preparing"
+                            status == "preparing" || status == "started"
+                        }
+                    } else {
+                        tours.filter { 
+                            val status = it["status"] as? String ?: ""
+                            (status == "completed" || status == "cancelled") &&
+                            (it["title"] as? String ?: "").contains(searchQuery, ignoreCase = true)
+                        }
+                    }
 
-                items(filteredTours) { tour ->
-                    ScheduleTourItem(tour = tour, onClick = { onTourClick(tour["id"] as String) })
+                    items(filteredTours) { tour ->
+                        ScheduleTourItem(tour = tour, onClick = { onTourClick(tour["bookingId"] as String) })
+                    }
                 }
             }
         }
@@ -150,34 +155,30 @@ fun ScheduleTourItem(tour: Map<String, Any>, onClick: () -> Unit) {
                     fontWeight = FontWeight.Bold,
                     maxLines = 1
                 )
-                Text(
-                    text = "Thời gian: ${tour["duration"] ?: "N/A"}",
-                    fontSize = 13.sp,
-                    color = Color.Gray
-                )
                 
                 Row(
                     modifier = Modifier.padding(top = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val status = tour["status"] as? String ?: "upcoming"
-                    val statusColor = when(status) {
-                        "completed" -> Color(0xFF10B981)
-                        "cancelled" -> Color.Red
-                        "ongoing" -> Color(0xFFF59E0B)
-                        else -> Color(0xFF3B82F6)
+                    val status = tour["status"] as? String ?: "preparing"
+                    val (label, statusColor) = when(status) {
+                        "preparing" -> "Sắp đi" to Color(0xFF3B82F6)
+                        "started" -> "Đang đi" to Color(0xFFF59E0B)
+                        "completed" -> "Xong" to Color(0xFF10B981)
+                        "cancelled" -> "Đã hủy" to Color.Red
+                        else -> status.uppercase() to Color.Gray
                     }
                     Box(
                         modifier = Modifier
                             .background(statusColor.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
-                        Text(status.uppercase(), fontSize = 10.sp, color = statusColor, fontWeight = FontWeight.Bold)
+                        Text(label, fontSize = 10.sp, color = statusColor, fontWeight = FontWeight.Bold)
                     }
                     
                     Spacer(modifier = Modifier.weight(1f))
                     
-                    Text("Xem chi tiết >", fontSize = 12.sp, color = Color(0xFF2563EB))
+                    Text("Chi tiết >", fontSize = 12.sp, color = Color(0xFF2563EB))
                 }
             }
         }

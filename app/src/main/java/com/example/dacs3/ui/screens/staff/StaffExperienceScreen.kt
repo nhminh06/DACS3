@@ -73,9 +73,15 @@ fun StaffExperienceScreen(
                         ExperienceItem(
                             exp = exp,
                             onDelete = {
-                                staffViewModel.deleteExperience(exp.id) {
-                                    Toast.makeText(context, "Đã xóa kinh nghiệm", Toast.LENGTH_SHORT).show()
-                                }
+                                staffViewModel.deleteExperience(
+                                    expId = exp.id,
+                                    onSuccess = {
+                                        Toast.makeText(context, "Đã xóa kinh nghiệm", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onError = { error ->
+                                        Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                                    }
+                                )
                             }
                         )
                     }

@@ -68,7 +68,6 @@ fun MainContainer() {
 
     var selectedArticle by remember { mutableStateOf<ArticleEntity?>(null) }
     var selectedTour by remember { mutableStateOf<Tour?>(null) }
-    var selectedTourId by remember { mutableStateOf<String?>(null) }
     var selectedBookingId by remember { mutableStateOf<String?>(null) }
     var initialArticleCategory by remember { mutableStateOf(ArticleCategory.CULTURE) }
     
@@ -306,25 +305,25 @@ fun MainContainer() {
                 staffViewModel = staffViewModel,
                 onBack = { currentScreen = "staff_personal" },
                 onTourClick = { id -> 
-                    selectedTourId = id
+                    selectedBookingId = id
                     currentScreen = "staff_trip_detail"
                 }
             )
         }
         "staff_trip_detail" -> {
-            selectedTourId?.let { id ->
+            selectedBookingId?.let { id ->
                 StaffTripDetailScreen(
-                    tourId = id,
+                    bookingId = id,
                     staffViewModel = staffViewModel,
                     onBack = { currentScreen = "staff_schedule" }
                 )
             }
         }
         "staff_notes" -> {
-            androidx.compose.foundation.layout.Column {
-                Text("Màn hình Ghi chú đang được cập nhật")
-                Button(onClick = { currentScreen = "staff_personal" }) { Text("Quay lại") }
-            }
+            StaffNotesScreen(
+                staffViewModel = staffViewModel,
+                onBack = { currentScreen = "staff_personal" }
+            )
         }
         "staff_skills" -> {
             StaffSkillsScreen(

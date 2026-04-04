@@ -1,6 +1,7 @@
 package com.example.dacs3.ui.components.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -10,45 +11,48 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.dacs3.R
 import com.example.dacs3.data.model.Review
+import com.example.dacs3.ui.viewmodel.MainViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ReviewsSection() {
-    val reviews = listOf(
-        Review(
-            userName = "Trần Thị Minh",
-            rating = 5,
-            comment = "Chuyến đi vừa rồi được anh An hướng dẫn thực sự rất ấn tượng. Ứng dụng này đã giúp mình có những trải nghiệm văn hóa địa phương tuyệt vời. Chắc chắn sẽ giới thiệu cho bạn bè!",
-            createdAt = System.currentTimeMillis() - 86400000 * 2
-        ),
-        Review(
-            userName = "Lê Văn Nam",
-            rating = 4,
-            comment = "Dịch vụ rất tốt, hướng dẫn viên nhiệt tình và am hiểu kiến thức lịch sử. Mình rất hài lòng với chuyến đi Sapa vừa qua.",
-            createdAt = System.currentTimeMillis() - 86400000 * 5
-        ),
-        Review(
-            userName = "Hoàng Anh",
-            rating = 5,
-            comment = "Một trải nghiệm không thể quên tại Hội An. Cảm ơn đội ngũ đã hỗ trợ!",
-            createdAt = System.currentTimeMillis() - 86400000 * 10
-        )
-    )
+fun ReviewsSection(viewModel: MainViewModel) {
+    val reviews by viewModel.allReviews.collectAsState()
 
-    val pagerState = rememberPagerState(pageCount = { reviews.size })
+    // Fallback data if DB is empty
+    val displayReviews = reviews.ifEmpty {
+        listOf(
+            Review(
+                userName = "Trần Thị Minh",
+                rating = 5,
+                comment = "Chuyến đi vừa rồi thực sự rất ấn tượng. Ứng dụng này đã giúp mình có những trải nghiệm tuyệt vời.",
+                createdAt = System.currentTimeMillis() - 86400000 * 2
+            ),
+            Review(
+                userName = "Lê Văn Nam",
+                rating = 4,
+                comment = "Dịch vụ rất tốt, hướng dẫn viên nhiệt tình và am hiểu kiến thức. Mình rất hài lòng.",
+                createdAt = System.currentTimeMillis() - 86400000 * 5
+            )
+        )
+    }
+
+    val pagerState = rememberPagerState(pageCount = { displayReviews.size })
 
     Column {
         Text(
@@ -64,29 +68,31 @@ fun ReviewsSection() {
         )
         Spacer(modifier = Modifier.height(14.dp))
         
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxWidth(),
-            pageSpacing = 16.dp 
-        ) { page ->
-            ReviewCard(reviews[page])
-        }
+        if (displayReviews.isNotEmpty()) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth(),
+                pageSpacing = 16.dp 
+            ) { page ->
+                ReviewCard(displayReviews[page])
+            }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp),
-            horizontalArrangement = Arrangement.Center
-        ) {
-            repeat(reviews.size) { index ->
-                val isSelected = pagerState.currentPage == index
-                Surface(
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .size(if (isSelected) 8.dp else { 6.dp }),
-                    shape = CircleShape,
-                    color = if (isSelected) Color(0xFF2563EB) else Color.LightGray
-                ) {}
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                repeat(displayReviews.size) { index ->
+                    val isSelected = pagerState.currentPage == index
+                    Surface(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .size(if (isSelected) 8.dp else 6.dp),
+                        shape = CircleShape,
+                        color = if (isSelected) Color(0xFF2563EB) else Color.LightGray
+                    ) {}
+                }
             }
         }
     }
@@ -108,7 +114,7 @@ fun ReviewCard(review: Review) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 AsyncImage(
-                    model = if (review.userAvatar != null && review.userAvatar.isNotEmpty()) review.userAvatar else R.drawable.a9,
+                    model = if (!review.userAvatar.isNullOrEmpty()) review.userAvatar else "https://ui-avatars.com/api/?name=${review.userName}&background=random",
                     contentDescription = null,
                     modifier = Modifier.size(40.dp).clip(CircleShape),
                     contentScale = ContentScale.Crop
@@ -124,7 +130,8 @@ fun ReviewCard(review: Review) {
                             text = review.userName,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(text = dateStr, fontSize = 11.sp, color = Color.Gray)
                     }
@@ -146,7 +153,8 @@ fun ReviewCard(review: Review) {
                 fontSize = 13.sp,
                 color = Color(0xFF475569),
                 lineHeight = 18.sp,
-                maxLines = 3
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

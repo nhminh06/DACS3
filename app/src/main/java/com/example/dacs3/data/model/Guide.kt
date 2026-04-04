@@ -4,7 +4,10 @@ data class Guide(
     val id: String = "",
     val userId: String = "",
     val name: String = "",
+    val email: String = "",
+    val sdt: String = "",
     val bio: String = "",
+    val imageUrl: String = "",
     val imageRes: Int = 0,
     val skills: List<String> = emptyList(),
     val experiences: List<Experience> = emptyList()

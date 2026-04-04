@@ -45,6 +45,12 @@
 
         input, select, textarea { background-color: #0f172a !important; color: white !important; border: 1px solid #334155 !important; }
         .form-control:focus, .form-select:focus { background-color: #0f172a; border-color: #3b82f6; box-shadow: none; color: white; }
+
+        /* Select option styles for busy guides */
+        #guideSelect option.busy-guide {
+            color: #f87171 !important;
+            background-color: #450a0a !important;
+        }
     </style>
 </head>
 <body>
@@ -130,10 +136,15 @@
                             <div class="d-flex gap-2">
                                 <select id="guideSelect" class="form-select">
                                     <option value="">-- Chọn hướng dẫn viên --</option>
-                                    <option th:each="g : ${guides}" th:value="${g['id']}" th:text="${g['name'] + ' - ' + g['email']}"></option>
+                                    <option th:each="g : ${guides}" th:value="${g['id']}"
+                                            th:text="${g['name'] + (g['isBusy'] ? ' [BẬN: ' + g['busyReason'] + ']' : '')}"
+                                            th:classappend="${g['isBusy'] ? 'busy-guide' : ''}"></option>
                                 </select>
                                 <button onclick="assignGuide(document.getElementById('guideSelect').value)" class="btn btn-primary" style="white-space: nowrap;">Gán HDV</button>
                             </div>
+                            <small class="text-danger mt-1 d-block" id="guideBusyWarning" style="display:none !important;">
+                                <i class="bi bi-exclamation-triangle"></i> HDV này đang bận dẫn tour khác hoặc đã được gán.
+                            </small>
                         </div>
 
                         <div th:if="${booking.guide == null && booking.tripStatus != 'preparing'}" class="alert alert-danger">
@@ -251,7 +262,6 @@
 
                 if (result.success) {
                     showAlert(result.message, 'success');
-                    // Cập nhật UI không cần load lại trang
                     updateUI(status, formData);
                 } else {
                     showAlert(result.message, 'danger');
@@ -262,6 +272,14 @@
         }
 
         async function assignGuide(guideId) {
+            if (guideId) {
+                const select = document.getElementById('guideSelect');
+                const selectedOption = select.options[select.selectedIndex];
+                if (selectedOption.classList.contains('busy-guide')) {
+                    if (!confirm("Hướng dẫn viên này đang bận. Bạn vẫn muốn gán?")) return;
+                }
+            }
+
             const formData = new FormData();
             formData.append('bookingId', bookingId);
             formData.append('guideId', guideId);
@@ -274,7 +292,7 @@
                 const result = await response.json();
                 if (result.success) {
                     showAlert(result.message, 'success');
-                    location.reload(); // Re-load to update guide info display easily
+                    location.reload();
                 } else {
                     showAlert(result.message, 'danger');
                 }
@@ -283,8 +301,20 @@
             }
         }
 
+        // Show warning when selecting busy guide
+        document.getElementById('guideSelect')?.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const warning = document.getElementById('guideBusyWarning');
+            if (selectedOption.classList.contains('busy-guide')) {
+                warning.style.display = 'block';
+                warning.style.setProperty('display', 'block', 'important');
+            } else {
+                warning.style.display = 'none';
+                warning.style.setProperty('display', 'none', 'important');
+            }
+        });
+
         function updateUI(status, formData) {
-            // Cập nhật Status Badge
             const container = document.getElementById('statusBadgeContainer');
             let badgeHtml = '';
             if (status === 'started') badgeHtml = '<span class="status-badge-big badge-started"><i class="bi bi-play-circle"></i> ĐANG DIỄN RA</span>';
@@ -292,7 +322,6 @@
             else if (status === 'cancelled') badgeHtml = '<span class="status-badge-big badge-cancelled"><i class="bi bi-x-circle"></i> ĐÃ HỦY</span>';
             container.innerHTML = badgeHtml;
 
-            // Cập nhật Timeline
             if (status === 'started') {
                 document.querySelector('.step-started-ui').classList.add('active');
                 document.querySelector('.startTimeLabel').innerText = formData.get('startTime');

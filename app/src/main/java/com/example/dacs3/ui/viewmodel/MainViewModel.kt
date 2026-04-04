@@ -2,8 +2,13 @@ package com.example.dacs3.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dacs3.data.model.Guide
+import com.example.dacs3.data.model.Review
 import com.example.dacs3.data.model.Tour
 import com.example.dacs3.data.model.TourType
+import com.example.dacs3.data.remote.FirebaseService
+import com.example.dacs3.data.repository.GuideRepository
+import com.example.dacs3.data.repository.ReviewRepository
 import com.example.dacs3.data.repository.TourRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,10 +17,21 @@ import kotlinx.coroutines.launch
 
 class MainViewModel : ViewModel() {
     private val tourRepository = TourRepository()
+    private val guideRepository = GuideRepository(FirebaseService())
+    private val reviewRepository = ReviewRepository()
 
     private val _allTours = MutableStateFlow<List<Tour>>(emptyList())
     private val _tours = MutableStateFlow<List<Tour>>(emptyList())
     val tours: StateFlow<List<Tour>> = _tours.asStateFlow()
+
+    private val _guides = MutableStateFlow<List<Guide>>(emptyList())
+    val guides: StateFlow<List<Guide>> = _guides.asStateFlow()
+
+    private val _guideReviews = MutableStateFlow<List<Review>>(emptyList())
+    val guideReviews: StateFlow<List<Review>> = _guideReviews.asStateFlow()
+
+    private val _allReviews = MutableStateFlow<List<Review>>(emptyList())
+    val allReviews: StateFlow<List<Review>> = _allReviews.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -44,6 +60,8 @@ class MainViewModel : ViewModel() {
 
     init {
         loadTours()
+        loadGuides()
+        loadAllReviews()
     }
 
     fun loadTours() {
@@ -60,6 +78,37 @@ class MainViewModel : ViewModel() {
             
             applyFilters()
             _isLoading.value = false
+        }
+    }
+
+    fun loadGuides() {
+        viewModelScope.launch {
+            _guides.value = guideRepository.getAllGuides()
+        }
+    }
+
+    fun loadAllReviews() {
+        viewModelScope.launch {
+            _allReviews.value = reviewRepository.getAllReviews(10)
+        }
+    }
+
+    fun loadReviewsForGuide(guideId: String) {
+        viewModelScope.launch {
+            val bookings = guideRepository.getToursForGuide(guideId)
+            val bookingIds = bookings.mapNotNull { it["bookingId"] as? String }
+            
+            if (bookingIds.isNotEmpty()) {
+                val tourIds = bookings.mapNotNull { it["tourId"] as? String }.distinct()
+                val guideReviewsList = mutableListOf<Review>()
+                for (tourId in tourIds) {
+                    val reviews = reviewRepository.getReviewsByTour(tourId)
+                    guideReviewsList.addAll(reviews.filter { review -> bookingIds.contains(review.bookingId) })
+                }
+                _guideReviews.value = guideReviewsList.sortedByDescending { it.createdAt }
+            } else {
+                _guideReviews.value = emptyList()
+            }
         }
     }
 
@@ -110,7 +159,6 @@ class MainViewModel : ViewModel() {
     fun applyFilters() {
         var filteredList = _allTours.value
 
-        // Helper to determine if it's a single day tour (no overnight)
         fun isSingleDay(tour: Tour): Boolean {
             if (tour.type == TourType.DAY_TOUR) return true
             if (tour.type == TourType.MULTI_DAY) return false
@@ -119,7 +167,6 @@ class MainViewModel : ViewModel() {
             return (d.contains("1 ngày") || d.contains("trong ngày")) && !d.contains("đêm")
         }
 
-        // 1. Filter by Tour Type
         if (_selectedTourType.value != "Tất cả") {
             filteredList = filteredList.filter { tour ->
                 val singleDay = isSingleDay(tour)
@@ -128,7 +175,6 @@ class MainViewModel : ViewModel() {
             }
         }
 
-        // 2. Filter by Specific Duration
         if (_selectedDuration.value != "Tất cả") {
             filteredList = filteredList.filter { tour ->
                 val d = tour.duration.lowercase()
@@ -145,17 +191,14 @@ class MainViewModel : ViewModel() {
             }
         }
 
-        // 3. Filter by Location
         if (_selectedLocations.value.isNotEmpty()) {
             filteredList = filteredList.filter { tour ->
                 _selectedLocations.value.any { loc -> tour.location.contains(loc, ignoreCase = true) }
             }
         }
 
-        // 4. Filter by Price
         filteredList = filteredList.filter { it.price.toFloat() in _priceRange.value }
 
-        // 5. Filter by Rating
         if (_selectedRating.value > 0) {
             filteredList = filteredList.filter { it.rating >= _selectedRating.value }
         }

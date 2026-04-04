@@ -114,9 +114,15 @@ fun StaffSkillsScreen(
 
             Button(
                 onClick = {
-                    staffViewModel.updateSkills(skills.toList()) {
-                        Toast.makeText(context, "Đã lưu kỹ năng", Toast.LENGTH_SHORT).show()
-                    }
+                    staffViewModel.updateSkills(
+                        newSkills = skills.toList(),
+                        onSuccess = {
+                            Toast.makeText(context, "Đã lưu kỹ năng", Toast.LENGTH_SHORT).show()
+                        },
+                        onError = { error ->
+                            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                        }
+                    )
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),

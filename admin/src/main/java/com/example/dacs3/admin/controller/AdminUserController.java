@@ -9,7 +9,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -24,19 +26,20 @@ public class AdminUserController {
     public String listUsers(Model model, 
                             @RequestParam(required = false) String search,
                             @RequestParam(required = false) String role,
-                            @RequestParam(required = false) String status) {
+                            @RequestParam(required = false) String status,
+                            @RequestParam(defaultValue = "1") int page) {
         try {
             ApiFuture<QuerySnapshot> future = firestore.collection("users").get();
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
             
-            long total = documents.size();
+            long totalAll = documents.size();
             long adminCount = documents.stream().filter(d -> "admin".equals(d.getString("role"))).count();
-            long staffCount = documents.stream().filter(d -> "staff".equals(d.getString("role"))).count();
+            long guideCount = documents.stream().filter(d -> "guide".equals(d.getString("role"))).count();
             long activeCount = documents.stream().filter(d -> "active".equals(d.getString("trang_thai"))).count();
 
-            model.addAttribute("total", total);
+            model.addAttribute("total", totalAll);
             model.addAttribute("adminCount", adminCount);
-            model.addAttribute("staffCount", staffCount);
+            model.addAttribute("guideCount", guideCount);
             model.addAttribute("activeCount", activeCount);
 
             List<QueryDocumentSnapshot> filteredUsers = documents;
@@ -62,15 +65,66 @@ public class AdminUserController {
                         .collect(Collectors.toList());
             }
 
-            model.addAttribute("users", filteredUsers);
+            // Pagination logic
+            int pageSize = 10;
+            int totalFiltered = filteredUsers.size();
+            int totalPages = (int) Math.ceil((double) totalFiltered / pageSize);
+            
+            // Ensure page is within valid range
+            if (page < 1) page = 1;
+            if (totalPages > 0 && page > totalPages) page = totalPages;
+
+            int start = (page - 1) * pageSize;
+            int end = Math.min(start + pageSize, totalFiltered);
+
+            List<QueryDocumentSnapshot> pagedUsers = List.of();
+            if (start < totalFiltered) {
+                pagedUsers = filteredUsers.subList(start, end);
+            }
+
+            model.addAttribute("users", pagedUsers);
             model.addAttribute("search", search);
             model.addAttribute("roleFilter", role);
             model.addAttribute("statusFilter", status);
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", totalPages);
+            model.addAttribute("totalFiltered", totalFiltered);
 
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
         return "users/list";
+    }
+
+    @GetMapping("/add")
+    public String showAddUserForm() {
+        return "users/add";
+    }
+
+    @PostMapping("/add")
+    public String processAddUser(@RequestParam String ho_ten,
+                                 @RequestParam String email,
+                                 @RequestParam(required = false) String sdt,
+                                 @RequestParam String password,
+                                 @RequestParam String role,
+                                 @RequestParam(required = false) String gioi_tinh,
+                                 @RequestParam(required = false) String ngay_sinh,
+                                 @RequestParam(required = false) String dia_chi,
+                                 @RequestParam(required = false, defaultValue = "blocked") String trang_thai) throws ExecutionException, InterruptedException {
+        
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("name", ho_ten);
+        userData.put("email", email);
+        userData.put("sdt", sdt);
+        userData.put("password", password);
+        userData.put("role", role);
+        userData.put("gioi_tinh", gioi_tinh);
+        userData.put("ngay_sinh", ngay_sinh);
+        userData.put("dia_chi", dia_chi);
+        userData.put("trang_thai", trang_thai.equals("on") ? "active" : "blocked");
+
+        firestore.collection("users").add(userData).get();
+        return "redirect:/admin/users";
     }
 
     @GetMapping("/toggle-status/{id}")
@@ -80,7 +134,6 @@ public class AdminUserController {
         if (snapshot.exists()) {
             String currentStatus = snapshot.getString("trang_thai");
             String newStatus = "active".equals(currentStatus) ? "blocked" : "active";
-            // Đợi Firestore cập nhật xong mới Redirect
             docRef.update("trang_thai", newStatus).get();
         }
         return "redirect:/admin/users";
@@ -88,14 +141,12 @@ public class AdminUserController {
 
     @PostMapping("/change-role")
     public String changeRole(@RequestParam String id, @RequestParam String role) throws ExecutionException, InterruptedException {
-        // Đợi Firestore cập nhật xong mới Redirect
         firestore.collection("users").document(id).update("role", role).get();
         return "redirect:/admin/users";
     }
 
     @GetMapping("/delete/{id}")
     public String deleteUser(@PathVariable String id) throws ExecutionException, InterruptedException {
-        // Đợi Firestore xóa xong mới Redirect
         firestore.collection("users").document(id).delete().get();
         return "redirect:/admin/users";
     }

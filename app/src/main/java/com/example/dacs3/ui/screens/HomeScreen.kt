@@ -95,8 +95,8 @@ fun AppHomeScreen(
                     }
                 }
 
-                item { HomePaddingWrapper { GuidesSection() } }
-                item { HomePaddingWrapper { ReviewsSection() } }
+                item { HomePaddingWrapper { GuidesSection(viewModel) } }
+                item { HomePaddingWrapper { ReviewsSection(viewModel) } }
                 item { Spacer(modifier = Modifier.height(24.dp)) }
             }
             

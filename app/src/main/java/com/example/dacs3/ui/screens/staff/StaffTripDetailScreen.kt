@@ -28,15 +28,23 @@ import com.example.dacs3.ui.viewmodel.StaffViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StaffTripDetailScreen(
-    tourId: String,
+    bookingId: String,
     staffViewModel: StaffViewModel,
     onBack: () -> Unit
 ) {
     val tours by staffViewModel.tours
-    val tour = tours.find { it["id"] == tourId }
+    val tour = tours.find { it["bookingId"] == bookingId }
+    val bookings by staffViewModel.selectedTourBookings
     
-    var noteText by remember { mutableStateOf("") }
+    var noteText by remember { mutableStateOf(tour?.get("tripNote") as? String ?: "") }
     val primaryColor = Color(0xFF2563EB)
+
+    LaunchedEffect(bookingId) {
+        tour?.let {
+            val tourId = it["tourId"] as? String ?: ""
+            staffViewModel.loadBookingsForTour(tourId)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -85,55 +93,54 @@ fun StaffTripDetailScreen(
                     
                     DetailRow(Icons.Default.Info, "Ngày khởi hành", tour["startDate"] as? String ?: "")
                     DetailRow(Icons.Default.Info, "Số ngày", tour["duration"] as? String ?: "")
-                    DetailRow(Icons.Default.People, "Tổng khách", "25") // Mock
+                    
+                    val totalPassengers = bookings.sumOf { 
+                        ((it["adults"] as? Number)?.toInt() ?: 0) + 
+                        ((it["children"] as? Number)?.toInt() ?: 0) + 
+                        ((it["infants"] as? Number)?.toInt() ?: 0) 
+                    }
+                    DetailRow(Icons.Default.People, "Tổng khách", totalPassengers.toString())
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     // Timeline
                     Text("Trạng thái chuyến đi", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(modifier = Modifier.height(12.dp))
-                    TripTimeline(currentStatus = tour["status"] as? String ?: "upcoming")
+                    TripTimeline(currentStatus = tour["status"] as? String ?: "preparing")
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     // Guest List
-                    Text("Danh sách khách", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Danh sách khách (${bookings.size} đơn)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(modifier = Modifier.height(12.dp))
-                    repeat(3) { // Mock guest list
-                        GuestItem()
-                        Spacer(modifier = Modifier.height(8.dp))
+                    
+                    if (bookings.isEmpty()) {
+                        Text("Chưa có danh sách khách cho chuyến này", fontSize = 14.sp, color = Color.Gray)
+                    } else {
+                        bookings.forEach { bk ->
+                            GuestItem(bk)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                     }
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    // Notes
-                    Text("Ghi chú", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    // Notes from Admin
+                    Text("Ghi chú từ quản trị", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            OutlinedTextField(
-                                value = noteText,
-                                onValueChange = { noteText = it },
-                                modifier = Modifier.fillMaxWidth().height(100.dp),
-                                placeholder = { Text("Thêm ghi chú mới...") },
-                                shape = RoundedCornerShape(12.dp)
+                            Text(
+                                text = tour["tripNote"] as? String ?: "Không có ghi chú nào.",
+                                fontSize = 14.sp,
+                                color = if (tour["tripNote"] != null) Color.Black else Color.Gray
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Button(
-                                onClick = { /* Add Note */ },
-                                modifier = Modifier.align(Alignment.End),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
-                            ) {
-                                Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Thêm ghi chú")
-                            }
                         }
                     }
                 }
@@ -155,27 +162,35 @@ fun DetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Stri
 
 @Composable
 fun TripTimeline(currentStatus: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        TimelineNode("Chuẩn bị", active = true)
-        TimelineNode("Bắt đầu", active = currentStatus == "ongoing" || currentStatus == "completed")
-        TimelineNode("Hoàn thành", active = currentStatus == "completed")
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp), 
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+    ) {
+        TimelineNode("Chuẩn bị", active = true, completed = currentStatus != "preparing")
+        TimelineNode("Bắt đầu", active = currentStatus == "started" || currentStatus == "completed", completed = currentStatus == "completed")
+        TimelineNode("Hoàn thành", active = currentStatus == "completed", completed = currentStatus == "completed")
     }
 }
 
 @Composable
-fun TimelineNode(label: String, active: Boolean) {
+fun TimelineNode(label: String, active: Boolean, completed: Boolean) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
-                .size(12.dp)
-                .background(if (active) Color(0xFF2563EB) else Color.LightGray, CircleShape)
+                .size(16.dp)
+                .background(
+                    if (completed) Color(0xFF10B981) else if (active) Color(0xFF2563EB) else Color.LightGray, 
+                    CircleShape
+                )
         )
-        Text(label, fontSize = 12.sp, color = if (active) Color.Black else Color.Gray)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (active) Color.Black else Color.Gray)
     }
 }
 
 @Composable
-fun GuestItem() {
+fun GuestItem(booking: Map<String, Any>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -184,13 +199,24 @@ fun GuestItem() {
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("BK-2024001", fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), fontSize = 12.sp)
+                val id = booking["id"] as? String ?: ""
+                val shortId = if (id.length > 8) id.substring(id.length - 8) else id
+                Text(shortId.uppercase(), fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), fontSize = 12.sp)
                 Spacer(modifier = Modifier.weight(1f))
-                Text("Confirmed", color = Color(0xFF10B981), fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                Text(
+                    text = booking["paymentStatus"] as? String ?: "Pending", 
+                    color = if (booking["paymentStatus"] == "da_thanh_toan") Color(0xFF10B981) else Color(0xFFF59E0B), 
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 10.sp
+                )
             }
-            Text("Nguyễn Thị B", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text("0987654321 • ntb@email.com", fontSize = 12.sp, color = Color.Gray)
-            Text("4 người", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Text(text = booking["customerName"] as? String ?: "N/A", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(text = "${booking["phone"] ?: "N/A"} • ${booking["email"] ?: ""}", fontSize = 12.sp, color = Color.Gray)
+            
+            val adults = (booking["adults"] as? Number)?.toInt() ?: 0
+            val children = (booking["children"] as? Number)?.toInt() ?: 0
+            val infants = (booking["infants"] as? Number)?.toInt() ?: 0
+            Text(text = "Đoàn: $adults người lớn, $children trẻ em, $infants em bé", fontSize = 12.sp, fontWeight = FontWeight.Medium)
         }
     }
 }

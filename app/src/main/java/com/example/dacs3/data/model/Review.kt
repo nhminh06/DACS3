@@ -6,8 +6,11 @@ data class Review(
     val userName: String = "",
     val userAvatar: String? = null,
     val tourId: String = "",
+    val guideId: String = "",
     val bookingId: String = "",
     val rating: Int = 5,
+    val guideRating: Int = 5,
     val comment: String = "",
+    val guideComment: String = "",
     val createdAt: Long = System.currentTimeMillis()
 )

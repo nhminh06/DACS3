@@ -138,14 +138,43 @@ public class AdminContactController {
         return result;
     }
 
+    @PostMapping("/send-guide-notification")
+    @ResponseBody
+    public Map<String, Object> sendGuideNotification(@RequestParam String title, @RequestParam String message) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            // Lấy danh sách tất cả hướng dẫn viên
+            ApiFuture<QuerySnapshot> future = firestore.collection("users").whereEqualTo("role", "guide").get();
+            List<QueryDocumentSnapshot> guides = future.get().getDocuments();
+
+            for (QueryDocumentSnapshot guide : guides) {
+                Map<String, Object> notification = new HashMap<>();
+                notification.put("userId", guide.getId());
+                notification.put("title", title);
+                notification.put("message", message);
+                notification.put("timestamp", Timestamp.now());
+                notification.put("isRead", false);
+                notification.put("type", "SYSTEM_ANNOUNCEMENT");
+                firestore.collection("notifications").add(notification);
+            }
+
+            result.put("success", true);
+            result.put("message", "Đã gửi thông báo tới " + guides.size() + " hướng dẫn viên");
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+        return result;
+    }
+
     private void sendHtmlEmail(String to, String name, String type, String content, String reply) {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
             
             String htmlMsg = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;'>" +
-                    "<div style='background-color: #2563eb; padding: 20px; text-align: center;'>" +
-                    "<h2 style='color: white; margin: 0;'>WIMD Travel - Phản hồi hỗ trợ</h2>" +
+                    "<div style='background-color: #2563eb; padding: 20px; text-align: center; color: white;'>" +
+                    "<h2>WIMD Travel - Phản hồi hỗ trợ</h2>" +
                     "</div>" +
                     "<div style='padding: 24px; color: #1e293b;'>" +
                     "<p>Xin chào <strong>" + name + "</strong>,</p>" +

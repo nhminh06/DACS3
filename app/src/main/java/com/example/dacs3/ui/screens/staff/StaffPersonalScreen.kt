@@ -302,7 +302,7 @@ fun StaffPersonalScreen(
                 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     StaffActionButton("Lịch Tour", Icons.Default.CalendarMonth, Modifier.weight(1f)) { onNavigate("staff_schedule") }
-                    StaffActionButton("Chi tiết chuyến đi", Icons.AutoMirrored.Filled.Assignment, Modifier.weight(1f)) { onNavigate("staff_trip_detail") }
+                    StaffActionButton("Thông báo hệ thống", Icons.Default.Notifications, Modifier.weight(1f)) { onNavigate("notifications") }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -330,10 +330,14 @@ fun StaffPersonalScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    staffViewModel.updateBio(tempBio) {
-                        showBioDialog = false
-                        Toast.makeText(context, "Đã cập nhật giới thiệu", Toast.LENGTH_SHORT).show()
-                    }
+                    staffViewModel.updateBio(
+                        newBio = tempBio,
+                        onSuccess = {
+                            showBioDialog = false
+                            Toast.makeText(context, "Đã cập nhật giới thiệu", Toast.LENGTH_SHORT).show()
+                        },
+                        onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+                    )
                 }) { Text("Lưu") }
             },
             dismissButton = { TextButton(onClick = { showBioDialog = false }) { Text("Hủy") } }

@@ -3,6 +3,7 @@ package com.example.dacs3.data.repository
 import android.util.Log
 import com.example.dacs3.data.model.Review
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 
 class ReviewRepository {
@@ -52,6 +53,18 @@ class ReviewRepository {
                 .toObjects(Review::class.java)
                 .sortedByDescending { it.createdAt }
         } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun getAllReviews(limit: Int = 10): List<Review> {
+        return try {
+            reviewsCollection.orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(limit.toLong())
+                .get().await()
+                .toObjects(Review::class.java)
+        } catch (e: Exception) {
+            Log.e("ReviewRepository", "Error getting all reviews: ${e.message}")
             emptyList()
         }
     }

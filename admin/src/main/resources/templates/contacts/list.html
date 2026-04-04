@@ -55,11 +55,14 @@
             </div>
         </div>
 
-        <div class="section-header">
+        <div class="section-header d-flex justify-content-between align-items-center">
             <div class="section-title">Danh sách tin nhắn từ App</div>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#announceModal">
+                <i class="bi bi-megaphone-fill me-2"></i> Gửi thông báo cho HDV
+            </button>
         </div>
 
-        <div class="controls">
+        <div class="controls mt-3">
             <form action="/admin/contacts" method="GET" class="d-flex gap-3">
                 <select name="type" onchange="this.form.submit()" class="sort-select">
                     <option value="">Tất cả loại</option>
@@ -74,7 +77,7 @@
             </form>
         </div>
 
-        <div class="table-container shadow-sm">
+        <div class="table-container shadow-sm mt-3">
             <table>
                 <thead>
                     <tr>
@@ -137,6 +140,35 @@
         </div>
     </div>
 
+    <!-- Announcement Modal -->
+    <div class="modal fade" id="announceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Gửi thông báo hệ thống cho HDV</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tiêu đề thông báo:</label>
+                        <input type="text" class="form-control" id="announceTitle" placeholder="Ví dụ: Cập nhật quy định mới...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nội dung chi tiết:</label>
+                        <textarea class="form-control" id="announceMessage" rows="5" placeholder="Nhập nội dung cần thông báo tới toàn bộ hướng dẫn viên..."></textarea>
+                    </div>
+                    <div class="alert alert-info py-2 small border-0 bg-opacity-10 bg-info text-info">
+                        <i class="bi bi-info-circle me-2"></i> Thông báo này sẽ được gửi tới <strong>tất cả</strong> các tài khoản có vai trò Hướng dẫn viên.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="submitAnnouncement()">Gửi thông báo ngay</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Reply Modal -->
     <div class="modal fade" id="replyModal" tabindex="-1">
         <div class="modal-dialog">
@@ -180,10 +212,40 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let replyModal;
+        let announceModal;
 
         document.addEventListener('DOMContentLoaded', function() {
             replyModal = new bootstrap.Modal(document.getElementById('replyModal'));
+            announceModal = new bootstrap.Modal(document.getElementById('announceModal'));
         });
+
+        function submitAnnouncement() {
+            const title = document.getElementById('announceTitle').value;
+            const message = document.getElementById('announceMessage').value;
+
+            if (!title.trim() || !message.trim()) {
+                alert("Vui lòng nhập đầy đủ tiêu đề và nội dung");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('message', message);
+
+            fetch('/admin/contacts/send-guide-notification', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    alert("Đã gửi thông báo thành công!");
+                    announceModal.hide();
+                    location.reload();
+                } else {
+                    alert("Lỗi: " + data.message);
+                }
+            });
+        }
 
         function openReplyModal(id, name, email, phone, content) {
             document.getElementById('current-contact-id').value = id;

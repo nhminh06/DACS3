@@ -79,6 +79,10 @@ fun StaffProfileScreen(
     var showBioDialog by remember { mutableStateOf(false) }
     var tempBio by remember { mutableStateOf("") }
 
+    // --- States cho Skills Dialog ---
+    var showSkillsDialog by remember { mutableStateOf(false) }
+    var tempSkills by remember { mutableStateOf("") }
+
     // --- States cho Experience Dialog ---
     var showExpDialog by remember { mutableStateOf(false) }
     var expTitle by remember { mutableStateOf("") }
@@ -258,20 +262,28 @@ fun StaffProfileScreen(
                             }
                         }
                     }
-                    TextButton(onClick = { /* Quản lý kỹ năng */ }, modifier = Modifier.padding(top = 8.dp)) {
+                    TextButton(onClick = { 
+                        tempSkills = guideProfile?.skills?.joinToString(", ") ?: ""
+                        showSkillsDialog = true 
+                    }, modifier = Modifier.padding(top = 8.dp)) {
                         Text("Quản lý kỹ năng", color = primaryColor, fontWeight = FontWeight.Bold)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 3.4 KINH NGHIỆM (QUAN TRỌNG NHẤT)
+                // 3.4 KINH NGHIỆM
                 SectionCard("KINH NGHIỆM") {
                     if (guideProfile?.experiences.isNullOrEmpty()) {
                         Text("Bạn chưa thêm kinh nghiệm", color = Color.Gray, fontSize = 14.sp)
                     } else {
                         guideProfile?.experiences?.forEach { exp ->
-                            ExperienceItem(exp)
+                            ProfileExperienceItem(exp) {
+                                staffViewModel.deleteExperience(exp.id, 
+                                    onSuccess = { Toast.makeText(context, "Đã xóa", Toast.LENGTH_SHORT).show() },
+                                    onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+                                )
+                            }
                             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF1F5F9))
                         }
                     }
@@ -326,13 +338,46 @@ fun StaffProfileScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    staffViewModel.updateBio(tempBio) {
-                        showBioDialog = false
-                        Toast.makeText(context, "Đã cập nhật giới thiệu", Toast.LENGTH_SHORT).show()
-                    }
+                    staffViewModel.updateBio(tempBio, 
+                        onSuccess = {
+                            showBioDialog = false
+                            Toast.makeText(context, "Đã cập nhật giới thiệu", Toast.LENGTH_SHORT).show()
+                        },
+                        onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+                    )
                 }) { Text("Lưu") }
             },
             dismissButton = { TextButton(onClick = { showBioDialog = false }) { Text("Hủy") } }
+        )
+    }
+
+    // Skills Dialog
+    if (showSkillsDialog) {
+        AlertDialog(
+            onDismissRequest = { showSkillsDialog = false },
+            title = { Text("Quản lý kỹ năng") },
+            text = {
+                OutlinedTextField(
+                    value = tempSkills,
+                    onValueChange = { tempSkills = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Kỹ năng (phân cách bằng dấu phẩy)") },
+                    placeholder = { Text("Ví dụ: Tiếng Anh, Giao tiếp, Sơ cứu...") }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val skillList = tempSkills.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                    staffViewModel.updateSkills(skillList, 
+                        onSuccess = {
+                            showSkillsDialog = false
+                            Toast.makeText(context, "Đã cập nhật kỹ năng", Toast.LENGTH_SHORT).show()
+                        },
+                        onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+                    )
+                }) { Text("Lưu") }
+            },
+            dismissButton = { TextButton(onClick = { showSkillsDialog = false }) { Text("Hủy") } }
         )
     }
 
@@ -423,12 +468,17 @@ fun ProfileEditField(label: String, value: String, onValueChange: (String) -> Un
 }
 
 @Composable
-fun ExperienceItem(exp: Experience) {
-    Column {
-        Text(exp.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
-        Text("${exp.startTime} - ${exp.endTime.ifEmpty { "Hiện tại" }}", color = Color(0xFF2563EB), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(exp.description, fontSize = 14.sp, color = Color(0xFF475569), lineHeight = 20.sp)
+fun ProfileExperienceItem(exp: Experience, onDelete: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(exp.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+            Text("${exp.startTime} - ${exp.endTime.ifEmpty { "Hiện tại" }}", color = Color(0xFF2563EB), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(exp.description, fontSize = 14.sp, color = Color(0xFF475569), lineHeight = 20.sp)
+        }
+        IconButton(onClick = onDelete) {
+            Icon(Icons.Default.Delete, contentDescription = "Xóa", tint = Color.Red.copy(alpha = 0.6f))
+        }
     }
 }
 

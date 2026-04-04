@@ -18,6 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin/bookings")
@@ -285,7 +286,6 @@ public class AdminBookingController {
                 ApiFuture<QuerySnapshot> future = firestore.collection("bookings")
                         .whereEqualTo("tourId", booking.getTourId())
                         .whereEqualTo("startDate", booking.getStartDate())
-                        .whereEqualTo("tripStatus", booking.getTripStatus())
                         .whereEqualTo("status", "CONFIRMED")
                         .get();
                 
@@ -293,14 +293,22 @@ public class AdminBookingController {
                 long totalRevenue = 0;
                 int totalPassengers = 0;
                 
+                String targetTripStatus = document.getString("tripStatus");
+                if (targetTripStatus == null) targetTripStatus = "preparing";
+
                 for (QueryDocumentSnapshot doc : future.get().getDocuments()) {
-                    Booking b = doc.toObject(Booking.class);
-                    b.setId(doc.getId());
-                    bookings.add(b);
-                    totalRevenue += b.getTotalPrice();
-                    totalPassengers += (b.getAdults() != null ? b.getAdults() : 0);
-                    totalPassengers += (b.getChildren() != null ? b.getChildren() : 0);
-                    totalPassengers += (b.getInfants() != null ? b.getInfants() : 0);
+                    String s = doc.getString("tripStatus");
+                    if (s == null) s = "preparing";
+
+                    if (s.equals(targetTripStatus)) {
+                        Booking b = doc.toObject(Booking.class);
+                        b.setId(doc.getId());
+                        bookings.add(b);
+                        totalRevenue += b.getTotalPrice();
+                        totalPassengers += (b.getAdults() != null ? b.getAdults() : 0);
+                        totalPassengers += (b.getChildren() != null ? b.getChildren() : 0);
+                        totalPassengers += (b.getInfants() != null ? b.getInfants() : 0);
+                    }
                 }
                 
                 model.addAttribute("booking", booking);
@@ -314,13 +322,22 @@ public class AdminBookingController {
 
     @GetMapping("/schedule")
     @SuppressWarnings("unchecked")
-    public String viewSchedule(Model model) {
+    public String viewSchedule(Model model, 
+                               @RequestParam(defaultValue = "1") int page,
+                               @RequestParam(required = false) String search,
+                               @RequestParam(required = false) String tourId,
+                               @RequestParam(required = false) String status) {
         try {
             ApiFuture<QuerySnapshot> toursFuture = firestore.collection("tours").get();
             Map<String, Map<String, Object>> toursMap = new HashMap<>();
+            List<Map<String, Object>> toursList = new ArrayList<>();
             for (QueryDocumentSnapshot doc : toursFuture.get().getDocuments()) {
-                toursMap.put(doc.getId(), doc.getData());
+                Map<String, Object> tourData = doc.getData();
+                tourData.put("id", doc.getId());
+                toursMap.put(doc.getId(), tourData);
+                toursList.add(tourData);
             }
+            model.addAttribute("toursList", toursList);
 
             ApiFuture<QuerySnapshot> future = firestore.collection("bookings")
                     .whereEqualTo("status", "CONFIRMED")
@@ -336,7 +353,11 @@ public class AdminBookingController {
                     b.setTour(toursMap.get(b.getTourId()));
                 }
 
-                String key = b.getTourId() + "_" + b.getStartDate() + "_" + b.getTripStatus();
+                String tStatus = doc.getString("tripStatus");
+                if (tStatus == null) tStatus = "preparing";
+                b.setTripStatus(tStatus);
+
+                String key = b.getTourId() + "_" + b.getStartDate() + "_" + tStatus;
                 GroupedTrip trip = groupedMap.computeIfAbsent(key, k -> {
                     GroupedTrip gt = new GroupedTrip();
                     gt.setId(b.getId());
@@ -354,26 +375,65 @@ public class AdminBookingController {
                 trip.setBookingCount(trip.getBookingCount() + 1);
             }
 
+            List<GroupedTrip> allTrips = new ArrayList<>(groupedMap.values());
+            
+            // Filter logic
+            if (search != null && !search.isEmpty()) {
+                String s = search.toLowerCase();
+                allTrips = allTrips.stream()
+                        .filter(t -> t.getTour() != null && t.getTour().get("title") != null && 
+                                   String.valueOf(t.getTour().get("title")).toLowerCase().contains(s))
+                        .collect(Collectors.toList());
+            }
+            if (tourId != null && !tourId.isEmpty()) {
+                allTrips = allTrips.stream()
+                        .filter(t -> tourId.equals(t.getTourId()))
+                        .collect(Collectors.toList());
+            }
+            if (status != null && !status.isEmpty()) {
+                allTrips = allTrips.stream()
+                        .filter(t -> status.equals(t.getTripStatus()))
+                        .collect(Collectors.toList());
+            }
+
+            // Pagination logic
+            int pageSize = 2;
+            int totalFilteredTrips = allTrips.size();
+            int totalPages = (int) Math.ceil((double) totalFilteredTrips / pageSize);
+            
+            if (page < 1) page = 1;
+            if (totalPages > 0 && page > totalPages) page = totalPages;
+
+            int start = (page - 1) * pageSize;
+            int end = Math.min(start + pageSize, totalFilteredTrips);
+
+            List<GroupedTrip> pagedTrips = new ArrayList<>();
+            if (start < totalFilteredTrips) {
+                pagedTrips = allTrips.subList(start, end);
+            }
+
+            // Stats based on ALL trips (not filtered)
             int preparingCount = 0;
             int startedCount = 0;
             int completedCount = 0;
-
             for (GroupedTrip trip : groupedMap.values()) {
-                String status = trip.getTripStatus();
-                if ("preparing".equals(status)) {
-                    preparingCount++;
-                } else if ("started".equals(status)) {
-                    startedCount++;
-                } else if ("completed".equals(status)) {
-                    completedCount++;
-                }
+                String s = trip.getTripStatus();
+                if ("preparing".equals(s)) preparingCount++;
+                else if ("started".equals(s)) startedCount++;
+                else if ("completed".equals(s)) completedCount++;
             }
 
-            model.addAttribute("trips", new ArrayList<>(groupedMap.values()));
+            model.addAttribute("trips", pagedTrips);
             model.addAttribute("totalTrips", groupedMap.size());
             model.addAttribute("preparingCount", preparingCount);
             model.addAttribute("startedCount", startedCount);
             model.addAttribute("completedCount", completedCount);
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", totalPages);
+            model.addAttribute("search", search);
+            model.addAttribute("tourFilter", tourId);
+            model.addAttribute("statusFilter", status);
+
         } catch (Exception e) { e.printStackTrace(); }
         return "bookings/schedule";
     }
@@ -392,19 +452,24 @@ public class AdminBookingController {
             booking.setId(id);
             loadTourInfo(booking, document);
 
-            // Fetch guide info if guideId exists
-            if (booking.getGuideId() != null && !booking.getGuideId().isEmpty()) {
-                DocumentSnapshot guideDoc = firestore.collection("guides").document(booking.getGuideId()).get().get();
+            // Đảm bảo lấy guideId trực tiếp từ document
+            String gId = document.getString("guideId");
+            if (gId != null && !gId.isEmpty()) {
+                DocumentSnapshot guideDoc = firestore.collection("users").document(gId).get().get();
                 if (guideDoc.exists()) {
+                    booking.setGuideId(gId);
                     booking.setGuide(guideDoc.getData());
                 }
             }
             
-            // Get all bookings for this trip (same tour, start date, and status)
+            String currentTripStatus = document.getString("tripStatus");
+            if (currentTripStatus == null) currentTripStatus = "preparing";
+            booking.setTripStatus(currentTripStatus);
+
+            // Get all bookings for this trip
             ApiFuture<QuerySnapshot> future = firestore.collection("bookings")
                     .whereEqualTo("tourId", booking.getTourId())
                     .whereEqualTo("startDate", booking.getStartDate())
-                    .whereEqualTo("tripStatus", booking.getTripStatus())
                     .whereEqualTo("status", "CONFIRMED")
                     .get();
             
@@ -413,21 +478,58 @@ public class AdminBookingController {
             int totalPassengers = 0;
             
             for (QueryDocumentSnapshot doc : future.get().getDocuments()) {
-                Booking b = doc.toObject(Booking.class);
-                b.setId(doc.getId());
-                bookings.add(b);
-                totalRevenue += b.getTotalPrice();
-                totalPassengers += (b.getAdults() != null ? b.getAdults() : 0);
-                totalPassengers += (b.getChildren() != null ? b.getChildren() : 0);
-                totalPassengers += (b.getInfants() != null ? b.getInfants() : 0);
+                String s = doc.getString("tripStatus");
+                if (s == null) s = "preparing";
+
+                if (s.equals(currentTripStatus)) {
+                    Booking b = doc.toObject(Booking.class);
+                    b.setId(doc.getId());
+                    bookings.add(b);
+                    totalRevenue += b.getTotalPrice();
+                    totalPassengers += (b.getAdults() != null ? b.getAdults() : 0);
+                    totalPassengers += (b.getChildren() != null ? b.getChildren() : 0);
+                    totalPassengers += (b.getInfants() != null ? b.getInfants() : 0);
+                }
             }
 
-            // Fetch all guides for the dropdown
-            ApiFuture<QuerySnapshot> guidesFuture = firestore.collection("guides").get();
+            // Fetch all users with role 'guide'
+            ApiFuture<QuerySnapshot> guidesFuture = firestore.collection("users")
+                    .whereEqualTo("role", "guide")
+                    .get();
+            
+            // Check busy status for each guide
+            ApiFuture<QuerySnapshot> allBookingsFuture = firestore.collection("bookings")
+                    .whereEqualTo("status", "CONFIRMED")
+                    .get();
+            List<QueryDocumentSnapshot> activeBookings = allBookingsFuture.get().getDocuments();
+
             List<Map<String, Object>> guidesList = new ArrayList<>();
             for (QueryDocumentSnapshot doc : guidesFuture.get().getDocuments()) {
-                Map<String, Object> g = doc.getData();
+                Map<String, Object> g = new HashMap<>(doc.getData());
                 g.put("id", doc.getId());
+                
+                boolean isBusy = false;
+                String busyReason = "";
+                
+                for (QueryDocumentSnapshot ab : activeBookings) {
+                    String assignedGuideId = ab.getString("guideId");
+                    String abTripStatus = ab.getString("tripStatus");
+                    if (abTripStatus == null) abTripStatus = "preparing";
+
+                    if (doc.getId().equals(assignedGuideId) && (abTripStatus.equals("preparing") || abTripStatus.equals("started"))) {
+                        // Check if it's NOT the current trip
+                        if (!booking.getTourId().equals(ab.getString("tourId")) || 
+                            !booking.getStartDate().equals(ab.getString("startDate")) ||
+                            !currentTripStatus.equals(abTripStatus)) {
+                            isBusy = true;
+                            busyReason = "started".equals(abTripStatus) ? "Đang dẫn tour" : "Đã được gán tour khác";
+                            break;
+                        }
+                    }
+                }
+                
+                g.put("isBusy", isBusy);
+                g.put("busyReason", busyReason);
                 guidesList.add(g);
             }
             
@@ -435,7 +537,7 @@ public class AdminBookingController {
             trip.setId(id);
             trip.setTourId(booking.getTourId());
             trip.setStartDate(booking.getStartDate());
-            trip.setTripStatus(booking.getTripStatus());
+            trip.setTripStatus(currentTripStatus);
             trip.setTour(booking.getTour());
             trip.setBookings(bookings);
             trip.setTotalRevenue(totalRevenue);
@@ -471,16 +573,15 @@ public class AdminBookingController {
                 return response;
             }
 
-            Booking booking = doc.toObject(Booking.class);
-            String tourId = booking.getTourId();
-            String startDate = booking.getStartDate();
-            String currentTripStatus = booking.getTripStatus();
+            String tourId = doc.getString("tourId");
+            String startDate = doc.getString("startDate");
+            String currentTripStatus = doc.getString("tripStatus");
+            if (currentTripStatus == null) currentTripStatus = "preparing";
 
             // Update all bookings for this trip
             QuerySnapshot tripBookings = firestore.collection("bookings")
                     .whereEqualTo("tourId", tourId)
                     .whereEqualTo("startDate", startDate)
-                    .whereEqualTo("tripStatus", currentTripStatus)
                     .whereEqualTo("status", "CONFIRMED")
                     .get().get();
 
@@ -491,7 +592,11 @@ public class AdminBookingController {
             if (tripNote != null && !tripNote.isEmpty()) updates.put("tripNote", tripNote);
 
             for (QueryDocumentSnapshot d : tripBookings.getDocuments()) {
-                firestore.collection("bookings").document(d.getId()).update(updates).get();
+                String s = d.getString("tripStatus");
+                if (s == null) s = "preparing";
+                if (s.equals(currentTripStatus)) {
+                    firestore.collection("bookings").document(d.getId()).update(updates).get();
+                }
             }
 
             response.put("success", true);
@@ -516,20 +621,28 @@ public class AdminBookingController {
                 return response;
             }
 
-            Booking booking = doc.toObject(Booking.class);
-            String tourId = booking.getTourId();
-            String startDate = booking.getStartDate();
-            String currentTripStatus = booking.getTripStatus();
+            String tourId = doc.getString("tourId");
+            String startDate = doc.getString("startDate");
+            String currentTripStatus = doc.getString("tripStatus");
+            if (currentTripStatus == null) currentTripStatus = "preparing";
 
+            // Luôn cập nhật booking cụ thể này
+            firestore.collection("bookings").document(bookingId).update("guideId", guideId).get();
+
+            // Tìm và cập nhật các booking khác cùng chuyến
             QuerySnapshot tripBookings = firestore.collection("bookings")
                     .whereEqualTo("tourId", tourId)
                     .whereEqualTo("startDate", startDate)
-                    .whereEqualTo("tripStatus", currentTripStatus)
                     .whereEqualTo("status", "CONFIRMED")
                     .get().get();
 
             for (QueryDocumentSnapshot d : tripBookings.getDocuments()) {
-                firestore.collection("bookings").document(d.getId()).update("guideId", guideId).get();
+                String s = d.getString("tripStatus");
+                if (s == null) s = "preparing";
+                
+                if (s.equals(currentTripStatus) && !d.getId().equals(bookingId)) {
+                    firestore.collection("bookings").document(d.getId()).update("guideId", guideId).get();
+                }
             }
 
             response.put("success", true);
