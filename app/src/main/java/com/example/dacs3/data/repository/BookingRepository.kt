@@ -19,6 +19,7 @@ class BookingRepository {
         return try {
             val bookingData = hashMapOf(
                 "id" to booking.id,
+                "userId" to booking.userId,
                 "tourId" to booking.tour.id,
                 "status" to booking.status.name,
                 "startDate" to booking.startDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
@@ -63,6 +64,7 @@ class BookingRepository {
                 
                 Booking(
                     id = doc.id,
+                    userId = doc.getString("userId") ?: "",
                     tour = tour,
                     status = BookingStatus.valueOf(doc.getString("status") ?: "PENDING"),
                     startDate = LocalDate.parse(doc.getString("startDate"), DateTimeFormatter.ISO_LOCAL_DATE),
@@ -75,7 +77,7 @@ class BookingRepository {
                     email = doc.getString("email") ?: "",
                     phone = doc.getString("phone") ?: "",
                     address = doc.getString("address") ?: "",
-                    paymentMethod = doc.getString("phone") ?: "CASH",
+                    paymentMethod = doc.getString("paymentMethod") ?: "CASH",
                     receiptUrl = doc.getString("receiptUrl"),
                     createdAt = doc.getTimestamp("createdAt")?.toDate()?.time ?: System.currentTimeMillis(),
                     tripStatus = doc.getString("tripStatus") ?: "preparing"
@@ -100,6 +102,7 @@ class BookingRepository {
             
             Booking(
                 id = doc.id,
+                userId = doc.getString("userId") ?: "",
                 tour = tour,
                 status = BookingStatus.valueOf(doc.getString("status") ?: "PENDING"),
                 startDate = LocalDate.parse(doc.getString("startDate"), DateTimeFormatter.ISO_LOCAL_DATE),

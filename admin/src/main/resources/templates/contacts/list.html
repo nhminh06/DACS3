@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý liên hệ - WIND Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/admin-style.css}">
+    <style>
+        .badge-gopy { background: #3b82f6; color: white; }
+        .badge-khieunai { background: #f43f5e; color: white; }
+        .status-processed { background: #10b981; color: white; }
+        .status-pending { background: #f59e0b; color: white; }
+        .msg-content { max-width: 350px; white-space: normal; word-break: break-word; font-size: 13px; line-height: 1.4; }
+        .contact-card { cursor: pointer; transition: 0.3s; }
+        .contact-card:hover { background: rgba(255,255,255,0.02); }
+        .reply-text { font-size: 12px; color: #10b981; margin-top: 5px; font-style: italic; }
+        .modal-content { background-color: #1e293b; color: white; }
+        .modal-header { border-bottom: 1px solid #334155; }
+        .modal-footer { border-top: 1px solid #334155; }
+        .form-control { background-color: #0f172a; border-color: #334155; color: white; }
+        .form-control:focus { background-color: #0f172a; color: white; border-color: #3b82f6; box-shadow: none; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar :: sidebar('contacts')}"></div>
+
+    <div class="main">
+        <header class="header mb-4">
+            <h1 class="h4 mb-0">Quản lý liên hệ & Hỗ trợ</h1>
+            <div class="user-info">
+                <span class="text-white me-3">Hôm nay: <strong th:text="${#calendars.format(#calendars.createNow(), 'dd/MM/yyyy')}"></strong></span>
+                Xin chào <strong th:text="${session.adminUser != null ? session.adminUser.name : 'Admin'}">Admin</strong>
+            </div>
+        </header>
+
+        <!-- Statistics -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <h3 th:text="${total}">0</h3>
+                <p>Tổng yêu cầu</p>
+            </div>
+            <div class="stat-card">
+                <h3 th:text="${gopYCount}">0</h3>
+                <p>Góp ý</p>
+            </div>
+            <div class="stat-card">
+                <h3 th:text="${khieuNaiCount}">0</h3>
+                <p>Khiếu nại</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="text-warning" th:text="${pendingCount}">0</h3>
+                <p>Chưa xử lý</p>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <div class="section-title">Danh sách tin nhắn từ App</div>
+        </div>
+
+        <div class="controls">
+            <form action="/admin/contacts" method="GET" class="d-flex gap-3">
+                <select name="type" onchange="this.form.submit()" class="sort-select">
+                    <option value="">Tất cả loại</option>
+                    <option value="Góp ý" th:selected="${selectedType == 'Góp ý'}">Góp ý</option>
+                    <option value="Khiếu nại" th:selected="${selectedType == 'Khiếu nại'}">Khiếu nại</option>
+                </select>
+                <select name="status" onchange="this.form.submit()" class="sort-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="pending" th:selected="${selectedStatus == 'pending'}">Chưa xử lý</option>
+                    <option value="processed" th:selected="${selectedStatus == 'processed'}">Đã xử lý</option>
+                </select>
+            </form>
+        </div>
+
+        <div class="table-container shadow-sm">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 200px;">KHÁCH HÀNG</th>
+                        <th style="width: 120px;">LOẠI</th>
+                        <th>NỘI DUNG CHI TIẾT</th>
+                        <th style="width: 130px;">NGÀY GỬI</th>
+                        <th style="width: 130px;">TRẠNG THÁI</th>
+                        <th style="width: 120px;" class="text-end">THAO TÁC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="contact : ${contacts}" class="contact-card">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div>
+                                    <div class="fw-bold" th:text="${contact.name}">Tên</div>
+                                    <div class="small text-white" th:text="${contact.email}">Email</div>
+                                    <div class="small text-info" th:if="${contact.userPhone}" th:text="${contact.userPhone}"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span th:class="'badge badge-status ' + (${contact.type == 'Góp ý'} ? 'badge-gopy' : 'badge-khieunai')"
+                                  th:text="${contact.type}">Góp ý</span>
+                        </td>
+                        <td>
+                            <div class="msg-content" th:text="${contact.content}">Nội dung...</div>
+                            <div th:if="${contact['reply'] != null}" class="reply-text">
+                                <i class="bi bi-reply-fill"></i> <span th:text="${contact['reply']}"></span>
+                            </div>
+                        </td>
+                        <td th:text="${contact.formattedDate}">Ngày</td>
+                        <td>
+                            <select class="form-select form-select-sm bg-dark text-white border-secondary"
+                                    th:data-id="${contact.id}"
+                                    onchange="updateStatus(this.getAttribute('data-id'), this.value)">
+                                <option value="pending" th:selected="${contact.status != 'processed'}">Chưa xử lý</option>
+                                <option value="processed" th:selected="${contact.status == 'processed'}">Đã xử lý</option>
+                            </select>
+                        </td>
+                        <td class="text-end">
+                            <button type="button" class="btn-action"
+                                    th:data-id="${contact.id}"
+                                    th:data-name="${contact.name}"
+                                    th:data-email="${contact.email}"
+                                    th:data-phone="${contact.userPhone ?: 'N/A'}"
+                                    th:data-content="${contact.content}"
+                                    onclick="openReplyModal(this.getAttribute('data-id'), this.getAttribute('data-name'), this.getAttribute('data-email'), this.getAttribute('data-phone'), this.getAttribute('data-content'))">
+                                <i class="bi bi-chat-dots"></i>
+                            </button>
+                            <a th:href="@{/admin/contacts/delete/{id}(id=${contact.id})}"
+                               class="btn-action text-danger" onclick="return confirm('Xóa yêu cầu này?')">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Reply Modal -->
+    <div class="modal fade" id="replyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Trả lời liên hệ</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-7">
+                            <label class="form-label text-white small mb-0">Khách hàng:</label>
+                            <div id="modal-customer-name" class="fw-bold text-primary"></div>
+                            <div id="modal-customer-email" class="small text-white"></div>
+                        </div>
+                        <div class="col-5 text-end">
+                            <label class="form-label text-white small mb-0">Số điện thoại:</label>
+                            <div>
+                                <span id="modal-customer-phone" class="small"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white">Nội dung yêu cầu:</label>
+                        <div id="modal-content" class="small p-2 bg-dark rounded border border-secondary" style="max-height: 150px; overflow-y: auto;"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="replyMessage" class="form-label">Nội dung phản hồi:</label>
+                        <textarea class="form-control" id="replyMessage" rows="4" placeholder="Nhập câu trả lời..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input type="hidden" id="current-contact-id">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" onclick="submitReply()">Gửi phản hồi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let replyModal;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            replyModal = new bootstrap.Modal(document.getElementById('replyModal'));
+        });
+
+        function openReplyModal(id, name, email, phone, content) {
+            document.getElementById('current-contact-id').value = id;
+            document.getElementById('modal-customer-name').innerText = name;
+            document.getElementById('modal-customer-email').innerText = email;
+            document.getElementById('modal-customer-phone').innerText = phone;
+            document.getElementById('modal-content').innerText = content;
+            document.getElementById('replyMessage').value = '';
+            replyModal.show();
+        }
+
+        function submitReply() {
+            const id = document.getElementById('current-contact-id').value;
+            const message = document.getElementById('replyMessage').value;
+
+            if (!message.trim()) {
+                alert("Vui lòng nhập nội dung trả lời");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('replyMessage', message);
+
+            fetch(`/admin/contacts/reply/${id}`, {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    replyModal.hide();
+                    location.reload();
+                } else {
+                    alert("Lỗi: " + data.message);
+                }
+            });
+        }
+
+        function updateStatus(id, status) {
+            const formData = new FormData();
+            formData.append('status', status);
+
+            fetch(`/admin/contacts/update-status/${id}`, {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    console.log("Updated success");
+                }
+            });
+        }
+    </script>
+</body>
+</html>

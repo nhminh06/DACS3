@@ -8,12 +8,15 @@ import com.example.dacs3.data.model.Tour
 import com.example.dacs3.data.remote.FirebaseService
 import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.data.repository.UserRepository
+import com.example.dacs3.data.repository.ContactRepository
 import com.example.dacs3.ui.screens.*
 import com.example.dacs3.ui.viewmodel.ArticleViewModel
 import com.example.dacs3.ui.viewmodel.MainViewModel
 import com.example.dacs3.ui.viewmodel.UserViewModel
 import com.example.dacs3.ui.viewmodel.BookingViewModel
+import com.example.dacs3.ui.viewmodel.ContactViewModel
 import com.example.dacs3.ui.viewmodel.factory.UserViewModelFactory
+import com.example.dacs3.ui.viewmodel.factory.ContactViewModelFactory
 import com.example.dacs3.data.model.ArticleCategory
 
 @Composable
@@ -27,9 +30,24 @@ fun MainContainer() {
     val userViewModel: UserViewModel = viewModel(
         factory = UserViewModelFactory(userRepository, sessionManager)
     )
+    
+    val contactRepository = ContactRepository(firebaseService)
+    val contactViewModel: ContactViewModel = viewModel(
+        factory = ContactViewModelFactory(contactRepository)
+    )
+
     val mainViewModel: MainViewModel = viewModel()
     val articleViewModel: ArticleViewModel = viewModel()
     val bookingViewModel: BookingViewModel = viewModel()
+
+    val user by userViewModel.currentUser
+    
+    // Lắng nghe thay đổi trạng thái booking để gửi notification
+    LaunchedEffect(user?.id) {
+        user?.id?.let { uid ->
+            bookingViewModel.listenAndNotifyBookingStatus(uid)
+        }
+    }
 
     // Mặc định vào App là màn hình Home
     var currentScreen by remember { mutableStateOf("home") }
@@ -161,6 +179,8 @@ fun MainContainer() {
         }
         "contact" -> {
             ContactScreen(
+                userViewModel = userViewModel,
+                contactViewModel = contactViewModel,
                 onNavigate = { screen -> currentScreen = screen }
             )
         }
@@ -212,6 +232,8 @@ fun MainContainer() {
         }
         "notifications" -> {
             NotificationsScreen(
+                userViewModel = userViewModel,
+                contactViewModel = contactViewModel,
                 onBack = { currentScreen = "profile" }
             )
         }

@@ -8,103 +8,257 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/admin-style.css}">
     <style>
-        .welcome-section {
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-            border-radius: 16px;
-            padding: 40px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            color: white;
-        }
-        .welcome-section h2 { font-weight: 700; margin-bottom: 10px; }
-        .welcome-section p { opacity: 0.9; font-size: 16px; }
+        body { background-color: #0f172a; color: #f1f5f9; }
+        .main { padding: 25px; }
 
-        .dashboard-grid {
+        /* Stats Grid */
+        .dashboard-stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card-v2 {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 15px;
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            transition: 0.3s;
+        }
+        .stat-card-v2:hover { transform: translateY(-5px); border-color: #3b82f6; }
+        .stat-card-v2 .info h3 { font-size: 22px; font-weight: 800; margin: 10px 0 0; color: white; }
+        .stat-card-v2 .info p { font-size: 10px; color: #94a3b8; margin: 2px 0 0; text-transform: uppercase; font-weight: 600; }
+        .stat-card-v2 .icon-box { width: 40px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+        .bg-blue-soft { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .bg-green-soft { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .bg-orange-soft { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .bg-purple-soft { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+        .bg-cyan-soft { background: rgba(6, 182, 212, 0.1); color: #06b6d4; }
+        .bg-rose-soft { background: rgba(244, 63, 94, 0.1); color: #f43f5e; }
+
+        /* Recent Activity Table */
+        .content-card {
+            background: #1e293b;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        .card-header-v2 {
+            padding: 20px 25px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-header-v2 h2 { font-size: 18px; font-weight: 700; margin: 0; }
+
+        .table-dash { width: 100%; color: #f1f5f9; border-collapse: collapse; }
+        .table-dash th { background: #0f172a; padding: 15px 25px; text-align: left; font-size: 12px; text-transform: uppercase; color: #94a3b8; }
+        .table-dash td { padding: 15px 25px; border-bottom: 1px solid #334155; font-size: 14px; }
+
+        .badge-pill-v2 { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-confirmed { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .badge-pending { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+        .secondary-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
             gap: 20px;
         }
 
-        .stat-card-dash {
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.3s ease;
-            background: white;
-            padding: 25px;
+        .quick-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .link-card {
+            background: #1e293b;
             border-radius: 12px;
+            padding: 20px;
+            text-decoration: none;
+            color: white;
+            border: 1px solid #334155;
             display: flex;
             align-items: center;
-            color: #1e293b;
+            gap: 15px;
+            transition: 0.3s;
         }
-        .stat-card-dash:hover { transform: translateY(-5px); }
-        .stat-card-dash i.card-icon {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 48px;
-            color: rgba(59, 130, 246, 0.1);
-        }
-        .stat-card-dash h3 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 700;
-        }
-        .stat-card-dash p {
-            margin: 0;
-            color: #64748b;
-            font-size: 14px;
-        }
+        .link-card:hover { background: #334155; transform: translateX(5px); }
+        .link-card i { font-size: 24px; color: #3b82f6; }
+
+        .last-child-border-0:last-child { border-bottom: none !important; margin-bottom: 0 !important; padding-bottom: 0 !important; }
     </style>
 </head>
 <body>
     <div th:replace="~{fragments/sidebar :: sidebar('stats')}"></div>
 
     <div class="main">
-        <header class="header">
-            <h1 class="h4 mb-0">Hệ thống Quản trị</h1>
+        <header class="header mb-4">
+            <h1 class="h4 mb-0">Trung tâm Điều hành Hệ thống</h1>
             <div class="user-info">
-                Xin chào <strong>Admin</strong>
-                <button class="btn-back" style="background: #475569;">Cài đặt</button>
+                <span class="text-white me-3">Hôm nay: <strong th:text="${#calendars.format(#calendars.createNow(), 'dd/MM/yyyy')}"></strong></span>
+                Xin chào <a href="/admin/profile" class="text-white text-decoration-none"><strong th:text="${session.adminUser != null ? session.adminUser['name'] : 'Admin'}">Admin</strong></a>
             </div>
         </header>
 
-        <div class="welcome-section">
-            <h2>Chào mừng quay trở lại, Admin!</h2>
-            <p>Hệ thống đang hoạt động ổn định. Chúc bạn một ngày làm việc hiệu quả.</p>
+        <!-- Top KPIs -->
+        <div class="dashboard-stats-grid">
+            <div class="stat-card-v2">
+                <div class="icon-box bg-blue-soft"><i class="bi bi-people"></i></div>
+                <div class="info">
+                    <h3 th:text="${totalUsers}">0</h3>
+                    <p>Khách hàng</p>
+                </div>
+            </div>
+            <div class="stat-card-v2">
+                <div class="icon-box bg-green-soft"><i class="bi bi-map"></i></div>
+                <div class="info">
+                    <h3 th:text="${totalTours}">0</h3>
+                    <p>Tổng Tour</p>
+                </div>
+            </div>
+            <div class="stat-card-v2">
+                <div class="icon-box bg-cyan-soft"><i class="bi bi-journal-text"></i></div>
+                <div class="info">
+                    <h3 th:text="${totalArticles}">0</h3>
+                    <p>Bài viết</p>
+                </div>
+            </div>
+            <div class="stat-card-v2">
+                <div class="icon-box bg-rose-soft"><i class="bi bi-chat-left-text"></i></div>
+                <div class="info">
+                    <h3 th:text="${totalReviews}">0</h3>
+                    <p>Đánh giá</p>
+                </div>
+            </div>
+            <div class="stat-card-v2">
+                <div class="icon-box bg-orange-soft"><i class="bi bi-journal-check"></i></div>
+                <div class="info">
+                    <h3 th:text="${totalBookings}">0</h3>
+                    <p>Tổng đơn đặt</p>
+                </div>
+            </div>
+            <div class="stat-card-v2">
+                <div class="icon-box bg-purple-soft"><i class="bi bi-currency-dollar"></i></div>
+                <div class="info">
+                    <h3 th:text="${#numbers.formatDecimal(totalRevenue / 1000000.0, 0, 'COMMA', 1, 'POINT') + 'M'}">0M</h3>
+                    <p>Doanh thu</p>
+                </div>
+            </div>
         </div>
 
-        <div class="dashboard-grid">
-            <div class="stat-card-dash">
-                <div>
-                    <h3 th:text="${totalUsers}">0</h3>
-                    <p>Người dùng hệ thống</p>
+        <div class="secondary-grid">
+            <!-- Recent Bookings -->
+            <div class="content-card">
+                <div class="card-header-v2">
+                    <h2>Đơn đặt gần đây</h2>
+                    <a href="/admin/bookings" class="btn btn-sm btn-outline-primary">Tất cả đơn</a>
                 </div>
-                <i class="bi bi-people card-icon"></i>
+                <table class="table-dash">
+                    <thead>
+                        <tr>
+                            <th>Khách hàng</th>
+                            <th>Ngày đi</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="booking : ${recentBookings}">
+                            <td>
+                                <div class="fw-bold" th:text="${booking.customerName}">Tên</div>
+                                <div class="small text-muted" th:text="${booking.phone}">SĐT</div>
+                            </td>
+                            <td th:text="${booking.startDate}">Ngày</td>
+                            <td>
+                                <span th:if="${booking.status == 'CONFIRMED'}" class="badge-pill-v2 badge-confirmed">XÁC NHẬN</span>
+                                <span th:if="${booking.status == 'PENDING'}" class="badge-pill-v2 badge-pending">CHỜ DUYỆT</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <div class="stat-card-dash">
-                <div>
-                    <h3 th:text="${totalTours}">0</h3>
-                    <p>Tour đang hoạt động</p>
+            <!-- Quick Links / Status / Recent Reviews -->
+            <div class="right-panel">
+                <div class="content-card p-4">
+                    <h2 class="h6 fw-bold mb-4">Lối tắt quản lý</h2>
+                    <div class="quick-links">
+                        <a href="/admin/tours" class="link-card">
+                            <i class="bi bi-plus-circle"></i>
+                            <div>
+                                <div class="fw-bold">Tour</div>
+                                <div class="small text-white">Thêm mới</div>
+                            </div>
+                        </a>
+                        <a href="/admin/articles" class="link-card">
+                            <i class="bi bi-file-earmark-plus"></i>
+                            <div>
+                                <div class="fw-bold">Bài viết</div>
+                                <div class="small text-white">Viết bài</div>
+                            </div>
+                        </a>
+                        <a href="/admin/bookings/schedule" class="link-card">
+                            <i class="bi bi-calendar-event"></i>
+                            <div>
+                                <div class="fw-bold">Lịch trình</div>
+                                <div class="small text-white">Vận hành</div>
+                            </div>
+                        </a>
+                        <a href="/admin/users" class="link-card">
+                            <i class="bi bi-shield-check"></i>
+                            <div>
+                                <div class="fw-bold">Bảo mật</div>
+                                <div class="small text-white">User</div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
-                <i class="bi bi-map card-icon"></i>
-            </div>
 
-            <div class="stat-card-dash">
-                <div>
-                    <h3 th:text="${totalBookings}">0</h3>
-                    <p>Đơn đặt Tour mới</p>
+                <div class="content-card p-4 bg-primary bg-opacity-10 border-primary border-opacity-20">
+                    <h2 class="h6 fw-bold mb-3 text-primary">Thông tin vận hành</h2>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-white">Đang chờ duyệt:</span>
+                        <span class="fw-bold" th:text="${pendingBookings}">0</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-white">Chuyến đang chạy:</span>
+                        <span class="fw-bold" th:text="${startedTrips}">0</span>
+                    </div>
+                    <div class="progress mt-3" style="height: 6px;">
+                        <div class="progress-bar" role="progressbar" th:style="'width: ' + (${totalBookings} > 0 ? (${confirmedBookings} * 100 / ${totalBookings}) : 0) + '%'"></div>
+                    </div>
+                    <div class="small text-white mt-2 text-center">Tỷ lệ đơn thành công</div>
                 </div>
-                <i class="bi bi-calendar-check card-icon"></i>
-            </div>
 
-            <div class="stat-card-dash">
-                <div>
-                    <h3>1.2M</h3>
-                    <p>Lượt truy cập tháng</p>
+                <!-- Recent Reviews Section (New - Fills the gap) -->
+                <div class="content-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="h6 fw-bold mb-0">Đánh giá khách hàng mới nhất</h2>
+                        <i class="bi bi-chat-dots text-rose-soft"></i>
+                    </div>
+                    <div class="review-list">
+                        <div th:each="review : ${recentReviews}" class="mb-3 pb-3 border-bottom border-secondary border-opacity-20 last-child-border-0">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold small" th:text="${review.userName}">Tên khách</span>
+                                <div class="text-warning small" style="font-size: 10px;">
+                                    <i class="bi bi-star-fill" th:each="i : ${#numbers.sequence(1, review.rating)}"></i>
+                                </div>
+                            </div>
+                            <p class="small text-muted mb-0 text-truncate" th:text="${review.comment}" style="max-width: 250px;">Nội dung phản hồi từ khách hàng...</p>
+                        </div>
+                        <div th:if="${recentReviews == null or recentReviews.empty}" class="text-center py-2 text-muted small">
+                            Chưa có phản hồi mới.
+                        </div>
+                    </div>
                 </div>
-                <i class="bi bi-graph-up card-icon"></i>
             </div>
         </div>
     </div>

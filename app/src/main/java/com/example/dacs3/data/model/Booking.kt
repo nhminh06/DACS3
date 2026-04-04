@@ -4,6 +4,7 @@ import java.time.LocalDate
 
 data class Booking(
     val id: String = "",
+    val userId: String = "",
     val tour: Tour = Tour(),
     val status: BookingStatus = BookingStatus.PENDING,
     val startDate: LocalDate = LocalDate.now(),

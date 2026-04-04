@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hồ sơ cá nhân - WIND Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/admin-style.css}">
+    <style>
+        .profile-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .nav-tabs-custom {
+            border-bottom: 1px solid #334155;
+            margin-bottom: 30px;
+        }
+        .nav-tabs-custom .nav-link {
+            color: #94a3b8;
+            border: none;
+            padding: 12px 20px;
+            font-weight: 500;
+            position: relative;
+        }
+        .nav-tabs-custom .nav-link.active {
+            color: #fff;
+            background: none;
+        }
+        .nav-tabs-custom .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #3b82f6;
+        }
+        .profile-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .avatar-section {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+        .avatar-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #3b82f6;
+        }
+        .btn-upload-avatar {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: #3b82f6;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid #1e293b;
+            color: white;
+            font-size: 14px;
+        }
+        .form-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #f1f5f9;
+        }
+        .custom-form-group {
+            margin-bottom: 20px;
+        }
+        .custom-form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        .custom-form-input {
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px 15px;
+            color: #f1f5f9;
+            transition: 0.3s;
+        }
+        .custom-form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: #0f172a;
+        }
+        .custom-form-input:disabled {
+            background: #0f172a;
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .btn-save {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        .btn-save:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        .btn-edit-toggle {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar :: sidebar('profile')}"></div>
+
+    <div class="main">
+        <header class="header mb-4">
+            <h1 class="h4 mb-0">Hồ sơ cá nhân</h1>
+            <div class="user-info">
+                <a href="/admin" class="btn btn-sm btn-danger">Trở lại</a>
+            </div>
+        </header>
+
+        <div class="profile-container">
+            <ul class="nav nav-tabs-custom" id="profileTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-pane" type="button" role="tab">Thông tin tài khoản</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security-pane" type="button" role="tab">Mật khẩu & Bảo mật</button>
+                </li>
+            </ul>
+
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="tab-content" id="profileTabsContent">
+                <!-- Tab Thông tin tài khoản -->
+                <div class="tab-pane fade show active" id="info-pane" role="tabpanel">
+                    <div class="form-section-title">Dữ liệu cá nhân</div>
+
+                    <div class="profile-card">
+                        <div class="avatar-section">
+                            <img th:src="${admin['avatar'] != null and admin['avatar'] != '' ? admin['avatar'] : '/images/default-avatar.png'}" alt="Avatar" class="avatar-img" id="avatarPreview">
+                            <label for="avatarInput" class="btn-upload-avatar" title="Đổi ảnh đại diện">
+                                <i class="bi bi-camera-fill"></i>
+                            </label>
+                            <form id="avatarForm" th:action="@{/admin/profile/update-avatar}" method="post" enctype="multipart/form-data" style="display: none;">
+                                <input type="file" id="avatarInput" name="avatar" accept="image/*" onchange="this.form.submit()">
+                            </form>
+                        </div>
+                        <div>
+                            <h4 class="mb-1" th:text="${admin['name']}">admin_user</h4>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary" th:text="${admin['rank']}">Bronze</span>
+                                <span class="text-muted small" th:text="${admin['role'] == 'admin' ? 'Quản trị viên' : 'Người dùng'}">Quản trị viên</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form th:action="@{/admin/profile/update-info}" method="post">
+                        <div class="custom-form-group">
+                            <label class="custom-form-label">Họ và tên đầy đủ</label>
+                            <input type="text" name="name" class="custom-form-input profile-field" th:value="${admin['name']}" disabled required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="custom-form-group">
+                                    <label class="custom-form-label">Giới tính</label>
+                                    <select name="gioi_tinh" class="custom-form-input profile-field" disabled>
+                                        <option value="nam" th:selected="${admin['gioi_tinh'] == 'nam'}">Nam</option>
+                                        <option value="nữ" th:selected="${admin['gioi_tinh'] == 'nữ'}">Nữ</option>
+                                        <option value="khác" th:selected="${admin['gioi_tinh'] == 'khác'}">Khác</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="custom-form-group">
+                                    <label class="custom-form-label">Ngày sinh</label>
+                                    <input type="text" name="ngay_sinh" class="custom-form-input profile-field" th:value="${admin['ngay_sinh']}" placeholder="dd/mm/yyyy" disabled>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="custom-form-group">
+                            <label class="custom-form-label">Địa chỉ</label>
+                            <input type="text" name="dia_chi" class="custom-form-input profile-field" th:value="${admin['dia_chi']}" disabled>
+                        </div>
+
+                        <div class="mb-4">
+                            <button type="button" class="btn-edit-toggle" onclick="toggleEdit()">Chỉnh sửa</button>
+                            <button type="submit" class="btn-save" id="btnSaveInfo" style="display: none;">Lưu</button>
+                        </div>
+
+                        <div class="form-section-title mt-5">E-mail</div>
+                        <div class="custom-form-group">
+                            <input type="email" th:value="${admin['email']}" class="custom-form-input" disabled>
+                        </div>
+
+                        <div class="form-section-title mt-5">Số điện thoại</div>
+                        <div class="custom-form-group">
+                            <input type="text" name="sdt" class="custom-form-input profile-field" th:value="${admin['sdt']}" disabled>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tab Mật khẩu & Bảo mật -->
+                <div class="tab-pane fade" id="security-pane" role="tabpanel">
+                    <div class="form-section-title">Đổi mật khẩu</div>
+                    <form th:action="@{/admin/profile/change-password}" method="post">
+                        <div class="custom-form-group">
+                            <label class="custom-form-label">Mật khẩu hiện tại</label>
+                            <input type="password" name="currentPassword" class="custom-form-input" required>
+                        </div>
+                        <div class="custom-form-group">
+                            <label class="custom-form-label">Mật khẩu mới</label>
+                            <input type="password" name="newPassword" class="custom-form-input" required>
+                        </div>
+                        <div class="custom-form-group">
+                            <label class="custom-form-label">Xác nhận mật khẩu mới</label>
+                            <input type="password" name="confirmPassword" class="custom-form-input" required>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn-save">Cập nhật mật khẩu</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleEdit() {
+            const fields = document.querySelectorAll('.profile-field');
+            const btnSave = document.getElementById('btnSaveInfo');
+            const btnEdit = document.querySelector('.btn-edit-toggle');
+
+            const isEditing = fields[0].disabled;
+
+            fields.forEach(field => {
+                field.disabled = !isEditing;
+            });
+
+            if (isEditing) {
+                btnSave.style.display = 'inline-block';
+                btnEdit.textContent = 'Hủy';
+                btnEdit.classList.replace('btn-edit-toggle', 'btn-secondary');
+            } else {
+                btnSave.style.display = 'none';
+                btnEdit.textContent = 'Chỉnh sửa';
+                btnEdit.classList.replace('btn-secondary', 'btn-edit-toggle');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

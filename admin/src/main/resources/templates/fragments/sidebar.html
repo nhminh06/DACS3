@@ -2,11 +2,17 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
     <aside th:fragment="sidebar(activeMenu)" class="sidebar">
-        <div class="logo">WIND Admin</div>
+        <div class="logo-container" style="padding: 20px; text-align: center;">
+            <div class="logo" style="font-size: 1.2rem; margin-top: 0;">WIND Admin</div>
+        </div>
         <nav class="nav flex-column">
-            <a class="nav-link" th:classappend="${activeMenu == 'admin' ? 'active' : ''}" href="#">
-                <i class="bi bi-person-gear"></i> Tài khoản quản trị
+            <a class="nav-link" th:classappend="${activeMenu == 'profile' ? 'active' : ''}" href="/admin/profile">
+                <i class="bi bi-person-circle"></i> Hồ sơ cá nhân
             </a>
+            <a class="nav-link" th:classappend="${activeMenu == 'stats' ? 'active' : ''}" href="/admin">
+                <i class="bi bi-bar-chart"></i> Thống kê Dashboard
+            </a>
+            <div class="nav-divider" style="height: 1px; background: rgba(255,255,255,0.05); margin: 10px 20px;"></div>
             <a class="nav-link" th:classappend="${activeMenu == 'tours' ? 'active' : ''}" href="/admin/tours">
                 <i class="bi bi-map"></i> Quản lý Tour
             </a>
@@ -16,16 +22,14 @@
             <a class="nav-link" th:classappend="${activeMenu == 'articles' ? 'active' : ''}" href="/admin/articles">
                 <i class="bi bi-journal-text"></i> Quản lý bài viết
             </a>
-            <a class="nav-link" th:classappend="${activeMenu == 'info' ? 'active' : ''}" href="#">
-                <i class="bi bi-info-circle"></i> Quản lý thông tin
-            </a>
             <a class="nav-link" th:classappend="${activeMenu == 'users' ? 'active' : ''}" href="/admin/users">
                 <i class="bi bi-people"></i> Quản lý người dùng
             </a>
-            <a class="nav-link" th:classappend="${activeMenu == 'stats' ? 'active' : ''}" href="/admin">
-                <i class="bi bi-bar-chart"></i> Thống kê
+            <a class="nav-link" th:classappend="${activeMenu == 'contacts' ? 'active' : ''}" href="/admin/contacts">
+                <i class="bi bi-chat-dots"></i> Liên hệ & Hỗ trợ
             </a>
-            <a class="nav-link" href="/">
+            <div class="nav-divider" style="height: 1px; background: rgba(255,255,255,0.05); margin: 10px 20px;"></div>
+            <a class="nav-link" href="/admin/logout" onclick="return confirm('Bạn có chắc chắn muốn đăng xuất?')">
                 <i class="bi bi-box-arrow-right"></i> Đăng xuất
             </a>
         </nav>

@@ -39,9 +39,12 @@ public class AdminArticleController {
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
 
             long total = documents.size();
-            long langNhe = documents.stream().filter(d -> Integer.valueOf(1).equals(d.get("loai_id"))).count();
-            long amThuc = documents.stream().filter(d -> Integer.valueOf(2).equals(d.get("loai_id"))).count();
-            long vanHoa = documents.stream().filter(d -> Integer.valueOf(3).equals(d.get("loai_id"))).count();
+            
+            // Thống kê dựa trên loai_id (1: Làng nghề, 2: Ẩm thực, 3: Văn hóa)
+            // Ép kiểu an toàn để tránh lỗi so sánh
+            long langNhe = documents.stream().filter(d -> isTypeMatch(d.get("loai_id"), 1)).count();
+            long amThuc = documents.stream().filter(d -> isTypeMatch(d.get("loai_id"), 2)).count();
+            long vanHoa = documents.stream().filter(d -> isTypeMatch(d.get("loai_id"), 3)).count();
 
             model.addAttribute("total", total);
             model.addAttribute("langNheCount", langNhe);
@@ -50,6 +53,7 @@ public class AdminArticleController {
 
             List<QueryDocumentSnapshot> filteredArticles = new ArrayList<>(documents);
 
+            // Filter by Search
             if (search != null && !search.isEmpty()) {
                 String searchLower = search.toLowerCase();
                 filteredArticles = filteredArticles.stream()
@@ -60,15 +64,14 @@ public class AdminArticleController {
                         .collect(Collectors.toList());
             }
 
+            // Filter by Category
             if (loai != null && loai > 0) {
                 filteredArticles = filteredArticles.stream()
-                        .filter(d -> {
-                            Object catId = d.get("loai_id");
-                            return catId != null && catId.toString().equals(loai.toString());
-                        })
+                        .filter(d -> isTypeMatch(d.get("loai_id"), loai))
                         .collect(Collectors.toList());
             }
 
+            // Sorting
             if (sort != null) {
                 switch (sort) {
                     case "name":
@@ -88,15 +91,21 @@ public class AdminArticleController {
                         filteredArticles.sort((d1, d2) -> {
                             Object date1 = d1.get("ngay_tao");
                             Object date2 = d2.get("ngay_tao");
-                            String s1 = date1 != null ? date1.toString() : "";
-                            String s2 = date2 != null ? date2.toString() : "";
+                            String s1 = (date1 != null) ? date1.toString() : "";
+                            String s2 = (date2 != null) ? date2.toString() : "";
                             return s2.compareTo(s1);
                         });
                         break;
                 }
             }
 
-            model.addAttribute("articles", filteredArticles);
+            List<Map<String, Object>> articleList = filteredArticles.stream().map(d -> {
+                Map<String, Object> map = new HashMap<>(d.getData());
+                map.put("id", d.getId());
+                return map;
+            }).collect(Collectors.toList());
+
+            model.addAttribute("articles", articleList);
             model.addAttribute("search", search);
             model.addAttribute("loai", loai);
             model.addAttribute("sort", sort);
@@ -107,11 +116,26 @@ public class AdminArticleController {
         return "articles/list";
     }
 
+    // Hàm phụ trợ so sánh loai_id an toàn
+    private boolean isTypeMatch(Object val, Integer target) {
+        if (val == null) return false;
+        try {
+            return Integer.valueOf(val.toString()).equals(target);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     @GetMapping("/add")
     public String addArticleForm(Model model) {
         try {
             ApiFuture<QuerySnapshot> tourFuture = firestore.collection("tours").get();
-            model.addAttribute("tours", tourFuture.get().getDocuments());
+            List<Map<String, Object>> tourList = tourFuture.get().getDocuments().stream().map(d -> {
+                Map<String, Object> map = new HashMap<>(d.getData());
+                map.put("id", d.getId());
+                return map;
+            }).collect(Collectors.toList());
+            model.addAttribute("tours", tourList);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -123,9 +147,17 @@ public class AdminArticleController {
         try {
             var doc = firestore.collection("articles").document(id).get().get();
             if (doc.exists()) {
-                model.addAttribute("article", doc);
+                Map<String, Object> articleData = new HashMap<>(doc.getData());
+                articleData.put("id", doc.getId());
+                model.addAttribute("article", articleData);
+                
                 ApiFuture<QuerySnapshot> tourFuture = firestore.collection("tours").get();
-                model.addAttribute("tours", tourFuture.get().getDocuments());
+                List<Map<String, Object>> tourList = tourFuture.get().getDocuments().stream().map(d -> {
+                    Map<String, Object> map = new HashMap<>(d.getData());
+                    map.put("id", d.getId());
+                    return map;
+                }).collect(Collectors.toList());
+                model.addAttribute("tours", tourList);
                 return "articles/form";
             }
         } catch (Exception e) {
@@ -157,8 +189,8 @@ public class AdminArticleController {
         List<Map<String, Object>> mucList = new ArrayList<>();
         for (int i = 0; i < tieuDeMuc.length; i++) {
             Map<String, Object> muc = new HashMap<>();
-            muc.put("tieu_de", tieuDeMuc[indexValid(tieuDeMuc, i)]);
-            muc.put("noi_dung", noiDungMuc[indexValid(noiDungMuc, i)]);
+            muc.put("tieu_de", tieuDeMuc[i]);
+            muc.put("noi_dung", noiDungMuc[i]);
             
             String currentImageUrl = (hinhAnhCu != null && i < hinhAnhCu.length) ? hinhAnhCu[i] : null;
 
@@ -181,10 +213,6 @@ public class AdminArticleController {
         }
 
         return "redirect:/admin/articles";
-    }
-    
-    private int indexValid(String[] arr, int i) {
-        return Math.min(i, arr.length - 1);
     }
 
     @GetMapping("/toggle-status/{id}")

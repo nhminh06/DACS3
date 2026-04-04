@@ -10,7 +10,7 @@
     <style>
         body { background-color: #0f172a; color: #f1f5f9; }
         .stats-cards-custom { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
-        .stat-card-custom { background: #1e293b; border-radius: 12px; padding: 25px 20px; color: #f1f5f9; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 1px solid #334155; transition: transform 0.2s; }
+        .stat-card-custom { background: #fff; border-radius: 12px; padding: 25px 20px; color: #f1f5f9; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 1px solid #334155; transition: transform 0.2s; }
         .stat-card-custom:hover { transform: translateY(-3px); }
         .stat-card-custom .value { font-size: 28px; font-weight: 700; color: #3b82f6; }
         .stat-card-custom .label { color: #94a3b8; font-size: 13px; font-weight: 600; text-transform: uppercase; flex: 1; margin-left: 10px; }
@@ -51,9 +51,12 @@
     <div th:replace="~{fragments/sidebar :: sidebar('bookings')}"></div>
 
     <div class="main">
-        <header class="header">
+        <header class="header mb-4">
             <h1 class="h4 mb-0">Quản lý Đặt Tour</h1>
-            <div class="user-info">Xin chào <strong>minhadmin</strong> <a href="/admin" class="btn-back">Trở lại</a></div>
+            <div class="user-info">
+                <span class="text-white me-3">Hôm nay: <strong th:text="${#calendars.format(#calendars.createNow(), 'dd/MM/yyyy')}"></strong></span>
+                Xin chào <strong th:text="${session.adminUser != null ? session.adminUser.name : 'Admin'}">Admin</strong>
+            </div>
         </header>
 
         <!-- Stats Section -->

@@ -34,6 +34,7 @@ import com.example.dacs3.data.model.BookingStatus
 import com.example.dacs3.data.model.Tour
 import com.example.dacs3.ui.viewmodel.UserViewModel
 import com.example.dacs3.ui.viewmodel.BookingViewModel
+import kotlinx.coroutines.delay
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -79,6 +80,16 @@ fun BookingFormScreen(
     val priceTreSoSinh = if (tour.giaTreNho > 0) tour.giaTreNho else (tour.price * 0.5).toLong()
     val totalPrice = (adults * tour.price) + (children * priceTreEm) + (infants * priceTreSoSinh)
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+
+    // Tối ưu hóa VietQR: Chỉ cập nhật khi người dùng ngừng thay đổi số lượng hoặc tên sau 800ms
+    var debouncedAmount by remember { mutableLongStateOf(totalPrice) }
+    var debouncedName by remember { mutableStateOf(name) }
+    
+    LaunchedEffect(totalPrice, name) {
+        delay(800) // Đợi 800ms để tránh load QR liên tục khi đang bấm +/- hoặc gõ tên
+        debouncedAmount = totalPrice
+        debouncedName = name
+    }
 
     LaunchedEffect(bookingSuccess) {
         if (bookingSuccess == true) {
@@ -149,6 +160,7 @@ fun BookingFormScreen(
                                 
                                 val newBooking = Booking(
                                     id = bookingId,
+                                    userId = user?.id ?: "",
                                     tour = tour,
                                     status = BookingStatus.PENDING,
                                     startDate = date,
@@ -186,11 +198,11 @@ fun BookingFormScreen(
                 }
             }
         }
-    ) { padding ->
+    ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(paddingValues)
                 .background(Color(0xFFF8FAFC))
         ) {
             item { BookingTourCard(tour, selectedDate) }
@@ -227,7 +239,14 @@ fun BookingFormScreen(
             
             item {
                 SectionTitle("PHƯƠNG THỨC THANH TOÁN")
-                PaymentMethodSection(paymentMethod, { paymentMethod = it }, totalPrice, name, receiptUri) { receiptUri = it }
+                PaymentMethodSection(
+                    selected = paymentMethod, 
+                    onSelect = { paymentMethod = it }, 
+                    amount = debouncedAmount, 
+                    name = debouncedName, 
+                    receiptUri = receiptUri,
+                    onReceiptSelected = { receiptUri = it }
+                )
             }
             
             item { Spacer(modifier = Modifier.height(32.dp)) }
@@ -494,10 +513,16 @@ fun PaymentMethodSection(
                         Spacer(modifier = Modifier.height(16.dp))
                         
                         Box(modifier = Modifier.background(Color.White, RoundedCornerShape(16.dp)).padding(12.dp)) {
+                            // Tạo URL tối ưu: chỉ lấy phần cuối của tên để addInfo không quá dài
+                            val shortName = name.split(" ").lastOrNull()?.uppercase() ?: "KHACH"
+                            val qrUrl = "https://img.vietqr.io/image/vcb-7899883653-compact2.jpg?amount=$amount&addInfo=DATTOUR%20$shortName&accountName=WIND%20Travel"
+                            
                             AsyncImage(
-                                model = "https://img.vietqr.io/image/vcb-7899883653-compact2.jpg?amount=$amount&addInfo=DATTOUR%20${name}&accountName=WIND%20Travel",
+                                model = qrUrl,
                                 contentDescription = "QR Code",
-                                modifier = Modifier.size(220.dp)
+                                modifier = Modifier.size(220.dp),
+                                // Thêm placeholder để tránh giật lag khi thay đổi ảnh
+                                placeholder = null // Hoặc một icon loading nhẹ
                             )
                         }
                         
@@ -510,7 +535,7 @@ fun PaymentMethodSection(
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text("Nội dung chuyển", fontSize = 11.sp, color = Color.Gray)
-                                Text("DATTOUR ${name.split(" ").last().uppercase()}", fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
+                                Text("DATTOUR ${name.split(" ").lastOrNull()?.uppercase() ?: "KHACH"}", fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
                             }
                         }
                         

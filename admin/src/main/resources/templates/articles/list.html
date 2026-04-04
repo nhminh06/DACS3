@@ -20,11 +20,11 @@
     <div th:replace="~{fragments/sidebar :: sidebar('articles')}"></div>
 
     <div class="main">
-        <header class="header">
+        <header class="header mb-4">
             <h1 class="h4 mb-0">Quản lý bài viết</h1>
             <div class="user-info">
-                Xin chào <strong>Admin</strong>
-                <a href="/admin" class="btn-back">Trở lại</a>
+                <span class="text-white me-3">Hôm nay: <strong th:text="${#calendars.format(#calendars.createNow(), 'dd/MM/yyyy')}"></strong></span>
+                Xin chào <strong th:text="${session.adminUser != null ? session.adminUser.name : 'Admin'}">Admin</strong>
             </div>
         </header>
 

@@ -1,37 +1,57 @@
 package com.example.dacs3.ui.screens
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Message
+import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.dacs3.data.model.Contact
 import com.example.dacs3.ui.components.AppBottomBar
+import com.example.dacs3.ui.viewmodel.UserViewModel
+import com.example.dacs3.ui.viewmodel.ContactViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactScreen(
+    userViewModel: UserViewModel,
+    contactViewModel: ContactViewModel,
     onNavigate: (String) -> Unit
 ) {
-    val primaryColor = Color(0xFF2563EB)
     val backgroundColor = Color(0xFFF8FAFC)
     
+    val currentUser by userViewModel.currentUser
+    val isLoading by contactViewModel.isLoading
+    val userContacts by contactViewModel.userContacts.collectAsState()
+    
+    var showForm by remember { mutableStateOf(true) }
     var contactType by remember { mutableStateOf("Góp ý") }
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(currentUser?.name ?: "") }
+    var email by remember { mutableStateOf(currentUser?.email ?: "") }
     var content by remember { mutableStateOf("") }
     var isSubmitted by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Tự động tải dữ liệu khi vào màn hình hoặc khi user thay đổi
+    LaunchedEffect(currentUser) {
+        currentUser?.id?.let { contactViewModel.fetchUserContacts(it) }
+    }
 
     Scaffold(
         containerColor = backgroundColor,
@@ -55,125 +75,95 @@ fun ContactScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header Illustration
-            Box(
+            // Tab Selector
+            Row(
                 modifier = Modifier
-                    .size(120.dp)
-                    .background(primaryColor.copy(alpha = 0.1f), CircleShape),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .background(Color.White, RoundedCornerShape(12.dp))
+                    .padding(4.dp)
             ) {
-                Icon(
-                    Icons.Default.SupportAgent, 
-                    contentDescription = null, 
-                    modifier = Modifier.size(60.dp),
-                    tint = primaryColor
+                TabButton(
+                    text = "Gửi yêu cầu",
+                    isSelected = showForm,
+                    onClick = { showForm = true },
+                    modifier = Modifier.weight(1f)
+                )
+                TabButton(
+                    text = "Lịch sử",
+                    isSelected = !showForm,
+                    onClick = { showForm = false },
+                    modifier = Modifier.weight(1f)
                 )
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                "Chúng tôi luôn lắng nghe bạn", 
-                fontWeight = FontWeight.Bold, 
-                fontSize = 18.sp, 
-                color = Color(0xFF1E293B)
-            )
-            Text(
-                "Mọi ý kiến đóng góp hoặc khiếu nại của bạn đều giúp chúng tôi hoàn thiện hơn.",
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(horizontal = 20.dp)
-            )
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Form Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    Text("Bạn muốn gửi gì?", fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        ContactTypeChip(
-                            label = "Góp ý", 
-                            isSelected = contactType == "Góp ý",
-                            onClick = { contactType = "Góp ý" },
-                            modifier = Modifier.weight(1f)
-                        )
-                        ContactTypeChip(
-                            label = "Khiếu nại", 
-                            isSelected = contactType == "Khiếu nại",
-                            onClick = { contactType = "Khiếu nại" },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    ContactTextField(value = name, onValueChange = { name = it }, label = "Họ và tên", icon = Icons.Default.Person)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    ContactTextField(value = email, onValueChange = { email = it }, label = "Email liên hệ", icon = Icons.Default.Email)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    ContactTextField(
-                        value = content, 
-                        onValueChange = { content = it }, 
-                        label = "Nội dung tin nhắn", 
-                        icon = Icons.Default.Message,
-                        isMultiline = true
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    Button(
-                        onClick = { 
+            Box(modifier = Modifier.weight(1f)) {
+                if (showForm) {
+                    ContactForm(
+                        name = name,
+                        onNameChange = { name = it },
+                        email = email,
+                        onEmailChange = { email = it },
+                        content = content,
+                        onContentChange = { content = it },
+                        contactType = contactType,
+                        onTypeChange = { contactType = it },
+                        isLoading = isLoading,
+                        onSubmit = {
                             if (name.isNotBlank() && email.isNotBlank() && content.isNotBlank()) {
-                                isSubmitted = true
+                                val contact = Contact(
+                                    userId = currentUser?.id,
+                                    name = name,
+                                    email = email,
+                                    type = contactType,
+                                    content = content
+                                )
+                                contactViewModel.submitContact(contact) { success, error ->
+                                    if (success) {
+                                        isSubmitted = true
+                                        content = ""
+                                    } else {
+                                        errorMessage = error
+                                    }
+                                }
                             }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
-                    ) {
-                        Text("Gửi thông tin", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    }
+                        }
+                    )
+                } else {
+                    ContactHistory(userContacts)
                 }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Support Info
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                SupportInfoItem(Icons.Default.Phone, "Hotline", "1900 1234")
-                SupportInfoItem(Icons.Default.Public, "Website", "windtravel.com")
             }
         }
     }
 
     if (isSubmitted) {
         AlertDialog(
-            onDismissRequest = { isSubmitted = false },
+            onDismissRequest = { 
+                isSubmitted = false
+                contactViewModel.resetSuccess()
+            },
             confirmButton = {
-                Button(onClick = { isSubmitted = false }) { Text("Đóng") }
+                TextButton(onClick = { 
+                    isSubmitted = false
+                    contactViewModel.resetSuccess()
+                }) { Text("Đóng") }
             },
             title = { Text("Gửi thành công!") },
-            text = { Text("Cảm ơn bạn đã gửi $contactType. Chúng tôi sẽ phản hồi sớm nhất qua email của bạn.") },
+            text = { Text("Cảm ơn bạn đã gửi $contactType. Chúng tôi sẽ phản hồi sớm nhất.") },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = Color.White
+        )
+    }
+
+    if (errorMessage != null) {
+        AlertDialog(
+            onDismissRequest = { errorMessage = null },
+            confirmButton = {
+                TextButton(onClick = { errorMessage = null }) { Text("Đóng") }
+            },
+            title = { Text("Lỗi") },
+            text = { Text(errorMessage!!) },
             shape = RoundedCornerShape(24.dp),
             containerColor = Color.White
         )
@@ -181,20 +171,221 @@ fun ContactScreen(
 }
 
 @Composable
+fun ContactHistory(contacts: List<Contact>) {
+    if (contacts.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.History, null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Chưa có lịch sử gửi yêu cầu", color = Color.Gray)
+            }
+        }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 16.dp, start = 16.dp, end = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(contacts) { contact ->
+                ContactHistoryItem(contact)
+            }
+        }
+    }
+}
+
+@Composable
+fun ContactHistoryItem(contact: Contact) {
+    val sdf = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()) }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    color = if (contact.type == "Góp ý") Color(0xFF3B82F6) else Color(0xFFF43F5E),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        contact.type, color = Color.White, fontSize = 10.sp, 
+                        fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                }
+                Text(sdf.format(contact.timestamp.toDate()), fontSize = 10.sp, color = Color.Gray)
+            }
+            
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                contact.content, 
+                fontSize = 14.sp, 
+                color = Color(0xFF1E293B), 
+                lineHeight = 20.sp,
+                fontWeight = FontWeight.Medium
+            )
+            
+            if (contact.reply != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                        .padding(12.dp)
+                ) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.AutoMirrored.Filled.Reply, null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Phản hồi từ hệ thống:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF10B981))
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(contact.reply!!, fontSize = 13.sp, color = Color(0xFF334155), lineHeight = 18.sp)
+                        
+                        if (contact.replyAt != null) {
+                            Text(
+                                sdf.format(contact.replyAt.toDate()), 
+                                fontSize = 9.sp, 
+                                color = Color.Gray, 
+                                modifier = Modifier.align(Alignment.End).padding(top = 4.dp)
+                            )
+                        }
+                    }
+                }
+            } else {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(
+                                if (contact.status == "processed") Color(0xFF10B981) else Color(0xFFF59E0B), 
+                                CircleShape
+                            )
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        if (contact.status == "processed") "Đã xử lý" else "Đang chờ phản hồi",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (contact.status == "processed") Color(0xFF10B981) else Color(0xFFF59E0B)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TabButton(text: String, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) Color(0xFF2563EB) else Color.Transparent,
+            contentColor = if (isSelected) Color.White else Color(0xFF64748B)
+        ),
+        elevation = null,
+        shape = RoundedCornerShape(8.dp),
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Text(text, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    }
+}
+
+@Composable
+fun ContactForm(
+    name: String, onNameChange: (String) -> Unit,
+    email: String, onEmailChange: (String) -> Unit,
+    content: String, onContentChange: (String) -> Unit,
+    contactType: String, onTypeChange: (String) -> Unit,
+    isLoading: Boolean,
+    onSubmit: () -> Unit
+) {
+    val primaryColor = Color(0xFF2563EB)
+    
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .size(60.dp)
+                .background(primaryColor.copy(alpha = 0.1f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Default.SupportAgent, null, modifier = Modifier.size(32.dp), tint = primaryColor)
+        }
+        
+        Spacer(modifier = Modifier.height(12.dp))
+        Text("Chúng tôi luôn lắng nghe bạn", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+        Text(
+            "Mọi ý kiến đóng góp giúp chúng tôi hoàn thiện hơn.",
+            textAlign = TextAlign.Center,
+            fontSize = 12.sp, color = Color.Gray,
+            modifier = Modifier.padding(horizontal = 20.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ContactTypeChip("Góp ý", contactType == "Góp ý", { onTypeChange("Góp ý") }, Modifier.weight(1f))
+                    ContactTypeChip("Khiếu nại", contactType == "Khiếu nại", { onTypeChange("Khiếu nại") }, Modifier.weight(1f))
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                ContactTextField(value = name, onValueChange = onNameChange, label = "Họ và tên", icon = Icons.Default.Person)
+                Spacer(modifier = Modifier.height(10.dp))
+                ContactTextField(value = email, onValueChange = onEmailChange, label = "Email liên hệ", icon = Icons.Default.Email)
+                Spacer(modifier = Modifier.height(10.dp))
+                ContactTextField(
+                    value = content, 
+                    onValueChange = onContentChange, 
+                    label = "Nội dung tin nhắn", 
+                    icon = Icons.AutoMirrored.Filled.Message, 
+                    isMultiline = true
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+                Button(
+                    onClick = onSubmit, enabled = !isLoading,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                ) {
+                    if (isLoading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    else Text("Gửi thông tin", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
 fun ContactTypeChip(label: String, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier) {
     Surface(
-        modifier = modifier
-            .height(48.dp)
-            .clickable { onClick() },
+        modifier = modifier.height(36.dp).clickable { onClick() },
         color = if (isSelected) Color(0xFF2563EB) else Color(0xFFF1F5F9),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(8.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Text(
-                label, 
-                fontWeight = FontWeight.Bold, 
-                color = if (isSelected) Color.White else Color(0xFF64748B)
-            )
+            Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (isSelected) Color.White else Color(0xFF64748B))
         }
     }
 }
@@ -204,31 +395,15 @@ fun ContactTextField(
     value: String, 
     onValueChange: (String) -> Unit, 
     label: String, 
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector, 
     isMultiline: Boolean = false
 ) {
+    val primaryColor = Color(0xFF2563EB)
     OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        leadingIcon = { Icon(icon, null, tint = Color(0xFF2563EB)) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (isMultiline) Modifier.height(150.dp) else Modifier),
-        shape = RoundedCornerShape(16.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Color(0xFF2563EB),
-            unfocusedBorderColor = Color(0xFFE2E8F0)
-        )
+        value = value, onValueChange = onValueChange, label = { Text(label, fontSize = 12.sp) },
+        leadingIcon = { Icon(icon, null, tint = primaryColor, modifier = Modifier.size(18.dp)) },
+        modifier = Modifier.fillMaxWidth().then(if (isMultiline) Modifier.height(120.dp) else Modifier),
+        shape = RoundedCornerShape(12.dp),
+        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryColor, unfocusedBorderColor = Color(0xFFE2E8F0))
     )
-}
-
-@Composable
-fun SupportInfoItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, null, tint = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(label, fontSize = 12.sp, color = Color.Gray)
-        Text(value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
-    }
 }
