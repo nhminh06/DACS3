@@ -83,7 +83,7 @@ fun RegisterScreen(
                 color = textColor
             )
             Text(
-                text = "Bắt đầu khám phá Việt Nam cùng chúng tôi",
+                text = "Bắt đầu khám phá miền Trung Việt Nam cùng chúng tôi",
                 fontSize = 14.sp,
                 color = Color.Gray,
                 modifier = Modifier.padding(top = 4.dp)

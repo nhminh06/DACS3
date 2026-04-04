@@ -1,5 +1,6 @@
 package com.example.dacs3.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -24,10 +26,15 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dacs3.R
+import com.example.dacs3.ui.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChangePasswordScreen(onBack: () -> Unit) {
+fun ChangePasswordScreen(
+    userViewModel: UserViewModel,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
     val primaryColor = Color(0xFF2563EB)
     val backgroundColor = Color(0xFFF8FAFC)
     
@@ -38,6 +45,8 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
     var currentPasswordVisible by remember { mutableStateOf(false) }
     var newPasswordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+
+    val isLoading by userViewModel.isLoading
 
     Scaffold(
         topBar = {
@@ -99,7 +108,8 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
                 label = "Mật khẩu hiện tại",
                 isVisible = currentPasswordVisible,
                 onVisibilityChange = { currentPasswordVisible = !currentPasswordVisible },
-                primaryColor = primaryColor
+                primaryColor = primaryColor,
+                enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -111,7 +121,8 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
                 label = "Mật khẩu mới",
                 isVisible = newPasswordVisible,
                 onVisibilityChange = { newPasswordVisible = !newPasswordVisible },
-                primaryColor = primaryColor
+                primaryColor = primaryColor,
+                enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -123,20 +134,51 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
                 label = "Xác nhận mật khẩu mới",
                 isVisible = confirmPasswordVisible,
                 onVisibilityChange = { confirmPasswordVisible = !confirmPasswordVisible },
-                primaryColor = primaryColor
+                primaryColor = primaryColor,
+                enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(40.dp))
 
             Button(
-                onClick = { /* Handle Change Password */ },
+                onClick = {
+                    if (currentPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
+                        Toast.makeText(context, "Vui lòng điền đầy đủ thông tin", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    if (newPassword.length < 8) {
+                        Toast.makeText(context, "Mật khẩu mới phải từ 8 ký tự", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    if (newPassword != confirmPassword) {
+                        Toast.makeText(context, "Mật khẩu xác nhận không khớp", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    userViewModel.changePassword(
+                        currentPass = currentPassword,
+                        newPass = newPassword,
+                        onSuccess = {
+                            Toast.makeText(context, "Đổi mật khẩu thành công", Toast.LENGTH_SHORT).show()
+                            onBack()
+                        },
+                        onError = { error ->
+                            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                enabled = !isLoading
             ) {
-                Text("Cập nhật mật khẩu", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Cập nhật mật khẩu", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
@@ -149,7 +191,8 @@ fun PasswordField(
     label: String,
     isVisible: Boolean,
     onVisibilityChange: () -> Unit,
-    primaryColor: Color
+    primaryColor: Color,
+    enabled: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
@@ -170,6 +213,7 @@ fun PasswordField(
             focusedLabelColor = primaryColor
         ),
         visualTransformation = if (isVisible) VisualTransformation.None else PasswordVisualTransformation(),
-        singleLine = true
+        singleLine = true,
+        enabled = enabled
     )
 }

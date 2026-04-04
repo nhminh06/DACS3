@@ -67,8 +67,10 @@ dependencies {
     // Image Loading
     implementation(libs.coil.compose)
 
-    // JSON Parsing
+    // JSON Parsing & Networking
     implementation(libs.gson)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

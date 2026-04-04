@@ -9,7 +9,6 @@ import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Controller;
@@ -19,7 +18,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.text.NumberFormat;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 @Controller
 @RequestMapping("/admin/bookings")
@@ -282,10 +280,36 @@ public class AdminBookingController {
                 Booking booking = document.toObject(Booking.class);
                 booking.setId(id);
                 loadTourInfo(booking, document);
+                
+                // Lấy tất cả các booking cùng tour, ngày khởi hành và trạng thái chuyến đi
+                ApiFuture<QuerySnapshot> future = firestore.collection("bookings")
+                        .whereEqualTo("tourId", booking.getTourId())
+                        .whereEqualTo("startDate", booking.getStartDate())
+                        .whereEqualTo("tripStatus", booking.getTripStatus())
+                        .whereEqualTo("status", "CONFIRMED")
+                        .get();
+                
+                List<Booking> bookings = new ArrayList<>();
+                long totalRevenue = 0;
+                int totalPassengers = 0;
+                
+                for (QueryDocumentSnapshot doc : future.get().getDocuments()) {
+                    Booking b = doc.toObject(Booking.class);
+                    b.setId(doc.getId());
+                    bookings.add(b);
+                    totalRevenue += b.getTotalPrice();
+                    totalPassengers += (b.getAdults() != null ? b.getAdults() : 0);
+                    totalPassengers += (b.getChildren() != null ? b.getChildren() : 0);
+                    totalPassengers += (b.getInfants() != null ? b.getInfants() : 0);
+                }
+                
                 model.addAttribute("booking", booking);
+                model.addAttribute("bookings", bookings);
+                model.addAttribute("totalPassengers", totalPassengers);
+                model.addAttribute("totalRevenue", totalRevenue);
             }
         } catch (Exception e) { e.printStackTrace(); }
-        return "bookings/booking_detail";
+        return "bookings/detail";
     }
 
     @GetMapping("/schedule")
@@ -325,10 +349,197 @@ public class AdminBookingController {
                 trip.getBookings().add(b);
                 trip.setTotalRevenue(trip.getTotalRevenue() + b.getTotalPrice());
                 trip.setTotalPassengers(trip.getTotalPassengers() + (b.getAdults() != null ? b.getAdults() : 0));
+                trip.setTotalPassengers(trip.getTotalPassengers() + (b.getChildren() != null ? b.getChildren() : 0));
+                trip.setTotalPassengers(trip.getTotalPassengers() + (b.getInfants() != null ? b.getInfants() : 0));
+                trip.setBookingCount(trip.getBookingCount() + 1);
             }
+
+            int preparingCount = 0;
+            int startedCount = 0;
+            int completedCount = 0;
+
+            for (GroupedTrip trip : groupedMap.values()) {
+                String status = trip.getTripStatus();
+                if ("preparing".equals(status)) {
+                    preparingCount++;
+                } else if ("started".equals(status)) {
+                    startedCount++;
+                } else if ("completed".equals(status)) {
+                    completedCount++;
+                }
+            }
+
             model.addAttribute("trips", new ArrayList<>(groupedMap.values()));
+            model.addAttribute("totalTrips", groupedMap.size());
+            model.addAttribute("preparingCount", preparingCount);
+            model.addAttribute("startedCount", startedCount);
+            model.addAttribute("completedCount", completedCount);
         } catch (Exception e) { e.printStackTrace(); }
         return "bookings/schedule";
+    }
+
+    @GetMapping("/trip-schedule/{id}")
+    @SuppressWarnings("unchecked")
+    public String tripSchedule(@PathVariable String id, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            DocumentSnapshot document = firestore.collection("bookings").document(id).get().get();
+            if (!document.exists()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy thông tin chuyến đi!");
+                return "redirect:/admin/bookings/schedule";
+            }
+            
+            Booking booking = document.toObject(Booking.class);
+            booking.setId(id);
+            loadTourInfo(booking, document);
+
+            // Fetch guide info if guideId exists
+            if (booking.getGuideId() != null && !booking.getGuideId().isEmpty()) {
+                DocumentSnapshot guideDoc = firestore.collection("guides").document(booking.getGuideId()).get().get();
+                if (guideDoc.exists()) {
+                    booking.setGuide(guideDoc.getData());
+                }
+            }
+            
+            // Get all bookings for this trip (same tour, start date, and status)
+            ApiFuture<QuerySnapshot> future = firestore.collection("bookings")
+                    .whereEqualTo("tourId", booking.getTourId())
+                    .whereEqualTo("startDate", booking.getStartDate())
+                    .whereEqualTo("tripStatus", booking.getTripStatus())
+                    .whereEqualTo("status", "CONFIRMED")
+                    .get();
+            
+            List<Booking> bookings = new ArrayList<>();
+            long totalRevenue = 0;
+            int totalPassengers = 0;
+            
+            for (QueryDocumentSnapshot doc : future.get().getDocuments()) {
+                Booking b = doc.toObject(Booking.class);
+                b.setId(doc.getId());
+                bookings.add(b);
+                totalRevenue += b.getTotalPrice();
+                totalPassengers += (b.getAdults() != null ? b.getAdults() : 0);
+                totalPassengers += (b.getChildren() != null ? b.getChildren() : 0);
+                totalPassengers += (b.getInfants() != null ? b.getInfants() : 0);
+            }
+
+            // Fetch all guides for the dropdown
+            ApiFuture<QuerySnapshot> guidesFuture = firestore.collection("guides").get();
+            List<Map<String, Object>> guidesList = new ArrayList<>();
+            for (QueryDocumentSnapshot doc : guidesFuture.get().getDocuments()) {
+                Map<String, Object> g = doc.getData();
+                g.put("id", doc.getId());
+                guidesList.add(g);
+            }
+            
+            GroupedTrip trip = new GroupedTrip();
+            trip.setId(id);
+            trip.setTourId(booking.getTourId());
+            trip.setStartDate(booking.getStartDate());
+            trip.setTripStatus(booking.getTripStatus());
+            trip.setTour(booking.getTour());
+            trip.setBookings(bookings);
+            trip.setTotalRevenue(totalRevenue);
+            trip.setTotalPassengers(totalPassengers);
+            trip.setBookingCount(bookings.size());
+            
+            model.addAttribute("booking", booking);
+            model.addAttribute("trip", trip);
+            model.addAttribute("bookings", bookings);
+            model.addAttribute("totalPassengers", totalPassengers);
+            model.addAttribute("guides", guidesList);
+        } catch (Exception e) { 
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi: " + e.getMessage());
+            return "redirect:/admin/bookings/schedule";
+        }
+        return "bookings/trip_schedule";
+    }
+
+    @PostMapping("/trip-schedule/update-status")
+    @ResponseBody
+    public Map<String, Object> updateTripStatus(@RequestParam String bookingId, 
+                                               @RequestParam String tripStatus,
+                                               @RequestParam(required = false) String startTime,
+                                               @RequestParam(required = false) String endTime,
+                                               @RequestParam(required = false) String tripNote) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            DocumentSnapshot doc = firestore.collection("bookings").document(bookingId).get().get();
+            if (!doc.exists()) {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy đơn hàng");
+                return response;
+            }
+
+            Booking booking = doc.toObject(Booking.class);
+            String tourId = booking.getTourId();
+            String startDate = booking.getStartDate();
+            String currentTripStatus = booking.getTripStatus();
+
+            // Update all bookings for this trip
+            QuerySnapshot tripBookings = firestore.collection("bookings")
+                    .whereEqualTo("tourId", tourId)
+                    .whereEqualTo("startDate", startDate)
+                    .whereEqualTo("tripStatus", currentTripStatus)
+                    .whereEqualTo("status", "CONFIRMED")
+                    .get().get();
+
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("tripStatus", tripStatus);
+            if (startTime != null && !startTime.isEmpty()) updates.put("startTime", startTime);
+            if (endTime != null && !endTime.isEmpty()) updates.put("endTime", endTime);
+            if (tripNote != null && !tripNote.isEmpty()) updates.put("tripNote", tripNote);
+
+            for (QueryDocumentSnapshot d : tripBookings.getDocuments()) {
+                firestore.collection("bookings").document(d.getId()).update(updates).get();
+            }
+
+            response.put("success", true);
+            response.put("message", "Cập nhật trạng thái thành công");
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Lỗi: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @PostMapping("/trip-schedule/assign-guide")
+    @ResponseBody
+    public Map<String, Object> assignGuide(@RequestParam String bookingId, @RequestParam String guideId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            DocumentSnapshot doc = firestore.collection("bookings").document(bookingId).get().get();
+            if (!doc.exists()) {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy đơn hàng");
+                return response;
+            }
+
+            Booking booking = doc.toObject(Booking.class);
+            String tourId = booking.getTourId();
+            String startDate = booking.getStartDate();
+            String currentTripStatus = booking.getTripStatus();
+
+            QuerySnapshot tripBookings = firestore.collection("bookings")
+                    .whereEqualTo("tourId", tourId)
+                    .whereEqualTo("startDate", startDate)
+                    .whereEqualTo("tripStatus", currentTripStatus)
+                    .whereEqualTo("status", "CONFIRMED")
+                    .get().get();
+
+            for (QueryDocumentSnapshot d : tripBookings.getDocuments()) {
+                firestore.collection("bookings").document(d.getId()).update("guideId", guideId).get();
+            }
+
+            response.put("success", true);
+            response.put("message", "Gán hướng dẫn viên thành công");
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "Lỗi: " + e.getMessage());
+        }
+        return response;
     }
 
     @GetMapping("/delete/{id}")

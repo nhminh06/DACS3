@@ -1,5 +1,7 @@
 package com.example.dacs3.ui
 
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -9,14 +11,11 @@ import com.example.dacs3.data.remote.FirebaseService
 import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.data.repository.ContactRepository
+import com.example.dacs3.data.repository.GuideRepository
 import com.example.dacs3.ui.screens.*
-import com.example.dacs3.ui.viewmodel.ArticleViewModel
-import com.example.dacs3.ui.viewmodel.MainViewModel
-import com.example.dacs3.ui.viewmodel.UserViewModel
-import com.example.dacs3.ui.viewmodel.BookingViewModel
-import com.example.dacs3.ui.viewmodel.ContactViewModel
-import com.example.dacs3.ui.viewmodel.factory.UserViewModelFactory
-import com.example.dacs3.ui.viewmodel.factory.ContactViewModelFactory
+import com.example.dacs3.ui.screens.staff.*
+import com.example.dacs3.ui.viewmodel.*
+import com.example.dacs3.ui.viewmodel.factory.*
 import com.example.dacs3.data.model.ArticleCategory
 
 @Composable
@@ -36,6 +35,11 @@ fun MainContainer() {
         factory = ContactViewModelFactory(contactRepository)
     )
 
+    val guideRepository = GuideRepository(firebaseService)
+    val staffViewModel: StaffViewModel = viewModel(
+        factory = StaffViewModelFactory(guideRepository)
+    )
+
     val mainViewModel: MainViewModel = viewModel()
     val articleViewModel: ArticleViewModel = viewModel()
     val bookingViewModel: BookingViewModel = viewModel()
@@ -46,13 +50,25 @@ fun MainContainer() {
     LaunchedEffect(user?.id) {
         user?.id?.let { uid ->
             bookingViewModel.listenAndNotifyBookingStatus(uid)
+            if (user?.role == "guide") {
+                staffViewModel.loadGuideProfile(uid)
+            }
         }
     }
 
-    // Mặc định vào App là màn hình Home
+    // Mặc định vào App
     var currentScreen by remember { mutableStateOf("home") }
+    
+    // Nếu là guide, chuyển thẳng sang màn hình staff personal profile
+    LaunchedEffect(user?.role) {
+        if (user?.role == "guide" && (currentScreen == "home" || currentScreen == "login")) {
+            currentScreen = "staff_personal"
+        }
+    }
+
     var selectedArticle by remember { mutableStateOf<ArticleEntity?>(null) }
     var selectedTour by remember { mutableStateOf<Tour?>(null) }
+    var selectedTourId by remember { mutableStateOf<String?>(null) }
     var selectedBookingId by remember { mutableStateOf<String?>(null) }
     var initialArticleCategory by remember { mutableStateOf(ArticleCategory.CULTURE) }
     
@@ -67,7 +83,13 @@ fun MainContainer() {
                 userViewModel = userViewModel,
                 onNavigateToRegister = { currentScreen = "register" },
                 onNavigateToForgotPassword = { currentScreen = "forgot_password" },
-                onLoginSuccess = { currentScreen = "home" }
+                onLoginSuccess = { 
+                    if (user?.role == "guide") {
+                        currentScreen = "staff_personal"
+                    } else {
+                        currentScreen = "home"
+                    }
+                }
             )
         }
         "register" -> {
@@ -79,6 +101,7 @@ fun MainContainer() {
         }
         "forgot_password" -> {
             ForgotPasswordScreen(
+                userViewModel = userViewModel,
                 onBackToLogin = { currentScreen = "login" }
             )
         }
@@ -147,7 +170,6 @@ fun MainContainer() {
                     initialInfants = infantCount,
                     onNavigateBack = { currentScreen = "tour_detail" },
                     onBookingSuccess = {
-                        // Sau khi đặt thành công, chuyển đến danh sách đơn hàng
                         currentScreen = "my_bookings"
                     },
                     userViewModel = userViewModel,
@@ -207,7 +229,13 @@ fun MainContainer() {
         "edit_profile" -> {
             EditProfileScreen(
                 userViewModel = userViewModel,
-                onBack = { currentScreen = "profile" }
+                onBack = { 
+                    if (user?.role == "guide") {
+                        currentScreen = "staff_personal"
+                    } else {
+                        currentScreen = "profile"
+                    }
+                }
             )
         }
         "my_bookings" -> {
@@ -234,12 +262,74 @@ fun MainContainer() {
             NotificationsScreen(
                 userViewModel = userViewModel,
                 contactViewModel = contactViewModel,
-                onBack = { currentScreen = "profile" }
+                onBack = { 
+                    if (user?.role == "guide") {
+                        currentScreen = "staff_personal"
+                    } else {
+                        currentScreen = "profile"
+                    }
+                }
             )
         }
         "change_password" -> {
             ChangePasswordScreen(
-                onBack = { currentScreen = "profile" }
+                userViewModel = userViewModel,
+                onBack = { 
+                    if (user?.role == "guide") {
+                        currentScreen = "staff_personal"
+                    } else {
+                        currentScreen = "profile"
+                    }
+                }
+            )
+        }
+        
+        // Staff Screens
+        "staff_personal" -> {
+            StaffPersonalScreen(
+                userViewModel = userViewModel,
+                staffViewModel = staffViewModel,
+                onNavigate = { screen -> 
+                    if (screen == "login") {
+                        userViewModel.logout { currentScreen = "login" }
+                    } else {
+                        currentScreen = screen
+                    }
+                },
+                onBack = { 
+                    userViewModel.logout { currentScreen = "login" }
+                }
+            )
+        }
+        "staff_schedule" -> {
+            StaffScheduleScreen(
+                staffViewModel = staffViewModel,
+                onBack = { currentScreen = "staff_personal" },
+                onTourClick = { id -> 
+                    selectedTourId = id
+                    currentScreen = "staff_trip_detail"
+                }
+            )
+        }
+        "staff_trip_detail" -> {
+            selectedTourId?.let { id ->
+                StaffTripDetailScreen(
+                    tourId = id,
+                    staffViewModel = staffViewModel,
+                    onBack = { currentScreen = "staff_schedule" }
+                )
+            }
+        }
+        "staff_notes" -> {
+            androidx.compose.foundation.layout.Column {
+                Text("Màn hình Ghi chú đang được cập nhật")
+                Button(onClick = { currentScreen = "staff_personal" }) { Text("Quay lại") }
+            }
+        }
+        "staff_skills" -> {
+            StaffSkillsScreen(
+                staffViewModel = staffViewModel,
+                onBack = { currentScreen = "staff_personal" }
             )
         }
     }

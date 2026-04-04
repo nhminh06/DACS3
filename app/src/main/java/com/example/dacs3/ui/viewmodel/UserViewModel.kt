@@ -63,6 +63,41 @@ class UserViewModel(
         }
     }
 
+    fun changePassword(currentPass: String, newPass: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val userId = _currentUser.value?.id ?: return
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.changePassword(userId, currentPass, newPass)
+            _isLoading.value = false
+            result.onSuccess {
+                val updatedUser = _currentUser.value?.copy(password = newPass)
+                _currentUser.value = updatedUser
+                updatedUser?.let { sessionManager.saveUser(it) }
+                onSuccess()
+            }.onFailure {
+                onError(it.message ?: "Đổi mật khẩu thất bại")
+            }
+        }
+    }
+
+    fun sendOtp(email: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.sendOtp(email)
+            _isLoading.value = false
+            result.onSuccess { onSuccess() }.onFailure { onError(it.message ?: "Lỗi gửi mã OTP") }
+        }
+    }
+
+    fun resetPasswordWithOtp(email: String, otp: String, newPass: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.resetPasswordWithOtp(email, otp, newPass)
+            _isLoading.value = false
+            result.onSuccess { onSuccess() }.onFailure { onError(it.message ?: "Lỗi khôi phục mật khẩu") }
+        }
+    }
+
     fun updateAvatar(uri: Uri, onError: (String) -> Unit) {
         val userId = _currentUser.value?.id ?: return
         viewModelScope.launch {

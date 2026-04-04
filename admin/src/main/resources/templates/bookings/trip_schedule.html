@@ -130,7 +130,7 @@
                             <div class="d-flex gap-2">
                                 <select id="guideSelect" class="form-select">
                                     <option value="">-- Chọn hướng dẫn viên --</option>
-                                    <option th:each="g : ${guides}" th:value="${g.id}" th:text="${g.name + ' - ' + g.email}"></option>
+                                    <option th:each="g : ${guides}" th:value="${g['id']}" th:text="${g['name'] + ' - ' + g['email']}"></option>
                                 </select>
                                 <button onclick="assignGuide(document.getElementById('guideSelect').value)" class="btn btn-primary" style="white-space: nowrap;">Gán HDV</button>
                             </div>

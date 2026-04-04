@@ -201,16 +201,16 @@
                 <div class="label">Tổng chuyến đi</div>
             </div>
             <div class="stat-card-custom">
-                <div class="value">0</div>
+                <div class="value" th:text="${preparingCount}">0</div>
                 <div class="label">Sắp khởi hành</div>
             </div>
             <div class="stat-card-custom">
-                <div class="value">0</div>
+                <div class="value" th:text="${completedCount}">0</div>
                 <div class="label">Đã hoàn thành</div>
             </div>
             <div class="stat-card-custom" style="min-width: 180px;">
-                <div class="value" th:text="${trips.size()}">0</div>
-                <div class="label">Hiển thị</div>
+                <div class="value" th:text="${startedCount}">0</div>
+                <div class="label">Đang diễn ra</div>
             </div>
         </div>
 
@@ -277,7 +277,7 @@
             </div>
             <div class="trip-footer">
                 <!-- Nút xem chi tiết cho cả chuyến đi -->
-                <a th:href="@{/admin/bookings/detail/{id}(id=${trip.id})}" class="btn-trip-cyan">
+                <a th:href="@{/admin/bookings/booking-detail/{id}(id=${trip.id})}" class="btn-trip-cyan">
                     <i class="bi bi-list-ul me-2"></i>Xem danh sách booking
                 </a>
                 <a th:href="@{/admin/bookings/trip-schedule/{id}(id=${trip.id})}" class="btn-trip-green">

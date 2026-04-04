@@ -29,10 +29,10 @@ import androidx.compose.foundation.Image
 @Composable
 fun GuidesSection() {
     val guides = listOf(
-        Guide("Nguyễn Văn An", "Chuyên gia Văn hóa Hội An", R.drawable.a8),
-        Guide("Lê Thị Lan", "Hướng dẫn viên bản địa Sapa", R.drawable.a9),
-        Guide("Trần Hùng", "Hướng dẫn viên du lịch Vịnh Hạ Long", R.drawable.a2),
-        Guide("Phạm Minh Hoàng", "Chuyên gia ẩm thực Huế", R.drawable.a7)
+        Guide(name = "Nguyễn Văn An", bio = "Chuyên gia Văn hóa Hội An", imageRes = R.drawable.a8),
+        Guide(name = "Lê Thị Lan", bio = "Hướng dẫn viên bản địa Sapa", imageRes = R.drawable.a9),
+        Guide(name = "Trần Hùng", bio = "Hướng dẫn viên du lịch Vịnh Hạ Long", imageRes = R.drawable.a2),
+        Guide(name = "Phạm Minh Hoàng", bio = "Chuyên gia ẩm thực Huế", imageRes = R.drawable.a7)
     )
 
     // Nhóm 2 người vào 1 trang để lướt một lần ra 2 cái
