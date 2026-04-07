@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.screens
+package com.example.dacs3.ui.screens.user
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -11,10 +11,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,10 +49,10 @@ fun EditProfileScreen(userViewModel: UserViewModel, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chỉnh sửa hồ sơ", fontWeight = FontWeight.Bold) },
+                title = { Text("Chỉnh sửa hồ sơ", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color(0xFF0F172A))
                     }
                 },
                 actions = {
@@ -131,13 +131,13 @@ fun EditProfileScreen(userViewModel: UserViewModel, onBack: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB), contentColor = Color.White),
                 enabled = !userViewModel.isLoading.value
             ) {
                 if (userViewModel.isLoading.value) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Lưu thay đổi", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("LƯU THAY ĐỔI", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color.White)
                 }
             }
         }
@@ -146,19 +146,26 @@ fun EditProfileScreen(userViewModel: UserViewModel, onBack: () -> Unit) {
 
 @Composable
 fun EditField(label: String, value: String, onValueChange: (String) -> Unit) {
+    val primaryColor = Color(0xFF2563EB)
     Column {
-        Text(label, fontWeight = FontWeight.Medium, color = Color(0xFF64748B), fontSize = 14.sp)
+        Text(label, fontWeight = FontWeight.Bold, color = Color(0xFF334155), fontSize = 14.sp)
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
+            textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium, fontSize = 15.sp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF2563EB),
-                unfocusedBorderColor = Color(0xFFE2E8F0),
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                focusedBorderColor = primaryColor,
+                unfocusedBorderColor = Color.Gray,
+                cursorColor = primaryColor,
                 focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White
+                unfocusedContainerColor = Color.White,
+                focusedLabelColor = primaryColor,
+                unfocusedLabelColor = Color(0xFF475569)
             )
         )
     }

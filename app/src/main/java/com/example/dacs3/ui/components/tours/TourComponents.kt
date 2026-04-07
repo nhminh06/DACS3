@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,7 +52,7 @@ fun FilterTag(text: String, isSelected: Boolean, onClick: () -> Unit = {}) {
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
-            color = if (isSelected) Color(0xFF2563EB) else Color(0xFF64748B)
+            color = if (isSelected) Color(0xFF2563EB) else Color(0xFF334155)
         )
     }
 }
@@ -133,15 +134,15 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.LocationOn, null, tint = Color(0xFF64748B), modifier = Modifier.size(12.dp))
+                        Icon(Icons.Default.LocationOn, null, tint = Color(0xFF475569), modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(tour.location, color = Color(0xFF64748B), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(tour.location, color = Color(0xFF475569), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         
                         Spacer(modifier = Modifier.width(12.dp))
                         
-                        Icon(Icons.Default.Timer, null, tint = Color(0xFF64748B), modifier = Modifier.size(12.dp))
+                        Icon(Icons.Default.Timer, null, tint = Color(0xFF475569), modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(tour.duration, color = Color(0xFF64748B), fontSize = 11.sp)
+                        Text(tour.duration, color = Color(0xFF475569), fontSize = 11.sp)
                     }
                 }
 
@@ -157,7 +158,7 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 16.sp
                         )
-                        Text("mỗi khách", color = Color.Gray, fontSize = 9.sp)
+                        Text("mỗi khách", color = Color(0xFF64748B), fontSize = 9.sp, fontWeight = FontWeight.Medium)
                     }
                     
                     IconButton(
@@ -189,6 +190,7 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
     val priceRange by viewModel.priceRange.collectAsState()
     val selectedDuration by viewModel.selectedDuration.collectAsState()
     val selectedRating by viewModel.selectedRating.collectAsState()
+    val primaryColor = Color(0xFF2563EB)
 
     // Internal state for text fields, initialized empty if they are default values
     var minPriceText by remember { 
@@ -206,7 +208,7 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
             .verticalScroll(scrollState)
     ) {
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Bộ lọc tìm kiếm", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = Color(0xFF1E293B))
+        Text("Bộ lọc tìm kiếm", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = Color(0xFF0F172A))
         Spacer(modifier = Modifier.height(24.dp))
         
         // 1. Loại tour
@@ -221,7 +223,7 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
         FilterSectionTitle("Địa điểm")
         Column(modifier = Modifier.padding(vertical = 8.dp)) {
             if (availableProvinces.isEmpty()) {
-                Text("Đang tải địa điểm...", color = Color.Gray, fontSize = 14.sp)
+                Text("Đang tải địa điểm...", color = Color(0xFF64748B), fontSize = 14.sp)
             } else {
                 availableProvinces.forEach { name ->
                     Row(
@@ -231,7 +233,7 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = selectedLocations.contains(name), onCheckedChange = { viewModel.toggleLocation(name) })
-                            Text(name, fontSize = 15.sp, color = Color(0xFF334155))
+                            Text(name, fontSize = 15.sp, color = Color(0xFF0F172A), fontWeight = FontWeight.Medium)
                         }
                     }
                 }
@@ -254,14 +256,24 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
                     }
                 },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("0", fontSize = 14.sp, color = Color.LightGray) },
-                label = { Text("Từ", fontSize = 12.sp) },
+                placeholder = { Text("0", fontSize = 14.sp, color = Color(0xFF94A3B8)) },
+                label = { Text("Từ", fontSize = 12.sp, color = Color(0xFF475569)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 15.sp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedBorderColor = primaryColor,
+                    unfocusedBorderColor = Color.Gray,
+                    cursorColor = primaryColor,
+                    focusedLabelColor = primaryColor,
+                    unfocusedLabelColor = Color(0xFF475569)
+                )
             )
             
-            Text("-", fontWeight = FontWeight.Bold, color = Color.Gray)
+            Text("-", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
 
             OutlinedTextField(
                 value = maxPriceText,
@@ -272,11 +284,21 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
                     }
                 },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Không giới hạn", fontSize = 14.sp, color = Color.LightGray) },
-                label = { Text("Đến", fontSize = 12.sp) },
+                placeholder = { Text("Không giới hạn", fontSize = 14.sp, color = Color(0xFF94A3B8)) },
+                label = { Text("Đến", fontSize = 12.sp, color = Color(0xFF475569)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 15.sp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedBorderColor = primaryColor,
+                    unfocusedBorderColor = Color.Gray,
+                    cursorColor = primaryColor,
+                    focusedLabelColor = primaryColor,
+                    unfocusedLabelColor = Color(0xFF475569)
+                )
             )
         }
 
@@ -314,7 +336,7 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
                         Text(score.toString(), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(label, fontSize = 15.sp, color = Color(0xFF334155))
+                    Text(label, fontSize = 15.sp, color = Color(0xFF0F172A), fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -332,9 +354,10 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
                     maxPriceText = ""
                 },
                 modifier = Modifier.weight(1f).height(50.dp),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF64748B))
             ) {
-                Text("Đặt lại", fontWeight = FontWeight.Bold)
+                Text("Đặt lại", fontWeight = FontWeight.Bold, color = Color(0xFF334155))
             }
             Button(
                 onClick = {
@@ -343,9 +366,9 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
                 },
                 modifier = Modifier.weight(1f).height(50.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB), contentColor = Color.White)
             ) {
-                Text("Áp dụng", fontWeight = FontWeight.Bold)
+                Text("Áp dụng", fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
     }
@@ -382,7 +405,7 @@ fun FilterSelectButton(text: String, isSelected: Boolean, onClick: () -> Unit) {
                 text = text,
                 fontSize = 13.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) Color(0xFF2563EB) else Color(0xFF64748B)
+                color = if (isSelected) Color(0xFF2563EB) else Color(0xFF334155)
             )
         }
     }

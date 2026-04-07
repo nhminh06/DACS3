@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.screens
+package com.example.dacs3.ui.screens.articles
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -214,7 +214,7 @@ fun ExplorerArticleItem(article: ArticleEntity, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
-            val firstImage = article.sections.firstOrNull { it["hinh_anh"] != null }?.get("hinh_anh")
+            val firstImage = article.sections.firstOrNull()?.get("hinh_anh")
             
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
@@ -280,7 +280,7 @@ fun ExplorerArticleItem(article: ArticleEntity, onClick: () -> Unit) {
                 val firstContent = article.sections.firstOrNull()?.get("noi_dung") ?: ""
                 Text(
                     text = firstContent,
-                    color = Color(0xFF64748B),
+                    color = Color(0xFF475569),
                     fontSize = 14.sp,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,

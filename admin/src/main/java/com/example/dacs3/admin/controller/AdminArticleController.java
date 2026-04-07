@@ -2,11 +2,14 @@ package com.example.dacs3.admin.controller;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.example.dacs3.admin.service.HuggingFaceService;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +32,9 @@ public class AdminArticleController {
     @Autowired
     private Cloudinary cloudinary;
 
+    @Autowired
+    private HuggingFaceService huggingFaceService;
+
     @GetMapping
     public String listArticles(Model model,
                                @RequestParam(required = false) String search,
@@ -39,9 +45,6 @@ public class AdminArticleController {
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
 
             long total = documents.size();
-            
-            // Thống kê dựa trên loai_id (1: Làng nghề, 2: Ẩm thực, 3: Văn hóa)
-            // Ép kiểu an toàn để tránh lỗi so sánh
             long langNhe = documents.stream().filter(d -> isTypeMatch(d.get("loai_id"), 1)).count();
             long amThuc = documents.stream().filter(d -> isTypeMatch(d.get("loai_id"), 2)).count();
             long vanHoa = documents.stream().filter(d -> isTypeMatch(d.get("loai_id"), 3)).count();
@@ -53,7 +56,6 @@ public class AdminArticleController {
 
             List<QueryDocumentSnapshot> filteredArticles = new ArrayList<>(documents);
 
-            // Filter by Search
             if (search != null && !search.isEmpty()) {
                 String searchLower = search.toLowerCase();
                 filteredArticles = filteredArticles.stream()
@@ -64,14 +66,12 @@ public class AdminArticleController {
                         .collect(Collectors.toList());
             }
 
-            // Filter by Category
             if (loai != null && loai > 0) {
                 filteredArticles = filteredArticles.stream()
                         .filter(d -> isTypeMatch(d.get("loai_id"), loai))
                         .collect(Collectors.toList());
             }
 
-            // Sorting
             if (sort != null) {
                 switch (sort) {
                     case "name":
@@ -116,7 +116,67 @@ public class AdminArticleController {
         return "articles/list";
     }
 
-    // Hàm phụ trợ so sánh loai_id an toàn
+    @GetMapping("/view/{id}")
+    public String viewArticle(@PathVariable String id, Model model) {
+        try {
+            var doc = firestore.collection("articles").document(id).get().get();
+            if (doc.exists()) {
+                Map<String, Object> articleData = new HashMap<>(doc.getData());
+                articleData.put("id", doc.getId());
+                model.addAttribute("article", articleData);
+                return "articles/detail";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "redirect:/admin/articles";
+    }
+
+    @GetMapping("/ai-review/{id}")
+    @ResponseBody
+    @SuppressWarnings("unchecked")
+    public ResponseEntity<Map<String, Object>> getAiReview(@PathVariable String id) {
+        try {
+            var doc = firestore.collection("articles").document(id).get().get();
+            if (doc.exists()) {
+                Map<String, Object> articleData = doc.getData();
+                String title = (String) articleData.getOrDefault("tieu_de", "Không có tiêu đề");
+                List<Map<String, Object>> sections = (List<Map<String, Object>>) articleData.get("sections");
+                
+                // Tối ưu việc gộp nội dung để gửi sang AI
+                StringBuilder fullContent = new StringBuilder();
+                if (sections != null) {
+                    for (Map<String, Object> section : sections) {
+                        String sectionTitle = (String) section.get("tieu_de");
+                        String sectionContent = (String) section.get("noi_dung");
+                        
+                        if (sectionTitle != null && !sectionTitle.isEmpty()) {
+                            fullContent.append(sectionTitle).append(". ");
+                        }
+                        if (sectionContent != null && !sectionContent.isEmpty()) {
+                            fullContent.append(sectionContent).append("\n\n");
+                        }
+                    }
+                }
+
+                // Gửi sang HuggingFaceService đã được tối ưu stripHtml và Regex
+                Map<String, Object> result = huggingFaceService.reviewArticle(title, fullContent.toString());
+                if (result != null) {
+                    return ResponseEntity.ok(result);
+                } else {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("error", "AI tạm thời không phản hồi. Vui lòng thử lại sau.");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+                }
+            }
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Lỗi hệ thống: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
     private boolean isTypeMatch(Object val, Integer target) {
         if (val == null) return false;
         try {
@@ -170,21 +230,12 @@ public class AdminArticleController {
     public String saveArticle(@RequestParam(required = false) String id,
                               @RequestParam String tieu_de,
                               @RequestParam Integer loai_id,
+                              @RequestParam(required = false) String tac_gia,
                               @RequestParam(required = false) String tour_id,
                               @RequestParam("tieu_de_muc[]") String[] tieuDeMuc,
                               @RequestParam("noi_dung_muc[]") String[] noiDungMuc,
                               @RequestParam(value = "hinh_anh_muc[]", required = false) MultipartFile[] hinhAnhMuc,
                               @RequestParam(value = "hinh_anh_cu[]", required = false) String[] hinhAnhCu) throws IOException, ExecutionException, InterruptedException {
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("tieu_de", tieu_de);
-        data.put("loai_id", loai_id);
-        data.put("tour_id", tour_id != null && !tour_id.equals("0") ? tour_id : null);
-        
-        if (id == null || id.isEmpty()) {
-            data.put("ngay_tao", LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-            data.put("trang_thai", 1);
-        }
 
         List<Map<String, Object>> mucList = new ArrayList<>();
         for (int i = 0; i < tieuDeMuc.length; i++) {
@@ -195,21 +246,38 @@ public class AdminArticleController {
             String currentImageUrl = (hinhAnhCu != null && i < hinhAnhCu.length) ? hinhAnhCu[i] : null;
 
             if (hinhAnhMuc != null && i < hinhAnhMuc.length && !hinhAnhMuc[i].isEmpty()) {
+                @SuppressWarnings("rawtypes")
                 Map uploadResult = cloudinary.uploader().upload(hinhAnhMuc[i].getBytes(), ObjectUtils.emptyMap());
                 muc.put("hinh_anh", uploadResult.get("secure_url"));
             } else {
                 muc.put("hinh_anh", currentImageUrl);
             }
-            
             mucList.add(muc);
         }
-        data.put("sections", mucList);
-        data.put("so_muc", mucList.size());
+
+        String author = (tac_gia == null || tac_gia.isEmpty()) ? "Admin" : tac_gia;
 
         if (id == null || id.isEmpty()) {
+            Map<String, Object> data = new HashMap<>();
+            data.put("tieu_de", tieu_de);
+            data.put("loai_id", loai_id);
+            data.put("tour_id", tour_id != null && !tour_id.equals("0") ? tour_id : null);
+            data.put("sections", mucList);
+            data.put("so_muc", mucList.size());
+            data.put("ngay_tao", LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            data.put("trang_thai", 1);
+            data.put("nguon_goc", "admin");
+            data.put("tac_gia", author);
             firestore.collection("articles").add(data).get();
         } else {
-            firestore.collection("articles").document(id).update(data).get();
+            firestore.collection("articles").document(id).update(
+                "tieu_de", tieu_de,
+                "loai_id", loai_id,
+                "tac_gia", author,
+                "tour_id", tour_id != null && !tour_id.equals("0") ? tour_id : null,
+                "sections", mucList,
+                "so_muc", mucList.size()
+            ).get();
         }
 
         return "redirect:/admin/articles";

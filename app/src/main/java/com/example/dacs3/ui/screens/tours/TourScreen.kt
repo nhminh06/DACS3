@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.screens
+package com.example.dacs3.ui.screens.tours
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -93,7 +93,7 @@ fun TourScreen(
                             ) {
                                 Icon(Icons.Default.Search, null, tint = Color(0xFF2563EB))
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Text("Tìm tour, địa điểm...", color = Color.Gray, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                                Text("Tìm tour, địa điểm...", color = Color(0xFF475569), fontSize = 14.sp, modifier = Modifier.weight(1f))
                                 
                                 VerticalDivider(modifier = Modifier.padding(vertical = 12.dp).width(1.dp), color = Color.LightGray)
                                 
@@ -136,7 +136,7 @@ fun TourScreen(
                 if (tours.isEmpty() && !isLoading) {
                     item {
                         Box(modifier = Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
-                            Text("Không có tour nào khả dụng", color = Color.Gray)
+                            Text("Không có tour nào khả dụng", color = Color(0xFF64748B))
                         }
                     }
                 }
@@ -152,7 +152,7 @@ fun TourScreen(
             }
 
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color(0xFF2563EB))
             }
         }
 

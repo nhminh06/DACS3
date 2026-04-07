@@ -15,7 +15,9 @@ data class ArticleEntity(
     val ngay_tao: String = "",
     val tour_id: String? = null,
     val trang_thai: Int = 1,
-    val so_muc: Int = 0
+    val so_muc: Int = 0,
+    val nguon_goc: String = "admin", // admin hoặc user
+    val tac_gia: String = "Admin"
 )
 
 class ArticleRepository {
@@ -51,6 +53,26 @@ class ArticleRepository {
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
+        }
+    }
+
+    suspend fun createArticle(article: ArticleEntity): Boolean {
+        return try {
+            val articleData = hashMapOf(
+                "tieu_de" to article.tieu_de,
+                "loai_id" to article.loai_id,
+                "sections" to article.sections,
+                "ngay_tao" to article.ngay_tao,
+                "trang_thai" to article.trang_thai,
+                "so_muc" to article.sections.size,
+                "nguon_goc" to article.nguon_goc,
+                "tac_gia" to article.tac_gia
+            )
+            db.collection("articles").add(articleData).await()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
     }
 

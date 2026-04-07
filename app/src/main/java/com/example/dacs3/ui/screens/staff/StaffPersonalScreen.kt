@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -319,13 +320,21 @@ fun StaffPersonalScreen(
     if (showBioDialog) {
         AlertDialog(
             onDismissRequest = { showBioDialog = false },
-            title = { Text("Giới thiệu bản thân") },
+            title = { Text("Giới thiệu bản thân", color = Color.Black, fontWeight = FontWeight.Bold) },
             text = {
                 OutlinedTextField(
                     value = tempBio,
                     onValueChange = { tempBio = it },
                     modifier = Modifier.fillMaxWidth().height(150.dp),
-                    placeholder = { Text("Nhập giới thiệu của bạn...") }
+                    placeholder = { Text("Nhập giới thiệu của bạn...") },
+                    textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedBorderColor = primaryColor,
+                        unfocusedBorderColor = Color.Gray,
+                        cursorColor = primaryColor
+                    )
                 )
             },
             confirmButton = {
@@ -338,7 +347,7 @@ fun StaffPersonalScreen(
                         },
                         onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
                     )
-                }) { Text("Lưu") }
+                }) { Text("Lưu", fontWeight = FontWeight.Bold) }
             },
             dismissButton = { TextButton(onClick = { showBioDialog = false }) { Text("Hủy") } }
         )
@@ -347,20 +356,67 @@ fun StaffPersonalScreen(
     if (showExpDialog) {
         AlertDialog(
             onDismissRequest = { showExpDialog = false },
-            title = { Text("Thêm kinh nghiệm") },
+            title = { Text("Thêm kinh nghiệm", color = Color.Black, fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = expTitle, onValueChange = { expTitle = it }, label = { Text("Chức danh *") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(
+                        value = expTitle, 
+                        onValueChange = { expTitle = it }, 
+                        label = { Text("Chức danh *") }, 
+                        modifier = Modifier.fillMaxWidth(),
+                        textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedBorderColor = primaryColor,
+                            unfocusedBorderColor = Color.Gray,
+                            cursorColor = primaryColor
+                        )
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(value = expStart, onValueChange = { expStart = it }, label = { Text("Bắt đầu *") }, modifier = Modifier.weight(1f))
-                        OutlinedTextField(value = expEnd, onValueChange = { expEnd = it }, label = { Text("Kết thúc") }, modifier = Modifier.weight(1f))
+                        OutlinedTextField(
+                            value = expStart, 
+                            onValueChange = { expStart = it }, 
+                            label = { Text("Bắt đầu *") }, 
+                            modifier = Modifier.weight(1f),
+                            textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black,
+                                focusedBorderColor = primaryColor,
+                                unfocusedBorderColor = Color.Gray,
+                                cursorColor = primaryColor
+                            )
+                        )
+                        OutlinedTextField(
+                            value = expEnd, 
+                            onValueChange = { expEnd = it }, 
+                            label = { Text("Kết thúc") }, 
+                            modifier = Modifier.weight(1f),
+                            textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black,
+                                focusedBorderColor = primaryColor,
+                                unfocusedBorderColor = Color.Gray,
+                                cursorColor = primaryColor
+                            )
+                        )
                     }
                     OutlinedTextField(
                         value = expDesc, 
                         onValueChange = { expDesc = it }, 
                         label = { Text("Mô tả chi tiết *") }, 
                         modifier = Modifier.fillMaxWidth().height(100.dp),
-                        placeholder = { Text("BẮT BUỘC: Nhập mô tả...") }
+                        placeholder = { Text("BẮT BUỘC: Nhập mô tả...") },
+                        textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedBorderColor = primaryColor,
+                            unfocusedBorderColor = Color.Gray,
+                            cursorColor = primaryColor
+                        )
                     )
                     Text("* Thông tin bắt buộc", fontSize = 11.sp, color = Color.Red)
                 }
@@ -379,7 +435,7 @@ fun StaffPersonalScreen(
                             onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
                         )
                     }
-                }) { Text("Thêm") }
+                }) { Text("Thêm", fontWeight = FontWeight.Bold) }
             },
             dismissButton = { TextButton(onClick = { showExpDialog = false }) { Text("Hủy") } }
         )
@@ -407,6 +463,7 @@ private fun StaffSectionCard(title: String, action: @Composable (() -> Unit)? = 
 
 @Composable
 private fun StaffProfileInfoRow(label: String, value: String, onValueChange: (String) -> Unit, isEditing: Boolean, editable: Boolean) {
+    val primaryColor = Color(0xFF2563EB)
     Column(modifier = Modifier.padding(bottom = 12.dp)) {
         Text(label, fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
         if (isEditing && editable) {
@@ -414,11 +471,16 @@ private fun StaffProfileInfoRow(label: String, value: String, onValueChange: (St
                 value = value,
                 onValueChange = onValueChange,
                 modifier = Modifier.fillMaxWidth(),
+                textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
                 colors = TextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
                     disabledContainerColor = Color.Transparent,
-                    errorContainerColor = Color.Transparent
+                    errorContainerColor = Color.Transparent,
+                    focusedIndicatorColor = primaryColor,
+                    unfocusedIndicatorColor = Color.Gray
                 ),
                 singleLine = true
             )

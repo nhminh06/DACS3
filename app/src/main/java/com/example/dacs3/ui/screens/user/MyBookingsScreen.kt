@@ -1,11 +1,10 @@
-package com.example.dacs3.ui.screens
+package com.example.dacs3.ui.screens.user
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -20,14 +19,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.dacs3.R
 import com.example.dacs3.data.model.Booking
 import com.example.dacs3.data.model.BookingStatus
 import com.example.dacs3.data.model.Review
@@ -294,16 +294,17 @@ fun ReviewDialog(
 ) {
     var rating by remember { mutableStateOf(5) }
     var comment by remember { mutableStateOf("") }
+    val primaryColor = Color(0xFF2563EB)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Đánh giá chuyến đi", fontWeight = FontWeight.Bold) },
+        title = { Text("Đánh giá chuyến đi", fontWeight = FontWeight.Bold, color = Color(0xFF1E293B)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text(booking.tour.title, fontWeight = FontWeight.Medium, color = Color.Gray)
+                Text(booking.tour.title, fontWeight = FontWeight.Medium, color = Color(0xFF334155))
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                Text("Bạn đánh giá thế nào?", fontSize = 14.sp)
+                Text("Bạn đánh giá thế nào?", fontSize = 14.sp, color = Color(0xFF0F172A), fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.Center
@@ -324,9 +325,19 @@ fun ReviewDialog(
                 OutlinedTextField(
                     value = comment,
                     onValueChange = { comment = it },
-                    label = { Text("Lời bình luận của bạn") },
+                    label = { Text("Lời bình luận của bạn", color = Color(0xFF475569)) },
                     modifier = Modifier.fillMaxWidth().height(120.dp),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium, fontSize = 15.sp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedBorderColor = primaryColor,
+                        unfocusedBorderColor = Color.Gray,
+                        cursorColor = primaryColor,
+                        focusedLabelColor = primaryColor,
+                        unfocusedLabelColor = Color(0xFF475569)
+                    )
                 )
             }
         },
@@ -334,15 +345,16 @@ fun ReviewDialog(
             Button(
                 onClick = { onSubmit(rating, comment) },
                 enabled = !isSubmitting && comment.isNotBlank(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor, contentColor = Color.White)
             ) {
                 if (isSubmitting) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
-                else Text("Gửi đánh giá")
+                else Text("Gửi đánh giá", fontWeight = FontWeight.Bold, color = Color.White)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !isSubmitting) {
-                Text("Hủy")
+                Text("Hủy", fontWeight = FontWeight.Bold)
             }
         },
         shape = RoundedCornerShape(24.dp),
@@ -462,7 +474,7 @@ fun BookingCard(
                     Row(verticalAlignment = Alignment.Top) {
                         Icon(Icons.AutoMirrored.Filled.Note, contentDescription = null, modifier = Modifier.size(16.dp).padding(top = 2.dp), tint = Color(0xFF64748B))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(booking.note, fontSize = 13.sp, color = Color(0xFF64748B), fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+                        Text(booking.note, fontSize = 13.sp, color = Color(0xFF64748B), fontStyle = FontStyle.Italic)
                     }
                 }
 
@@ -487,7 +499,7 @@ fun BookingCard(
                                 shape = RoundedCornerShape(14.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                             ) {
-                                Text("Đánh giá ngay", fontWeight = FontWeight.Bold)
+                                Text("Đánh giá ngay", fontWeight = FontWeight.Bold, color = Color.White)
                             }
                         } else {
                             Button(
@@ -511,7 +523,7 @@ fun BookingCard(
 }
 
 @Composable
-fun BookingDetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+fun BookingDetailRow(icon: ImageVector, label: String, value: String) {
     Row(modifier = Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier

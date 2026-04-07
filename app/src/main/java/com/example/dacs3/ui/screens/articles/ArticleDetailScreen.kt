@@ -1,14 +1,12 @@
-package com.example.dacs3.ui.screens
+package com.example.dacs3.ui.screens.articles
 
 import android.widget.Toast
-import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,7 +17,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,10 +60,10 @@ fun ArticleDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(article.tieu_de, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+                title = { Text(article.tieu_de, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.DarkGray)
                     }
                 },
                 actions = {
@@ -92,9 +92,9 @@ fun ArticleDetailScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                 ) {
-                    Text("Xem chuyến đi", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("Xem chuyến đi", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.Default.ArrowForward, contentDescription = null)
+                    Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Color.White)
                 }
             }
         }
@@ -193,7 +193,8 @@ fun ArticleDetailScreen(
                                 Toast.makeText(context, "Bạn cần đăng nhập để thả tim", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        isCommenting = isCommenting
+                        isCommenting = isCommenting,
+                        primaryColor = primaryColor
                     )
                 }
             }
@@ -305,13 +306,14 @@ fun CommentSection(
     onPostComment: (String) -> Unit,
     onDeleteComment: (Comment) -> Unit,
     onLikeComment: (Comment, Boolean) -> Unit,
-    isCommenting: Boolean
+    isCommenting: Boolean,
+    primaryColor: Color
 ) {
     var commentText by remember { mutableStateOf("") }
 
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Bình luận", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+            Text("Bình luận", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1E293B))
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 "(${comments.size})",
@@ -329,9 +331,13 @@ fun CommentSection(
             placeholder = { Text(if (isLoggedIn) "Chia sẻ cảm nghĩ của bạn..." else "Bạn cần đăng nhập để bình luận", fontSize = 14.sp) },
             modifier = Modifier.fillMaxWidth().height(120.dp),
             shape = RoundedCornerShape(16.dp),
+            textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF2563EB),
-                unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f)
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                focusedBorderColor = primaryColor,
+                unfocusedBorderColor = Color.Gray,
+                cursorColor = primaryColor
             )
         )
         
@@ -347,12 +353,12 @@ fun CommentSection(
             enabled = isLoggedIn && !isCommenting && commentText.isNotBlank(),
             modifier = Modifier.align(Alignment.End),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+            colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
         ) {
             if (isCommenting) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
             } else {
-                Text("Gửi bình luận", fontWeight = FontWeight.Bold)
+                Text("Gửi bình luận", fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
 
@@ -362,7 +368,7 @@ fun CommentSection(
             Text(
                 "Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ cảm nghĩ!",
                 modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
                 color = Color.Gray,
                 fontSize = 14.sp
             )

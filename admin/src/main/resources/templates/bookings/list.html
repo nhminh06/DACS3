@@ -45,6 +45,15 @@
         .btn-confirm-v { background: #065f46 !important; }
         .btn-cancel-x { background: #7c2d12 !important; }
         .btn-delete-trash { background: #451a03 !important; }
+
+        /* Pagination Styles */
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding: 0 5px; }
+        .pagination-info { font-size: 13px; color: #94a3b8; }
+        .pagination { margin-bottom: 0; gap: 5px; }
+        .page-link { background: #1e293b; border: 1px solid #334155; color: #cbd5e1; border-radius: 6px; padding: 8px 16px; font-size: 14px; transition: 0.3s; }
+        .page-link:hover { background: #334155; color: white; border-color: #475569; }
+        .page-item.active .page-link { background: #3b82f6; border-color: #3b82f6; color: white; }
+        .page-item.disabled .page-link { background: #0f172a; border-color: #1e293b; color: #475569; }
     </style>
 </head>
 <body>
@@ -54,8 +63,7 @@
         <header class="header mb-4">
             <h1 class="h4 mb-0">Quản lý Đặt Tour</h1>
             <div class="user-info">
-                <span class="text-white me-3">Hôm nay: <strong th:text="${#calendars.format(#calendars.createNow(), 'dd/MM/yyyy')}"></strong></span>
-                Xin chào <strong th:text="${session.adminUser != null ? session.adminUser.name : 'Admin'}">Admin</strong>
+                 Xin chào <strong th:text="${session.adminUser != null ? session.adminUser.name : 'Admin'}">Admin</strong>
             </div>
         </header>
 
@@ -82,15 +90,16 @@
         <div class="section-title">Danh sách đặt tour</div>
 
         <div class="filters-row">
-            <div class="search-group">
-                <input type="text" class="form-control" placeholder="Tìm kiếm mã đặt tour, khách hàng...">
-                <button class="btn-search-muted"><i class="bi bi-search"></i></button>
-            </div>
+            <form action="/admin/bookings" method="GET" class="search-group">
+                <input type="text" name="search" th:value="${search}" class="form-control" placeholder="Tìm kiếm mã đặt tour, khách hàng...">
+                <input type="hidden" name="status" th:value="${currentStatus}">
+                <button type="submit" class="btn-search-muted"><i class="bi bi-search"></i></button>
+            </form>
             <select class="filter-select-custom" onchange="location = this.value;">
-                <option th:value="@{/admin/bookings}" th:selected="${currentStatus == null}">Tất cả trạng thái</option>
-                <option th:value="@{/admin/bookings(status='PENDING')}" th:selected="${currentStatus == 'PENDING'}">Chờ xác nhận</option>
-                <option th:value="@{/admin/bookings(status='CONFIRMED')}" th:selected="${currentStatus == 'CONFIRMED'}">Đã xác nhận</option>
-                <option th:value="@{/admin/bookings(status='CANCELLED')}" th:selected="${currentStatus == 'CANCELLED'}">Đã hủy</option>
+                <option th:value="@{/admin/bookings(page=1)}" th:selected="${currentStatus == null}">Tất cả trạng thái</option>
+                <option th:value="@{/admin/bookings(status='PENDING', page=1)}" th:selected="${currentStatus == 'PENDING'}">Chờ xác nhận</option>
+                <option th:value="@{/admin/bookings(status='CONFIRMED', page=1)}" th:selected="${currentStatus == 'CONFIRMED'}">Đã xác nhận</option>
+                <option th:value="@{/admin/bookings(status='CANCELLED', page=1)}" th:selected="${currentStatus == 'CANCELLED'}">Đã hủy</option>
             </select>
             <a href="/admin/bookings/schedule" class="btn-muted-green"><i class="bi bi-calendar-event me-2"></i>Quản lý lịch trình</a>
         </div>
@@ -132,7 +141,6 @@
                         <td th:text="${booking.startDate}">10/01/2026</td>
                         <td>
                             <div class="fw-bold text-info" th:text="${#numbers.formatDecimal(booking.totalPrice, 0, 'COMMA', 0, 'POINT') + ' đ'}">0 đ</div>
-                            <!-- THÊM TRẠNG THÁI THANH TOÁN TẠI ĐÂY -->
                             <div th:if="${booking.paymentMethod == 'QR'}">
                                 <span th:if="${booking.paymentStatus == 'da_thanh_toan'}" class="badge-payment-v2 payment-paid">ĐÃ THANH TOÁN</span>
                                 <span th:if="${booking.paymentStatus == 'tu_choi'}" class="badge-payment-v2 payment-rejected">TỪ CHỐI</span>
@@ -157,6 +165,28 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-container" th:if="${totalPages > 1}">
+            <div class="pagination-info">
+                Hiển thị <span th:text="${bookings.size()}">0</span> / <span th:text="${totalFiltered}">0</span> đơn hàng
+            </div>
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    <li class="page-item" th:classappend="${currentPage == 1 ? 'disabled' : ''}">
+                        <a class="page-link" th:href="@{/admin/bookings(page=${currentPage - 1}, status=${currentStatus}, search=${search})}">Trước</a>
+                    </li>
+
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage ? 'active' : ''}">
+                        <a class="page-link" th:text="${i}" th:href="@{/admin/bookings(page=${i}, status=${currentStatus}, search=${search})}">1</a>
+                    </li>
+
+                    <li class="page-item" th:classappend="${currentPage == totalPages ? 'disabled' : ''}">
+                        <a class="page-link" th:href="@{/admin/bookings(page=${currentPage + 1}, status=${currentStatus}, search=${search})}">Sau</a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
 </body>

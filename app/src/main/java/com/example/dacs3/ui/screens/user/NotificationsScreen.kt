@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.screens
+package com.example.dacs3.ui.screens.user
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -48,18 +48,14 @@ fun NotificationsScreen(
     LaunchedEffect(user?.id) {
         if (user?.id != null) {
             val currentUserId = user!!.id
-            Log.d("NOTIF_DEBUG", "Fetching notifications for UserID: $currentUserId")
             contactViewModel.fetchUserContacts(currentUserId)
             
             try {
-                // Thử lấy tất cả thông báo của User này
                 val snapshot = FirebaseFirestore.getInstance()
                     .collection("notifications")
                     .whereEqualTo("userId", currentUserId)
                     .get()
                     .await()
-                
-                Log.d("NOTIF_DEBUG", "Found ${snapshot.size()} notifications")
                 
                 systemNotifications = snapshot.documents.map { doc ->
                     val data = doc.data?.toMutableMap() ?: mutableMapOf()
@@ -81,15 +77,15 @@ fun NotificationsScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Thông báo của tôi", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                        Text("Thông báo của tôi", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color(0xFF0F172A))
                         if (user != null) {
-                            Text("ID: ${user?.id?.take(8)}...", fontSize = 10.sp, color = Color.Gray)
+                            Text("ID: ${user?.id?.take(8)}...", fontSize = 10.sp, color = Color(0xFF64748B))
                         }
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF1E293B))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF0F172A))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
@@ -165,20 +161,21 @@ fun SystemNotificationItem(data: Map<String, Any>) {
                 Text(
                     text = data["title"]?.toString() ?: "Thông báo đặt tour",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = Color(0xFF1E293B)
+                    fontSize = 15.sp,
+                    color = Color(0xFF0F172A)
                 )
                 Text(
                     text = data["message"]?.toString() ?: "",
-                    fontSize = 12.sp,
-                    color = Color(0xFF475569),
+                    fontSize = 13.sp,
+                    color = Color(0xFF334155),
                     lineHeight = 18.sp
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = timestamp?.let { sdf.format(it.toDate()) } ?: "",
-                    fontSize = 9.sp,
-                    color = Color.Gray
+                    fontSize = 10.sp,
+                    color = Color(0xFF64748B),
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
@@ -186,7 +183,7 @@ fun SystemNotificationItem(data: Map<String, Any>) {
 }
 
 @Composable
-fun AdminReplyItem(contact: Contact, primaryColor: Color) {
+fun AdminReplyItem(contact: com.example.dacs3.data.model.Contact, primaryColor: Color) {
     val sdf = remember { SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault()) }
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -198,25 +195,26 @@ fun AdminReplyItem(contact: Contact, primaryColor: Color) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.AutoMirrored.Filled.Reply, null, tint = primaryColor, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Phản hồi: ${contact.type}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text("Phản hồi: ${contact.type}", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF0F172A))
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             
-            Box(modifier = Modifier.fillMaxWidth().background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp)).padding(8.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp)).padding(10.dp)) {
                 Column {
-                    Text("Nội dung của bạn:", fontSize = 10.sp, color = Color.Gray)
-                    Text(contact.content, fontSize = 12.sp)
+                    Text("Nội dung của bạn:", fontSize = 11.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Bold)
+                    Text(contact.content, fontSize = 13.sp, color = Color(0xFF1E293B))
                 }
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Admin phản hồi:", fontSize = 10.sp, color = primaryColor, fontWeight = FontWeight.Bold)
-            Text(contact.reply ?: "", fontSize = 13.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text("Admin phản hồi:", fontSize = 11.sp, color = primaryColor, fontWeight = FontWeight.ExtraBold)
+            Text(contact.reply ?: "", fontSize = 14.sp, color = Color(0xFF0F172A), fontWeight = FontWeight.Medium)
             
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 contact.replyAt?.let { sdf.format(it.toDate()) } ?: sdf.format(contact.timestamp.toDate()),
-                fontSize = 9.sp, color = Color.Gray, modifier = Modifier.align(Alignment.End)
+                fontSize = 10.sp, color = Color(0xFF64748B), modifier = Modifier.align(Alignment.End)
             )
         }
     }
@@ -226,9 +224,9 @@ fun AdminReplyItem(contact: Contact, primaryColor: Color) {
 fun EmptyNotifications() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Default.Notifications, null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
+            Icon(Icons.Default.Notifications, null, modifier = Modifier.size(64.dp), tint = Color(0xFFCBD5E1))
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Chưa có thông báo nào", color = Color.Gray)
+            Text("Chưa có thông báo nào", color = Color(0xFF64748B), fontSize = 16.sp, fontWeight = FontWeight.Medium)
         }
     }
 }

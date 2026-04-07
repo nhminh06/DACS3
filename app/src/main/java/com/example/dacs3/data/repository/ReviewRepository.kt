@@ -17,7 +17,7 @@ class ReviewRepository {
             val finalReview = review.copy(id = docRef.id)
             docRef.set(finalReview).await()
             
-            // Update tour overall rating
+            // Cập nhật lại điểm trung bình cho tour
             updateTourRating(review.tourId)
             true
         } catch (e: Exception) {
@@ -27,20 +27,32 @@ class ReviewRepository {
     }
 
     private suspend fun updateTourRating(tourId: String) {
+        if (tourId.isBlank()) return
+        
         try {
-            val reviews = reviewsCollection.whereEqualTo("tourId", tourId).get().await()
-            if (reviews.isEmpty) return
+            // Lấy tất cả đánh giá của tour này từ Firebase
+            val snapshot = reviewsCollection.whereEqualTo("tourId", tourId).get().await()
+            val reviews = snapshot.toObjects(Review::class.java)
+            
+            if (reviews.isEmpty()) return
 
-            val totalRating = reviews.documents.sumOf { it.getLong("rating")?.toDouble() ?: 0.0 }
-            val count = reviews.size()
+            // Tính tổng điểm và trung bình cộng
+            val totalRating = reviews.sumOf { it.rating.toDouble() }
+            val count = reviews.size
             val averageRating = totalRating / count
 
+            // Làm tròn đến 1 chữ số thập phân (ví dụ: 3.0)
+            val roundedRating = Math.round(averageRating * 10.0) / 10.0
+
+            // Cập nhật thông tin vào document của tour
             toursCollection.document(tourId).update(
                 mapOf(
-                    "rating" to averageRating,
+                    "rating" to roundedRating,
                     "reviewCount" to count
                 )
             ).await()
+            
+            Log.d("ReviewRepository", "Updated tour $tourId: rating=$roundedRating, count=$count")
         } catch (e: Exception) {
             Log.e("ReviewRepository", "Error updating tour rating: ${e.message}")
         }

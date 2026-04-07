@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,6 +36,7 @@ fun StaffScheduleScreen(
     val tabs = listOf("Tour sắp tới", "Lịch sử")
 
     var searchQuery by remember { mutableStateOf("") }
+    val primaryColor = Color(0xFF2563EB)
 
     Scaffold(
         topBar = {
@@ -58,7 +60,7 @@ fun StaffScheduleScreen(
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = Color.White,
-                contentColor = Color(0xFF2563EB)
+                contentColor = primaryColor
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -83,7 +85,15 @@ fun StaffScheduleScreen(
                         placeholder = { Text("Tìm tên tour...") },
                         leadingIcon = { Icon(Icons.Default.Search, null) },
                         shape = RoundedCornerShape(12.dp),
-                        singleLine = true
+                        singleLine = true,
+                        textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedBorderColor = primaryColor,
+                            unfocusedBorderColor = Color.Gray,
+                            cursorColor = primaryColor
+                        )
                     )
                 }
             }

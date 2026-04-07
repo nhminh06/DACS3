@@ -63,7 +63,9 @@ public class AdminBookingController {
 
     @GetMapping
     @SuppressWarnings("unchecked")
-    public String listBookings(Model model, @RequestParam(required = false) String status) {
+    public String listBookings(Model model, 
+                               @RequestParam(required = false) String status,
+                               @RequestParam(defaultValue = "1") int page) {
         try {
             ApiFuture<QuerySnapshot> toursFuture = firestore.collection("tours").get();
             Map<String, Map<String, Object>> toursMap = new HashMap<>();
@@ -74,7 +76,7 @@ public class AdminBookingController {
             ApiFuture<QuerySnapshot> future = firestore.collection("bookings").get();
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
             
-            List<Booking> bookings = new ArrayList<>();
+            List<Booking> allFilteredBookings = new ArrayList<>();
             long totalRevenue = 0;
             int confirmedCount = 0;
             int pendingCount = 0;
@@ -108,17 +110,43 @@ public class AdminBookingController {
                 }
 
                 if (status == null || status.isEmpty() || status.equals(booking.getStatus())) {
-                    bookings.add(booking);
+                    allFilteredBookings.add(booking);
                 }
             }
 
-            model.addAttribute("bookings", bookings);
+            // Sắp xếp theo ngày đặt mới nhất
+            allFilteredBookings.sort((b1, b2) -> {
+                if (b1.getCreatedAt() == null || b2.getCreatedAt() == null) return 0;
+                return b2.getCreatedAt().compareTo(b1.getCreatedAt());
+            });
+
+            // Phân trang
+            int pageSize = 6;
+            int totalFiltered = allFilteredBookings.size();
+            int totalPages = (int) Math.ceil((double) totalFiltered / pageSize);
+            
+            if (page < 1) page = 1;
+            if (totalPages > 0 && page > totalPages) page = totalPages;
+
+            int start = (page - 1) * pageSize;
+            int end = Math.min(start + pageSize, totalFiltered);
+
+            List<Booking> pagedBookings = new ArrayList<>();
+            if (start < totalFiltered) {
+                pagedBookings = allFilteredBookings.subList(start, end);
+            }
+
+            model.addAttribute("bookings", pagedBookings);
             model.addAttribute("totalBookingsCount", documents.size());
             model.addAttribute("confirmedCount", confirmedCount);
             model.addAttribute("pendingCount", pendingCount);
             model.addAttribute("unpaidCount", unpaidCount);
             model.addAttribute("totalRevenue", totalRevenue);
             model.addAttribute("currentStatus", status);
+            
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", totalPages);
+            model.addAttribute("totalFiltered", totalFiltered);
 
         } catch (Exception e) { e.printStackTrace(); }
         return "bookings/list";
@@ -142,7 +170,7 @@ public class AdminBookingController {
                 redirectAttributes.addFlashAttribute("successMessage", "Xác nhận tour thành công!");
             }
         } catch (Exception e) { e.printStackTrace(); }
-        return "redirect:/admin/bookings";
+        return "redirect:/admin/bookings/booking-detail/" + id;
     }
 
     @GetMapping("/confirm-payment/{id}")
@@ -275,6 +303,22 @@ public class AdminBookingController {
     @GetMapping("/booking-detail/{id}")
     @SuppressWarnings("unchecked")
     public String bookingDetail(@PathVariable String id, Model model) {
+        try {
+            DocumentSnapshot document = firestore.collection("bookings").document(id).get().get();
+            if (document.exists()) {
+                Booking booking = document.toObject(Booking.class);
+                booking.setId(id);
+                loadTourInfo(booking, document);
+                
+                model.addAttribute("booking", booking);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return "bookings/booking_detail";
+    }
+
+    @GetMapping("/grouped-trip-detail/{id}")
+    @SuppressWarnings("unchecked")
+    public String groupedTripDetail(@PathVariable String id, Model model) {
         try {
             DocumentSnapshot document = firestore.collection("bookings").document(id).get().get();
             if (document.exists()) {

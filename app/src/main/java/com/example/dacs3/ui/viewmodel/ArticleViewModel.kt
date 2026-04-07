@@ -1,15 +1,19 @@
 package com.example.dacs3.ui.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.model.Comment
 import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.data.repository.ArticleRepository
+import com.example.dacs3.data.repository.storage.StorageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class ArticleViewModel(private val repository: ArticleRepository = ArticleRepository()) : ViewModel() {
+    private val storageRepository = StorageRepository()
+    
     private val _homeArticles = MutableStateFlow<List<ArticleEntity>>(emptyList())
     val homeArticles: StateFlow<List<ArticleEntity>> = _homeArticles
 
@@ -48,6 +52,20 @@ class ArticleViewModel(private val repository: ArticleRepository = ArticleReposi
         }
     }
 
+    fun createArticle(article: ArticleEntity, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val success = repository.createArticle(article)
+            if (success) {
+                fetchAllArticles()
+            }
+            onComplete(success)
+        }
+    }
+
+    suspend fun uploadImage(uri: Uri): String? {
+        return storageRepository.uploadFile(uri)
+    }
+
     fun fetchComments(articleId: String) {
         viewModelScope.launch {
             val result = repository.getComments(articleId)
@@ -79,7 +97,6 @@ class ArticleViewModel(private val repository: ArticleRepository = ArticleReposi
 
     fun toggleLikeComment(articleId: String, commentId: String, userId: String) {
         viewModelScope.launch {
-            // The repository now handles the toggle logic internally via transaction
             val success = repository.toggleLikeComment(articleId, commentId, userId)
             if (success) {
                 fetchComments(articleId)

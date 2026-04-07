@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.screens
+package com.example.dacs3.ui.screens.user
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -22,9 +22,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dacs3.R
@@ -40,6 +42,7 @@ fun ForgotPasswordScreen(
     val backgroundColor = Color(0xFFF1F5F9)
     val primaryColor = Color(0xFF2563EB)
     val textColor = Color(0xFF1E293B)
+    val textblack = Color(0xFF000000)
 
     var email by remember { mutableStateOf("") }
     var otp by remember { mutableStateOf("") }
@@ -55,7 +58,7 @@ fun ForgotPasswordScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (!isOtpSent) "Quên mật khẩu" else "Xác thực OTP", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+                title = { Text(if (!isOtpSent) "Quên mật khẩu" else "Xác thực OTP", fontSize = 18.sp, fontWeight = FontWeight.Bold,color = textblack) },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (isOtpSent) isOtpSent = false else onBackToLogin()
@@ -106,7 +109,7 @@ fun ForgotPasswordScreen(
                     "Mã xác thực đã được gửi đến email $email",
                 fontSize = 14.sp,
                 color = Color.Gray,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(40.dp))
@@ -120,10 +123,13 @@ fun ForgotPasswordScreen(
                     leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = primaryColor) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
+                    textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
                         focusedBorderColor = primaryColor,
-                        unfocusedBorderColor = Color.LightGray,
-                        focusedLabelColor = primaryColor
+                        unfocusedBorderColor = Color.Gray,
+                        cursorColor = primaryColor
                     ),
                     singleLine = true,
                     enabled = !isLoading
@@ -137,10 +143,13 @@ fun ForgotPasswordScreen(
                     leadingIcon = { Icon(Icons.Default.Pin, contentDescription = null, tint = primaryColor) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
+                    textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
                         focusedBorderColor = primaryColor,
-                        unfocusedBorderColor = Color.LightGray,
-                        focusedLabelColor = primaryColor
+                        unfocusedBorderColor = Color.Gray,
+                        cursorColor = primaryColor
                     ),
                     singleLine = true,
                     enabled = !isLoading
@@ -161,10 +170,13 @@ fun ForgotPasswordScreen(
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
+                    textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
                         focusedBorderColor = primaryColor,
-                        unfocusedBorderColor = Color.LightGray,
-                        focusedLabelColor = primaryColor
+                        unfocusedBorderColor = Color.Gray,
+                        cursorColor = primaryColor
                     ),
                     singleLine = true,
                     enabled = !isLoading
@@ -185,10 +197,13 @@ fun ForgotPasswordScreen(
                     visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
+                    textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
                         focusedBorderColor = primaryColor,
-                        unfocusedBorderColor = Color.LightGray,
-                        focusedLabelColor = primaryColor
+                        unfocusedBorderColor = Color.Gray,
+                        cursorColor = primaryColor
                     ),
                     singleLine = true,
                     enabled = !isLoading
@@ -247,7 +262,7 @@ fun ForgotPasswordScreen(
                 if (isLoading) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 } else {
-                    Text(if (!isOtpSent) "Gửi mã OTP" else "Xác nhận đổi mật khẩu", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(if (!isOtpSent) "Gửi mã OTP" else "Xác nhận đổi mật khẩu", fontSize = 16.sp, fontWeight = FontWeight.Bold , color = Color.White)
                 }
             }
         }

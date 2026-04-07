@@ -20,7 +20,9 @@ data class Booking(
     val paymentMethod: String = "CASH",
     val receiptUrl: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
-    val tripStatus: String = "preparing" // preparing, started, completed, cancelled
+    val tripStatus: String = "preparing", // preparing, started, completed, cancelled
+    val paymentStatus: String? = null,
+    val paymentImage: String? = null
 ) {
     val totalPeople: Int get() = adults + children + infants
     
@@ -35,7 +37,8 @@ data class Booking(
     val canCancel: Boolean get() {
         val today = LocalDate.now()
         val daysUntilStart = java.time.temporal.ChronoUnit.DAYS.between(today, startDate)
-        return status != BookingStatus.CANCELLED && daysUntilStart >= 3
+        // Chỉ cho phép hủy khi đang chờ xác nhận (PENDING) và ít nhất 3 ngày trước khởi hành
+        return status == BookingStatus.PENDING && daysUntilStart >= 3
     }
 }
 

@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.screens
+package com.example.dacs3.ui.screens.tours
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,10 +50,10 @@ fun BookingDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chi tiết đặt tour", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+                title = { Text("Chi tiết đặt tour", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại", tint = Color.DarkGray)
                     }
                 },
                 actions = {
@@ -64,9 +65,10 @@ fun BookingDetailScreen(
             )
         },
         bottomBar = {
-            booking?.let { 
-                if (it.status != BookingStatus.CANCELLED) {
-                    ActionButtons(it, onCancelClick = { showCancelDialog = true }) 
+            booking?.let { b ->
+                // Chỉ hiển thị ActionButtons nếu tour có thể hủy (PENDING) hoặc có thể đánh giá (completed)
+                if (b.status == BookingStatus.PENDING || b.tripStatus == "completed") {
+                    ActionButtons(b, onCancelClick = { showCancelDialog = true })
                 }
             }
         }
@@ -158,10 +160,11 @@ fun TourHeader(booking: Booking) {
                     contentScale = ContentScale.Crop
                 )
                 
-                val statusColor = when(booking.status) {
-                    BookingStatus.CONFIRMED -> Color(0xFF22C55E)
-                    BookingStatus.PENDING -> Color(0xFFF59E0B)
-                    BookingStatus.CANCELLED -> Color(0xFFEF4444)
+                val statusColor = when {
+                    booking.status == BookingStatus.CANCELLED -> Color(0xFFEF4444)
+                    booking.tripStatus == "completed" -> Color(0xFF10B981)
+                    booking.status == BookingStatus.CONFIRMED -> Color(0xFF22C55E)
+                    else -> Color(0xFFF59E0B)
                 }
                 
                 Surface(
@@ -170,10 +173,11 @@ fun TourHeader(booking: Booking) {
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = when(booking.status) {
-                            BookingStatus.CONFIRMED -> "Đã xác nhận"
-                            BookingStatus.PENDING -> "Chờ xác nhận"
-                            BookingStatus.CANCELLED -> "Đã hủy"
+                        text = when {
+                            booking.status == BookingStatus.CANCELLED -> "Đã hủy"
+                            booking.tripStatus == "completed" -> "Hoàn thành"
+                            booking.status == BookingStatus.CONFIRMED -> "Đã xác nhận"
+                            else -> "Chờ xác nhận"
                         },
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         color = Color.White,
@@ -238,7 +242,7 @@ fun TourQuickInfo(booking: Booking) {
 }
 
 @Composable
-fun QuickInfoItem(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String, label: String) {
+fun QuickInfoItem(icon: ImageVector, value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(icon, null, tint = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
         Spacer(modifier = Modifier.height(4.dp))
@@ -271,7 +275,7 @@ fun BookingTimeline(booking: Booking) {
         TimelineItem(
             title = "Ngày khởi hành",
             date = booking.startDate.format(dateFormatter),
-            isCompleted = false,
+            isCompleted = booking.tripStatus == "completed" || booking.tripStatus == "started",
             isLast = true
         )
     }
@@ -320,7 +324,7 @@ fun BookingCustomerInfo(booking: Booking) {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Chi tiết khách hàng", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
+            Text("Chi tiết khách hàng", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color(0xFF0F172A))
             Spacer(modifier = Modifier.height(16.dp))
             
             DetailInfoRow(Icons.Default.FlightTakeoff, "Khởi hành", booking.startDate.format(dateFormatter))
@@ -358,7 +362,7 @@ fun BookingCustomerInfo(booking: Booking) {
 }
 
 @Composable
-fun DetailInfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+fun DetailInfoRow(icon: ImageVector, label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
         Spacer(modifier = Modifier.width(12.dp))
@@ -380,7 +384,7 @@ fun PaymentSummary(booking: Booking) {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Thanh toán", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
+            Text("Thanh toán", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color(0xFF0F172A))
             Spacer(modifier = Modifier.height(16.dp))
             
             PaymentRow("Người lớn x${booking.adults}", currencyFormatter.format(booking.tour.price * booking.adults))
@@ -427,7 +431,8 @@ fun ActionButtons(booking: Booking, onCancelClick: () -> Unit) {
                 .navigationBarsPadding(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (booking.canCancel) {
+            // CHỈ cho phép hủy nếu trạng thái là PENDING (Chờ xác nhận)
+            if (booking.status == BookingStatus.PENDING) {
                 Button(
                     onClick = onCancelClick,
                     modifier = Modifier.weight(1f).height(54.dp),
@@ -436,7 +441,8 @@ fun ActionButtons(booking: Booking, onCancelClick: () -> Unit) {
                 ) {
                     Text("HỦY ĐẶT TOUR", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
                 }
-            } else if (booking.status == BookingStatus.CONFIRMED) {
+            } else if (booking.tripStatus == "completed") {
+                // Nếu hoàn thành thì hiện nút Đánh giá
                 Button(
                     onClick = { /* Navigate to Review Screen */ },
                     modifier = Modifier.weight(1f).height(54.dp),

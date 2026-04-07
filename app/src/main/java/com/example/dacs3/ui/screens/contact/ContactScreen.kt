@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.screens
+package com.example.dacs3.ui.screens.contact
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -58,7 +59,7 @@ fun ContactScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { 
-                    Text("Liên Hệ & Hỗ Trợ", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp) 
+                    Text("Liên Hệ & Hỗ Trợ", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF0F172A)) 
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White),
                 modifier = Modifier.clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
@@ -147,10 +148,10 @@ fun ContactScreen(
                 TextButton(onClick = { 
                     isSubmitted = false
                     contactViewModel.resetSuccess()
-                }) { Text("Đóng") }
+                }) { Text("Đóng", fontWeight = FontWeight.Bold) }
             },
-            title = { Text("Gửi thành công!") },
-            text = { Text("Cảm ơn bạn đã gửi $contactType. Chúng tôi sẽ phản hồi sớm nhất.") },
+            title = { Text("Gửi thành công!", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A)) },
+            text = { Text("Cảm ơn bạn đã gửi $contactType. Chúng tôi sẽ phản hồi sớm nhất.", color = Color(0xFF334155)) },
             shape = RoundedCornerShape(24.dp),
             containerColor = Color.White
         )
@@ -160,10 +161,10 @@ fun ContactScreen(
         AlertDialog(
             onDismissRequest = { errorMessage = null },
             confirmButton = {
-                TextButton(onClick = { errorMessage = null }) { Text("Đóng") }
+                TextButton(onClick = { errorMessage = null }) { Text("Đóng", fontWeight = FontWeight.Bold) }
             },
-            title = { Text("Lỗi") },
-            text = { Text(errorMessage!!) },
+            title = { Text("Lỗi", fontWeight = FontWeight.Bold, color = Color.Red) },
+            text = { Text(errorMessage!!, color = Color(0xFF334155)) },
             shape = RoundedCornerShape(24.dp),
             containerColor = Color.White
         )
@@ -217,14 +218,14 @@ fun ContactHistoryItem(contact: Contact) {
                         fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )
                 }
-                Text(sdf.format(contact.timestamp.toDate()), fontSize = 10.sp, color = Color.Gray)
+                Text(sdf.format(contact.timestamp.toDate()), fontSize = 10.sp, color = Color(0xFF64748B))
             }
             
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 contact.content, 
                 fontSize = 14.sp, 
-                color = Color(0xFF1E293B), 
+                color = Color(0xFF0F172A), 
                 lineHeight = 20.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -244,13 +245,13 @@ fun ContactHistoryItem(contact: Contact) {
                             Text("Phản hồi từ hệ thống:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF10B981))
                         }
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text(contact.reply!!, fontSize = 13.sp, color = Color(0xFF334155), lineHeight = 18.sp)
+                        Text(contact.reply!!, fontSize = 13.sp, color = Color(0xFF1E293B), lineHeight = 18.sp, fontWeight = FontWeight.Medium)
                         
                         if (contact.replyAt != null) {
                             Text(
                                 sdf.format(contact.replyAt.toDate()), 
                                 fontSize = 9.sp, 
-                                color = Color.Gray, 
+                                color = Color(0xFF64748B), 
                                 modifier = Modifier.align(Alignment.End).padding(top = 4.dp)
                             )
                         }
@@ -271,7 +272,7 @@ fun ContactHistoryItem(contact: Contact) {
                     Text(
                         if (contact.status == "processed") "Đã xử lý" else "Đang chờ phản hồi",
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         color = if (contact.status == "processed") Color(0xFF10B981) else Color(0xFFF59E0B)
                     )
                 }
@@ -287,7 +288,7 @@ fun TabButton(text: String, isSelected: Boolean, onClick: () -> Unit, modifier: 
         modifier = modifier,
         colors = ButtonDefaults.buttonColors(
             containerColor = if (isSelected) Color(0xFF2563EB) else Color.Transparent,
-            contentColor = if (isSelected) Color.White else Color(0xFF64748B)
+            contentColor = if (isSelected) Color.White else Color(0xFF475569)
         ),
         elevation = null,
         shape = RoundedCornerShape(8.dp),
@@ -326,11 +327,11 @@ fun ContactForm(
         }
         
         Spacer(modifier = Modifier.height(12.dp))
-        Text("Chúng tôi luôn lắng nghe bạn", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+        Text("Chúng tôi luôn lắng nghe bạn", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color(0xFF0F172A))
         Text(
             "Mọi ý kiến đóng góp giúp chúng tôi hoàn thiện hơn.",
             textAlign = TextAlign.Center,
-            fontSize = 12.sp, color = Color.Gray,
+            fontSize = 13.sp, color = Color(0xFF475569),
             modifier = Modifier.padding(horizontal = 20.dp)
         )
 
@@ -364,12 +365,12 @@ fun ContactForm(
                 Spacer(modifier = Modifier.height(20.dp))
                 Button(
                     onClick = onSubmit, enabled = !isLoading,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor, contentColor = Color.White)
                 ) {
                     if (isLoading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                    else Text("Gửi thông tin", fontWeight = FontWeight.Bold)
+                    else Text("Gửi thông tin", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                 }
             }
         }
@@ -380,12 +381,12 @@ fun ContactForm(
 @Composable
 fun ContactTypeChip(label: String, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier) {
     Surface(
-        modifier = modifier.height(36.dp).clickable { onClick() },
+        modifier = modifier.height(38.dp).clickable { onClick() },
         color = if (isSelected) Color(0xFF2563EB) else Color(0xFFF1F5F9),
         shape = RoundedCornerShape(8.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (isSelected) Color.White else Color(0xFF64748B))
+            Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (isSelected) Color.White else Color(0xFF475569))
         }
     }
 }
@@ -400,10 +401,19 @@ fun ContactTextField(
 ) {
     val primaryColor = Color(0xFF2563EB)
     OutlinedTextField(
-        value = value, onValueChange = onValueChange, label = { Text(label, fontSize = 12.sp) },
+        value = value, onValueChange = onValueChange, label = { Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium) },
         leadingIcon = { Icon(icon, null, tint = primaryColor, modifier = Modifier.size(18.dp)) },
-        modifier = Modifier.fillMaxWidth().then(if (isMultiline) Modifier.height(120.dp) else Modifier),
+        modifier = Modifier.fillMaxWidth().then(if (isMultiline) Modifier.height(130.dp) else Modifier),
         shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = primaryColor, unfocusedBorderColor = Color(0xFFE2E8F0))
+        textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium, fontSize = 15.sp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = Color.Black,
+            unfocusedTextColor = Color.Black,
+            focusedBorderColor = primaryColor,
+            unfocusedBorderColor = Color(0xFFCBD5E1),
+            focusedLabelColor = primaryColor,
+            unfocusedLabelColor = Color(0xFF475569),
+            cursorColor = primaryColor
+        )
     )
 }

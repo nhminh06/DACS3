@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.screens
+package com.example.dacs3.ui.screens.user
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -93,9 +94,13 @@ fun LoginScreen(
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = primaryColor) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
+                textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
                     focusedBorderColor = primaryColor,
-                    unfocusedBorderColor = Color.LightGray,
+                    unfocusedBorderColor = Color.Gray,
+                    cursorColor = primaryColor,
                     focusedLabelColor = primaryColor
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -119,9 +124,13 @@ fun LoginScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
+                textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
                     focusedBorderColor = primaryColor,
-                    unfocusedBorderColor = Color.LightGray,
+                    unfocusedBorderColor = Color.Gray,
+                    cursorColor = primaryColor,
                     focusedLabelColor = primaryColor
                 ),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -163,13 +172,13 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor, contentColor = Color.White),
                 enabled = !isLoading
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Đăng Nhập", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("Đăng Nhập", fontSize = 16.sp, fontWeight = FontWeight.Bold , color = Color.White)
                 }
             }
 

@@ -1,4 +1,4 @@
-package com.example.dacs3.ui.screens
+package com.example.dacs3.ui.screens.user
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -6,10 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.BookOnline
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -87,6 +84,12 @@ fun ProfileScreen(userViewModel: UserViewModel, onNavigate: (String) -> Unit) {
                         title = "Đặt chỗ của tôi", 
                         icon = Icons.Default.BookOnline, 
                         onClick = { onNavigate("my_bookings") }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = Color(0xFFF1F5F9))
+                    ProfileOptionItem(
+                        title = "Đóng góp bài viết", 
+                        icon = Icons.Default.PostAdd, 
+                        onClick = { onNavigate("create_article") }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = Color(0xFFF1F5F9))
                     ProfileOptionItem(

@@ -1,7 +1,5 @@
 package com.example.dacs3.ui
 
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -13,6 +11,11 @@ import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.data.repository.ContactRepository
 import com.example.dacs3.data.repository.GuideRepository
 import com.example.dacs3.ui.screens.*
+import com.example.dacs3.ui.screens.user.*
+import com.example.dacs3.ui.screens.articles.*
+import com.example.dacs3.ui.screens.home.*
+import com.example.dacs3.ui.screens.tours.*
+import com.example.dacs3.ui.screens.contact.*
 import com.example.dacs3.ui.screens.staff.*
 import com.example.dacs3.ui.viewmodel.*
 import com.example.dacs3.ui.viewmodel.factory.*
@@ -197,6 +200,13 @@ fun MainContainer() {
                     articleViewModel = articleViewModel
                 )
             }
+        }
+        "create_article" -> {
+            CreateArticleScreen(
+                userViewModel = userViewModel,
+                articleViewModel = articleViewModel,
+                onBack = { currentScreen = "profile" }
+            )
         }
         "contact" -> {
             ContactScreen(

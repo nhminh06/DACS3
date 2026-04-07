@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết bài viết - WIND Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/admin-style.css}">
+    <style>
+        body { background-color: #0f172a; color: #f1f5f9; }
+        .detail-card { background: #1e293b; border-radius: 16px; border: 1px solid #334155; padding: 30px; margin-bottom: 30px; }
+        .section-item { margin-bottom: 25px; border-left: 4px solid #3b82f6; padding-left: 20px; }
+        .section-img { max-width: 100%; border-radius: 12px; margin-top: 15px; border: 1px solid #334155; }
+        .meta-info { color: #94a3b8; font-size: 0.9rem; display: flex; gap: 20px; margin-bottom: 20px; }
+        .badge-status { padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .status-pending { background: #f59e0b; color: #000; }
+        .status-active { background: #10b981; color: #fff; }
+
+        @keyframes ai-glow {
+            0% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.2); border-color: #6366f1; }
+            50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.5); border-color: #818cf8; }
+            100% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.2); border-color: #6366f1; }
+        }
+
+        .ai-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #6366f1;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: none;
+            animation: ai-glow 3s infinite ease-in-out;
+        }
+
+        .btn-ai-magic {
+            background: linear-gradient(45deg, #6366f1, #a855f7);
+            color: white !important;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+        .btn-ai-magic:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4); }
+        .btn-ai-magic:disabled { background: #334155; transform: none; cursor: not-allowed; }
+
+        .ai-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid rgba(99, 102, 241, 0.3); padding-bottom: 15px; }
+        .ai-title { color: #818cf8; font-weight: 700; margin-bottom: 0; display: flex; align-items: center; gap: 8px; }
+
+        .verdict-box { padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .verdict-pass { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+        .verdict-fail { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
+
+        .ai-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 8px; text-transform: uppercase; font-weight: 800; }
+        .risk-low { background: #064e3b; color: #34d399; }
+        .risk-medium { background: #78350f; color: #fbbf24; }
+        .risk-high { background: #7f1d1d; color: #f87171; }
+
+        .confidence-bar { height: 8px; background: #334155; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+        .confidence-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7); transition: width 1s ease-in-out; }
+        .ai-summary { font-style: italic; color: #cbd5e1; border-left: 3px solid #6366f1; padding-left: 15px; margin: 15px 0; line-height: 1.6; }
+        .fact-check-box { background: rgba(99, 102, 241, 0.1); border-radius: 12px; padding: 15px; color: #e2e8f0; font-size: 0.95rem; border: 1px solid rgba(99, 102, 241, 0.2); }
+    </style>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar :: sidebar('articles')}"></div>
+
+    <div class="main">
+        <header class="header mb-4">
+            <div class="d-flex align-items-center">
+                <a href="/admin/articles" class="btn btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i></a>
+                <h1 class="h4 mb-0">Xem chi tiết bài viết</h1>
+            </div>
+            <div class="d-flex gap-2">
+                <button id="btnAiReview" class="btn-ai-magic" th:attr="onclick='runAiReview(\'' + ${article['id']} + '\')'">
+                    <i class="bi bi-stars"></i> KIỂM ĐỊNH BẰNG AI
+                </button>
+                <div class="btn-group">
+                    <a th:if="${#strings.toString(article['trang_thai']) != '1'}" th:href="@{/admin/articles/toggle-status/{id}(id=${article['id']})}"
+                       class="btn btn-success"><i class="bi bi-check-circle me-1"></i> Duyệt bài</a>
+                    <a th:href="@{/admin/articles/edit/{id}(id=${article['id']})}" class="btn btn-primary"><i class="bi bi-pencil"></i> Sửa</a>
+                </div>
+            </div>
+        </header>
+
+        <div id="aiCard" class="ai-card shadow-lg">
+            <div class="ai-header">
+                <div class="d-flex align-items-center gap-3">
+                    <h5 class="ai-title"><i class="bi bi-robot"></i> KẾT QUẢ PHÂN TÍCH AI</h5>
+                    <span id="aiRisk" class="ai-badge risk-low">RỦI RO: THẤP</span>
+                </div>
+                <div id="aiVerdict" class="verdict-box verdict-pass">
+                    <i class="bi bi-shield-check me-2"></i> KHUYÊN DÙNG: THÔNG QUA
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 border-end border-secondary border-opacity-25">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="text-secondary">Độ tin cậy của thông tin:</span>
+                        <span id="aiConfidenceText" class="text-info fw-bold">0%</span>
+                    </div>
+                    <div class="confidence-bar">
+                        <div id="aiConfidenceBar" class="confidence-fill" style="width: 0%"></div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="small text-secondary mb-2">Phân tích chi tiết:</div>
+                        <div class="fact-check-box">
+                            <i class="bi bi-search me-2 text-primary"></i>
+                            <span id="aiFactCheck">Đang phân tích dữ liệu...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 ps-md-4">
+                    <div class="small text-secondary mb-2">Tóm tắt nội dung:</div>
+                    <div id="aiSummary" class="ai-summary">Đang tạo tóm tắt...</div>
+
+                    <div class="row mt-4">
+                        <div class="col-6">
+                            <div class="p-2 rounded bg-dark bg-opacity-25 border border-secondary border-opacity-10 text-center">
+                                <i id="aiSpamIcon" class="bi bi-check-circle-fill text-success mb-1 d-block fs-4"></i>
+                                <div class="small text-secondary">Spam/Rác</div>
+                                <span id="aiSpamText" class="fw-bold">Không</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 rounded bg-dark bg-opacity-25 border border-secondary border-opacity-10 text-center">
+                                <i id="aiSensitiveIcon" class="bi bi-check-circle-fill text-success mb-1 d-block fs-4"></i>
+                                <div class="small text-secondary">Nhạy cảm</div>
+                                <span id="aiSensitiveText" class="fw-bold">Không</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-card shadow">
+            <div class="mb-4">
+                <span th:if="${#strings.toString(article['trang_thai']) != '1'}" class="badge-status status-pending">Chờ phê duyệt</span>
+                <span th:if="${#strings.toString(article['trang_thai']) == '1'}" class="badge-status status-active">Đã công khai</span>
+            </div>
+
+            <h2 class="mb-3 text-white" th:text="${article['tieu_de']}">Tiêu đề bài viết</h2>
+
+            <div class="meta-info">
+                <span><i class="bi bi-person-fill me-1"></i> <span th:text="${article['tac_gia'] ?: 'Hệ thống'}">Tác giả</span></span>
+                <span><i class="bi bi-calendar-event me-1"></i> <span th:text="${article['ngay_tao']}">01/01/2024</span></span>
+                <span><i class="bi bi-bookmark-star-fill me-1"></i>
+                    <span th:if="${#strings.toString(article['loai_id']) == '1'}">Làng nghề</span>
+                    <span th:if="${#strings.toString(article['loai_id']) == '2'}">Ẩm thực</span>
+                    <span th:if="${#strings.toString(article['loai_id']) == '3'}">Văn hóa</span>
+                </span>
+                <span th:if="${article['nguon_goc'] == 'user'}" class="text-info"><i class="bi bi-patch-check-fill me-1"></i> Đóng góp từ người dùng</span>
+            </div>
+
+            <hr class="my-4 border-secondary opacity-25">
+
+            <div th:each="section : ${article['sections']}" class="section-item">
+                <h4 th:text="${section['tieu_de']}" class="text-info mb-3" th:if="${section['tieu_de'] != null && !section['tieu_de'].isEmpty()}">Tiêu đề mục</h4>
+                <p th:text="${section['noi_dung']}" style="white-space: pre-wrap; line-height: 1.8; color: #cbd5e1;">Nội dung đoạn văn...</p>
+                <img th:if="${section['hinh_anh'] != null && !section['hinh_anh'].isEmpty()}"
+                     th:src="${section['hinh_anh']}" class="section-img shadow-sm mb-4">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function runAiReview(articleId) {
+            const btn = document.getElementById('btnAiReview');
+            const card = document.getElementById('aiCard');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ĐANG KIỂM ĐỊNH...';
+
+            fetch('/admin/articles/ai-review/' + articleId)
+                .then(async response => {
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Lỗi server');
+                    }
+                    return data;
+                })
+                .then(data => {
+
+                    // ================= RISK =================
+                    const riskEl = document.getElementById('aiRisk');
+                    const riskMap = {
+                        'low': 'THẤP',
+                        'medium': 'TRUNG BÌNH',
+                        'high': 'CAO'
+                    };
+
+                    riskEl.innerText = 'RỦI RO: ' + (riskMap[data.riskLevel] || 'KHÔNG XÁC ĐỊNH');
+                    riskEl.className = 'ai-badge risk-' + (data.riskLevel || 'medium');
+
+                    // ================= SCORE =================
+                    let score = Math.round(data.confidenceScore || 0);
+                    score = Math.max(0, Math.min(100, score));
+
+                    const scoreText = document.getElementById('aiConfidenceText');
+                    const bar = document.getElementById('aiConfidenceBar');
+
+                    scoreText.innerText = score + '%';
+                    setTimeout(() => {
+                        bar.style.width = score + '%';
+                        if (score > 70) {
+                            bar.style.background = "linear-gradient(90deg, #10b981, #22c55e)";
+                        } else if (score > 40) {
+                            bar.style.background = "linear-gradient(90deg, #f59e0b, #fbbf24)";
+                        } else {
+                            bar.style.background = "linear-gradient(90deg, #ef4444, #f87171)";
+                        }
+                    }, 100);
+
+                    // ================= TEXT =================
+                    document.getElementById('aiFactCheck').innerText = data.factCheck || 'Không có nhận xét';
+                    document.getElementById('aiSummary').innerText = data.summary || 'Không có tóm tắt';
+
+                    // ================= SPAM =================
+                    const spamIcon = document.getElementById('aiSpamIcon');
+                    const spamText = document.getElementById('aiSpamText');
+                    spamText.innerText = data.isSpam ? 'Có' : 'Không';
+                    spamIcon.className = data.isSpam
+                        ? 'bi bi-x-circle-fill text-danger mb-1 d-block fs-4'
+                        : 'bi bi-check-circle-fill text-success mb-1 d-block fs-4';
+
+                    // ================= SENSITIVE =================
+                    const sensIcon = document.getElementById('aiSensitiveIcon');
+                    const sensText = document.getElementById('aiSensitiveText');
+                    sensText.innerText = data.isSensitive ? 'Có' : 'Không';
+                    sensIcon.className = data.isSensitive
+                        ? 'bi bi-exclamation-triangle-fill text-warning mb-1 d-block fs-4'
+                        : 'bi bi-check-circle-fill text-success mb-1 d-block fs-4';
+
+                    // ================= VERDICT (Sử dụng trực tiếp từ Backend) =================
+                    const verdictEl = document.getElementById('aiVerdict');
+                    if (data.verdict) {
+                        verdictEl.innerHTML = '<i class="bi bi-shield-check me-2"></i> KHUYÊN DÙNG: THÔNG QUA';
+                        verdictEl.className = 'verdict-box verdict-pass';
+                    } else {
+                        verdictEl.innerHTML = '<i class="bi bi-shield-exclamation me-2"></i> CẢNH BÁO: KHÔNG NÊN THÔNG QUA';
+                        verdictEl.className = 'verdict-box verdict-fail';
+                    }
+
+                    // ================= HIỂN THỊ =================
+                    card.style.display = 'block';
+                    btn.innerHTML = '<i class="bi bi-check-lg"></i> KIỂM ĐỊNH HOÀN TẤT';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                })
+                .catch(error => {
+                    console.error('AI Error:', error);
+                    alert('❌ Lỗi kiểm định AI: ' + error.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-stars"></i> THỬ LẠI';
+                });
+        }
+    </script>
+</body>
+</html>
