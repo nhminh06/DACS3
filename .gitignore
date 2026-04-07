@@ -28,3 +28,9 @@ Thumbs.db
 captures/
 .externalNativeBuild/
 .cxx/
+
+# Secret config
+application.properties
+
+# hoặc nếu chỉ muốn ignore 1 file cụ thể
+admin/src/main/resources/application.properties
