@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Notifications
@@ -20,9 +23,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,15 +52,23 @@ fun ArticleExplorerScreen(
     var selectedCategory by remember { mutableStateOf(initialCategory) }
     val allArticles by articleViewModel.explorerArticles.collectAsState()
     val isLoading by articleViewModel.isLoading.collectAsState()
+    val searchQuery by articleViewModel.searchQuery.collectAsState()
+    val focusManager = LocalFocusManager.current
     
     val filteredArticles = allArticles.filter { article ->
-        val category = when(article.loai_id) {
-            1 -> ArticleCategory.CRAFT_VILLAGE
-            2 -> ArticleCategory.CUISINE
-            3 -> ArticleCategory.CULTURE
-            else -> ArticleCategory.CULTURE
+        // Nếu có tìm kiếm, chỉ lọc theo tiêu đề (không phụ thuộc category)
+        if (searchQuery.isNotBlank()) {
+            article.tieu_de.lowercase().contains(searchQuery.lowercase().trim())
+        } else {
+            // Nếu không tìm kiếm, lọc theo category được chọn
+            val category = when(article.loai_id) {
+                1 -> ArticleCategory.CRAFT_VILLAGE
+                2 -> ArticleCategory.CUISINE
+                3 -> ArticleCategory.CULTURE
+                else -> ArticleCategory.CULTURE
+            }
+            category == selectedCategory
         }
-        category == selectedCategory
     }
 
     Scaffold(
@@ -116,12 +130,26 @@ fun ArticleExplorerScreen(
                                 modifier = Modifier.size(22.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Tìm kiếm bài viết văn hóa...",
-                                color = Color.Gray,
-                                fontSize = 14.sp,
-                                modifier = Modifier.weight(1f)
-                            )
+                            
+                            Box(modifier = Modifier.weight(1f)) {
+                                if (searchQuery.isEmpty()) {
+                                    Text(
+                                        text = "Tìm kiếm bài viết văn hóa...",
+                                        color = Color.Gray,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                                BasicTextField(
+                                    value = searchQuery,
+                                    onValueChange = { articleViewModel.setSearchQuery(it) },
+                                    textStyle = TextStyle(color = Color(0xFF1E293B), fontSize = 14.sp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
+                                )
+                            }
+                            
                             IconButton(onClick = { }) {
                                 Icon(
                                     Icons.Default.Notifications,
@@ -151,22 +179,25 @@ fun ArticleExplorerScreen(
                 }
             }
 
-            item {
-                Surface(
-                    color = Color.White,
-                    shadowElevation = 2.dp
-                ) {
-                    ArticleCategoryTabs(
-                        selectedCategory = selectedCategory,
-                        onCategorySelected = { selectedCategory = it }
-                    )
+            // Ẩn thanh chọn mục khi đang tìm kiếm để tập trung vào kết quả
+            if (searchQuery.isBlank()) {
+                item {
+                    Surface(
+                        color = Color.White,
+                        shadowElevation = 2.dp
+                    ) {
+                        ArticleCategoryTabs(
+                            selectedCategory = selectedCategory,
+                            onCategorySelected = { selectedCategory = it }
+                        )
+                    }
                 }
             }
             
             item {
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(
-                    text = when(selectedCategory) {
+                    text = if (searchQuery.isNotBlank()) "Kết quả tìm kiếm" else when(selectedCategory) {
                         ArticleCategory.CULTURE -> "Di sản văn hóa tiêu biểu"
                         ArticleCategory.CRAFT_VILLAGE -> "Tinh hoa làng nghề Việt"
                         ArticleCategory.CUISINE -> "Ẩm thực vùng miền đặc sắc"
@@ -186,12 +217,20 @@ fun ArticleExplorerScreen(
                     }
                 }
             } else {
-                items(filteredArticles) { article ->
-                    Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
-                        ExplorerArticleItem(
-                            article = article,
-                            onClick = { onArticleClick(article) }
-                        )
+                if (filteredArticles.isEmpty()) {
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
+                            Text("Không tìm thấy bài viết nào phù hợp", color = Color.Gray)
+                        }
+                    }
+                } else {
+                    items(filteredArticles) { article ->
+                        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
+                            ExplorerArticleItem(
+                                article = article,
+                                onClick = { onArticleClick(article) }
+                            )
+                        }
                     }
                 }
             }

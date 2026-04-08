@@ -69,6 +69,18 @@ class ReviewRepository {
         }
     }
 
+    suspend fun getReviewsByGuide(guideId: String): List<Review> {
+        return try {
+            reviewsCollection.whereEqualTo("guideId", guideId)
+                .get().await()
+                .toObjects(Review::class.java)
+                .sortedByDescending { it.createdAt }
+        } catch (e: Exception) {
+            Log.e("ReviewRepository", "Error getting reviews by guide: ${e.message}")
+            emptyList()
+        }
+    }
+
     suspend fun getAllReviews(limit: Int = 10): List<Review> {
         return try {
             reviewsCollection.orderBy("createdAt", Query.Direction.DESCENDING)

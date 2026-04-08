@@ -54,12 +54,41 @@
         .status-pill { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
         .status-active { background: #10b981; }
         .status-pending { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
+
+        /* Pagination Styling */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+            padding: 15px;
+            background: #1e293b;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+        .pagination-info { color: #94a3b8; font-size: 14px; }
+        .pagination .page-link {
+            background: #0f172a;
+            border-color: #334155;
+            color: #f1f5f9;
+            padding: 8px 16px;
+            border-radius: 6px;
+            margin: 0 3px;
+        }
+        .pagination .page-item.active .page-link {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
+        .pagination .page-item.disabled .page-link {
+            background: #1e293b;
+            color: #475569;
+        }
     </style>
 </head>
 <body>
     <div th:replace="~{fragments/sidebar :: sidebar('articles')}"></div>
     <div class="main">
-        <header class="header mb-4">
+        <header class="header mb-4 d-flex justify-content-between align-items-center">
             <h1 class="h4 mb-0">Quản lý Bài viết & Di sản</h1>
             <a href="/admin/articles/add" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Thêm bài viết mới</a>
         </header>
@@ -174,6 +203,32 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Pagination Section -->
+        <div class="pagination-container" th:if="${totalPages > 1}">
+            <div class="pagination-info">
+                Hiển thị <span th:text="${articles.size()}">0</span> / <span th:text="${totalFiltered}">0</span> bài viết
+            </div>
+            <nav>
+                <ul class="pagination mb-0">
+                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{/admin/articles(page=${currentPage - 1}, search=${search}, loai=${loai}, sort=${sort})}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'">
+                        <a class="page-link" th:text="${i}" th:href="@{/admin/articles(page=${i}, search=${search}, loai=${loai}, sort=${sort})}">1</a>
+                    </li>
+
+                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                        <a class="page-link" th:href="@{/admin/articles(page=${currentPage + 1}, search=${search}, loai=${loai}, sort=${sort})}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
 </body>

@@ -8,6 +8,7 @@ import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
@@ -33,6 +34,24 @@ public class HuggingFaceService {
             Pattern.CASE_INSENSITIVE
     );
 
+    // Phát hiện chuỗi vô nghĩa: lặp ký tự (jjjj), không nguyên âm, hoặc trộn chữ/số quá dài
+    private static final Pattern GIBBERISH_PATTERN = Pattern.compile(
+            "(.)\\1{6,}|\\b[^aeiouyáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợ\\s\\d]{8,}\\b|\\b(?=[^\\s]*[a-zA-Z])(?=[^\\s]*\\d)[^\\s]{10,}\\b",
+            Pattern.CASE_INSENSITIVE
+    );
+
+    // CHẶN TỪ NGỮ NHẠY CẢM / ÁC Ý (Bạo lực, tự tử, đồi trụy, phản động)
+    private static final Pattern SENSITIVE_PATTERN = Pattern.compile(
+            "(chết|giết|đâm|chém|tự tử|tự sát|máu me|kinh dị|phản động|biểu tình|đồi trụy|ngu ngốc|đồ tồi|)",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
+    );
+
+    // PHÁT HIỆN LẶP TỪ (Ví dụ: "chết chết chết chết")
+    private static final Pattern WORD_REPETITION_PATTERN = Pattern.compile(
+            "(\\b\\w+\\b)(\\s+\\1){3,}",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
+    );
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Value("${huggingface.api.key}")
@@ -44,11 +63,10 @@ public class HuggingFaceService {
         this.restTemplate = builder
                 .requestFactory(() -> {
                     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-                    factory.setConnectTimeout(10000);
-                    factory.setReadTimeout(60000); 
+                    factory.setConnectTimeout(15000);
+                    factory.setReadTimeout(120000); 
                     return factory;
                 })
-                // 🔥 Ép RestTemplate dùng UTF-8 để không bị lỗi font Tiếng Việt
                 .additionalMessageConverters(new StringHttpMessageConverter(StandardCharsets.UTF_8))
                 .build();
     }
@@ -61,15 +79,15 @@ public class HuggingFaceService {
         String cleanContent = stripHtml(content);
         String fullTextForRules = title + " " + cleanContent;
 
-        if (isSpamByRule(fullTextForRules)) {
-            return buildResult(true, false, 10,
-                    "Hệ thống phát hiện dấu hiệu spam qua số điện thoại hoặc từ khóa nhạy cảm.", "high", false);
-        }
+        // BƯỚC 1: KIỂM TRA QUY TẮC CỨNG (NHANH & CHÍNH XÁC)
+        Map<String, Object> ruleResult = checkManualRules(fullTextForRules);
+        if (ruleResult != null) return ruleResult;
 
         String inputText = "Tiêu đề: " + title + "\nNội dung: " +
                 (cleanContent.length() > MAX_CONTENT_LENGTH
                         ? cleanContent.substring(0, MAX_CONTENT_LENGTH) : cleanContent);
 
+        // BƯỚC 2: GỌI AI (CHUYÊN SÂU)
         try {
             Map<String, Object> body = Map.of(
                     "inputs", inputText,
@@ -89,8 +107,13 @@ public class HuggingFaceService {
                 return parseResponse(response.getBody());
             }
 
-        } catch (org.springframework.web.client.ResourceAccessException e) {
-            return buildResult(false, false, 0, "AI đang khởi động, vui lòng thử lại sau 30 giây.", "medium", false);
+        } catch (ResourceAccessException e) {
+            System.err.println("[HuggingFaceService] Timeout: " + e.getMessage());
+            return buildResult(false, false, 0, "AI phản hồi chậm do đang khởi động model. Vui lòng thử lại sau 30 giây.", "medium", false);
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            if (e.getStatusCode() == HttpStatus.SERVICE_UNAVAILABLE) {
+                return buildResult(false, false, 0, "Hệ thống AI đang khởi động. Vui lòng thử lại sau giây lát.", "medium", false);
+            }
         } catch (Exception e) {
             System.err.println("[HuggingFaceService] Error: " + e.getMessage());
         }
@@ -98,21 +121,49 @@ public class HuggingFaceService {
         return buildResult(false, false, 50, "Kết nối AI thất bại, vui lòng thử lại sau.", "medium", false);
     }
 
+    private Map<String, Object> checkManualRules(String text) {
+        // 1. Kiểm tra lặp từ (Ví dụ: "chết chết chết chết")
+        if (WORD_REPETITION_PATTERN.matcher(text).find()) {
+            return buildResult(true, true, 5, "Nội dung có dấu hiệu spam (lặp từ quá nhiều lần).", "high", false);
+        }
+
+        // 2. Kiểm tra từ ngữ nhạy cảm trực tiếp
+        if (SENSITIVE_PATTERN.matcher(text).find()) {
+            return buildResult(false, true, 10, "Nội dung chứa từ ngữ nhạy cảm hoặc ác ý không phù hợp.", "high", false);
+        }
+
+        // 3. Kiểm tra chuỗi vô nghĩa (jjjjj, gfhfgh)
+        if (GIBBERISH_PATTERN.matcher(text).find()) {
+            return buildResult(true, false, 15, "Nội dung vô nghĩa hoặc rác (gibberish).", "high", false);
+        }
+
+        // 4. Kiểm tra link/số điện thoại spam
+        if (SPAM_PATTERN.matcher(text).find()) {
+            return buildResult(true, false, 20, "Nội dung chứa liên kết hoặc thông tin quảng cáo bị chặn.", "high", false);
+        }
+
+        // 5. Kiểm tra độ dài từ bất thường
+        for (String word : text.split("\\s+")) {
+            if (word.length() > 30) {
+                return buildResult(true, false, 10, "Nội dung chứa chuỗi ký tự quá dài không hợp lệ.", "high", false);
+            }
+        }
+
+        return null; // Không vi phạm quy tắc cứng
+    }
+
     private Map<String, Object> parseResponse(String body) {
         try {
             JsonNode root = MAPPER.readTree(body);
             Map<String, Double> scoreMap = new HashMap<>();
 
-            // 1. Xử lý định dạng mảng các đối tượng: [{"label": "...", "score": ...}, ...]
             if (root.isArray()) {
                 for (JsonNode node : root) {
                     if (node.has("label") && node.has("score")) {
                         scoreMap.put(node.get("label").asText(), node.get("score").asDouble());
                     }
                 }
-            } 
-            // 2. Xử lý định dạng đối tượng đơn lẻ: {"labels": [...], "scores": [...]}
-            else if (root.has("labels") && root.has("scores")) {
+            } else if (root.has("labels") && root.has("scores")) {
                 JsonNode labels = root.path("labels");
                 JsonNode scores = root.path("scores");
                 for (int i = 0; i < labels.size(); i++) {
@@ -120,12 +171,6 @@ public class HuggingFaceService {
                 }
             }
             
-            if (scoreMap.isEmpty()) {
-                System.err.println("[HuggingFaceService] Unexpected response: " + body);
-                throw new Exception("Dữ liệu trả về không đúng định dạng labels/scores");
-            }
-
-            // Tính toán logic dựa trên scoreMap đã gộp
             double badScore = scoreMap.getOrDefault("quảng cáo", 0.0) 
                             + scoreMap.getOrDefault("nhạy cảm", 0.0)
                             + scoreMap.getOrDefault("rác", 0.0);
@@ -151,18 +196,13 @@ public class HuggingFaceService {
                     buildMessage(reliability, isSpam, isSensitive, goodScore), risk, verdict);
 
         } catch (Exception e) {
-            System.err.println("[HuggingFaceService] Parsing Error: " + e.getMessage());
-            return buildResult(false, false, 0, "Không thể phân tích phản hồi từ AI.", "high", false);
+            return buildResult(false, false, 0, "Lỗi phân tích dữ liệu AI.", "high", false);
         }
     }
 
     private String stripHtml(String html) {
         if (html == null) return "";
         return html.replaceAll("<[^>]*>", " ").replaceAll("\\s+", " ").trim();
-    }
-
-    private boolean isSpamByRule(String text) {
-        return SPAM_PATTERN.matcher(text).find();
     }
 
     private String buildMessage(double score, boolean spam, boolean sensitive, double good) {
@@ -184,7 +224,7 @@ public class HuggingFaceService {
                 "factCheck", message,
                 "riskLevel", risk,
                 "verdict", verdict,
-                "summary", "Hệ thống kiểm duyệt đa ngôn ngữ v3.3"
+                "summary", "Hệ thống kiểm duyệt AI Pro v4.0"
         );
     }
 }

@@ -4,14 +4,20 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dacs3.data.model.Comment
+import com.example.dacs3.data.model.Report
 import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.data.repository.ArticleRepository
+import com.example.dacs3.data.repository.ReportRepository
 import com.example.dacs3.data.repository.storage.StorageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class ArticleViewModel(private val repository: ArticleRepository = ArticleRepository()) : ViewModel() {
+class ArticleViewModel(
+    private val repository: ArticleRepository = ArticleRepository(),
+    private val reportRepository: ReportRepository = ReportRepository()
+) : ViewModel() {
     private val storageRepository = StorageRepository()
     
     private val _homeArticles = MutableStateFlow<List<ArticleEntity>>(emptyList())
@@ -29,9 +35,17 @@ class ArticleViewModel(private val repository: ArticleRepository = ArticleReposi
     private val _isCommenting = MutableStateFlow(false)
     val isCommenting: StateFlow<Boolean> = _isCommenting
 
+    // Search Query for Articles
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
     init {
         fetchHomeArticles()
         fetchAllArticles()
+    }
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
     }
 
     fun fetchHomeArticles() {
@@ -101,6 +115,13 @@ class ArticleViewModel(private val repository: ArticleRepository = ArticleReposi
             if (success) {
                 fetchComments(articleId)
             }
+        }
+    }
+
+    fun sendReport(report: Report, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val success = reportRepository.sendReport(report)
+            onComplete(success)
         }
     }
 }

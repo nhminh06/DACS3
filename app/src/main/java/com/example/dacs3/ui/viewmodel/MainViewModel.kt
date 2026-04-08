@@ -21,6 +21,8 @@ class MainViewModel : ViewModel() {
     private val reviewRepository = ReviewRepository()
 
     private val _allTours = MutableStateFlow<List<Tour>>(emptyList())
+    val allTours: StateFlow<List<Tour>> = _allTours.asStateFlow()
+
     private val _tours = MutableStateFlow<List<Tour>>(emptyList())
     val tours: StateFlow<List<Tour>> = _tours.asStateFlow()
 
@@ -36,6 +38,10 @@ class MainViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    // Search Query
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
     // Filter States
     private val _selectedTourType = MutableStateFlow("Tất cả")
     val selectedTourType = _selectedTourType.asStateFlow()
@@ -43,7 +49,6 @@ class MainViewModel : ViewModel() {
     private val _selectedLocations = MutableStateFlow<Set<String>>(emptySet())
     val selectedLocations = _selectedLocations.asStateFlow()
 
-    // Default price range: 0 to a very large number (effectively no limit)
     private val DEFAULT_MAX_PRICE = 1000000000f 
     private val _priceRange = MutableStateFlow(0f..DEFAULT_MAX_PRICE)
     val priceRange = _priceRange.asStateFlow()
@@ -54,7 +59,6 @@ class MainViewModel : ViewModel() {
     private val _selectedRating = MutableStateFlow(0f)
     val selectedRating = _selectedRating.asStateFlow()
 
-    // Dynamic locations
     private val _availableProvinces = MutableStateFlow<List<String>>(emptyList())
     val availableProvinces = _availableProvinces.asStateFlow()
 
@@ -70,7 +74,6 @@ class MainViewModel : ViewModel() {
             val result = tourRepository.getActiveTours()
             _allTours.value = result
             
-            // Extract unique provinces/cities from tour locations
             _availableProvinces.value = result.map { tour ->
                 val loc = tour.location.split(",").last().trim()
                 loc
@@ -95,21 +98,13 @@ class MainViewModel : ViewModel() {
 
     fun loadReviewsForGuide(guideId: String) {
         viewModelScope.launch {
-            val bookings = guideRepository.getToursForGuide(guideId)
-            val bookingIds = bookings.mapNotNull { it["bookingId"] as? String }
-            
-            if (bookingIds.isNotEmpty()) {
-                val tourIds = bookings.mapNotNull { it["tourId"] as? String }.distinct()
-                val guideReviewsList = mutableListOf<Review>()
-                for (tourId in tourIds) {
-                    val reviews = reviewRepository.getReviewsByTour(tourId)
-                    guideReviewsList.addAll(reviews.filter { review -> bookingIds.contains(review.bookingId) })
-                }
-                _guideReviews.value = guideReviewsList.sortedByDescending { it.createdAt }
-            } else {
-                _guideReviews.value = emptyList()
-            }
+            _guideReviews.value = reviewRepository.getReviewsByGuide(guideId)
         }
+    }
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+        applyFilters()
     }
 
     fun setTourType(type: String) {
@@ -118,25 +113,22 @@ class MainViewModel : ViewModel() {
 
     fun toggleLocation(location: String) {
         val current = _selectedLocations.value.toMutableSet()
-        if (current.contains(location)) current.remove(location)
-        else current.add(location)
+        if (current.contains(location)) {
+            current.remove(location)
+        } else {
+            current.add(location)
+        }
         _selectedLocations.value = current
     }
 
-    fun setPriceRange(range: ClosedFloatingPointRange<Float>) {
-        _priceRange.value = range
-    }
-    
-    fun setMinPrice(min: Float?) {
+    fun setMinPrice(price: Float?) {
         val currentRange = _priceRange.value
-        val newMin = min ?: 0f
-        _priceRange.value = newMin..currentRange.endInclusive
+        _priceRange.value = (price ?: 0f)..currentRange.endInclusive
     }
 
-    fun setMaxPrice(max: Float?) {
+    fun setMaxPrice(price: Float?) {
         val currentRange = _priceRange.value
-        val newMax = max ?: DEFAULT_MAX_PRICE
-        _priceRange.value = currentRange.start..newMax
+        _priceRange.value = currentRange.start..(price ?: DEFAULT_MAX_PRICE)
     }
 
     fun setDuration(duration: String) {
@@ -148,6 +140,7 @@ class MainViewModel : ViewModel() {
     }
 
     fun resetFilters() {
+        _searchQuery.value = ""
         _selectedTourType.value = "Tất cả"
         _selectedLocations.value = emptySet()
         _priceRange.value = 0f..DEFAULT_MAX_PRICE
@@ -159,10 +152,19 @@ class MainViewModel : ViewModel() {
     fun applyFilters() {
         var filteredList = _allTours.value
 
+        // Search Filter
+        if (_searchQuery.value.isNotBlank()) {
+            val query = _searchQuery.value.trim().lowercase()
+            filteredList = filteredList.filter { tour ->
+                tour.title.lowercase().contains(query) || 
+                tour.location.lowercase().contains(query) ||
+                tour.traiNghiem.lowercase().contains(query)
+            }
+        }
+
         fun isSingleDay(tour: Tour): Boolean {
             if (tour.type == TourType.DAY_TOUR) return true
             if (tour.type == TourType.MULTI_DAY) return false
-            
             val d = tour.duration.lowercase()
             return (d.contains("1 ngày") || d.contains("trong ngày")) && !d.contains("đêm")
         }

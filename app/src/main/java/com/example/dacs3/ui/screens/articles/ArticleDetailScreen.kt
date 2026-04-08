@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.dacs3.data.model.Comment
+import com.example.dacs3.data.model.Report
+import com.example.dacs3.data.model.ReportType
 import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.ui.viewmodel.ArticleViewModel
 import com.example.dacs3.ui.viewmodel.UserViewModel
@@ -44,7 +46,12 @@ fun ArticleDetailScreen(
 ) {
     val scrollState = rememberScrollState()
     val primaryColor = Color(0xFF2563EB)
+    
+    // Report States
     var showReportDialog by remember { mutableStateOf(false) }
+    var reportTargetComment by remember { mutableStateOf<Comment?>(null) }
+    var reportReason by remember { mutableStateOf("") }
+    
     var commentToDelete by remember { mutableStateOf<Comment?>(null) }
     
     val comments by articleViewModel.comments.collectAsState()
@@ -70,7 +77,15 @@ fun ArticleDetailScreen(
                     IconButton(onClick = { /* Share */ }) {
                         Icon(Icons.Default.Share, contentDescription = "Share")
                     }
-                    IconButton(onClick = { showReportDialog = true }) {
+                    IconButton(onClick = { 
+                        if (isLoggedIn) {
+                            reportTargetComment = null
+                            reportReason = ""
+                            showReportDialog = true 
+                        } else {
+                            Toast.makeText(context, "Bạn cần đăng nhập để báo cáo", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
                         Icon(Icons.Outlined.Flag, contentDescription = "Report Article")
                     }
                 },
@@ -163,7 +178,15 @@ fun ArticleDetailScreen(
                     // Comment Section
                     CommentSection(
                         isLoggedIn = isLoggedIn,
-                        onReportClick = { showReportDialog = true },
+                        onReportClick = { comment -> 
+                            if (isLoggedIn) {
+                                reportTargetComment = comment
+                                reportReason = ""
+                                showReportDialog = true
+                            } else {
+                                Toast.makeText(context, "Bạn cần đăng nhập để báo cáo", Toast.LENGTH_SHORT).show()
+                            }
+                        },
                         comments = comments,
                         currentUserId = currentUser?.id ?: "",
                         onPostComment = { content ->
@@ -204,11 +227,60 @@ fun ArticleDetailScreen(
     if (showReportDialog) {
         AlertDialog(
             onDismissRequest = { showReportDialog = false },
-            title = { Text("Báo cáo") },
-            text = { Text("Bạn có chắc chắn muốn báo cáo nội dung này là không phù hợp?") },
+            title = { Text(if (reportTargetComment == null) "Báo cáo bài viết" else "Báo cáo bình luận") },
+            text = {
+                Column {
+                    Text("Lý do báo cáo:", fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = reportReason,
+                        onValueChange = { reportReason = it },
+                        placeholder = { Text("Nhập lý do tại đây...") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
             confirmButton = {
-                TextButton(onClick = { showReportDialog = false }) {
-                    Text("Đồng ý", color = Color.Red)
+                Button(
+                    onClick = {
+                        if (reportReason.isNotBlank()) {
+                            val report = if (reportTargetComment == null) {
+                                Report(
+                                    type = ReportType.ARTICLE,
+                                    reporterId = currentUser?.id ?: "",
+                                    reporterName = currentUser?.name ?: "Ẩn danh",
+                                    articleId = article.id,
+                                    articleTitle = article.tieu_de,
+                                    reason = reportReason
+                                )
+                            } else {
+                                Report(
+                                    type = ReportType.COMMENT,
+                                    reporterId = currentUser?.id ?: "",
+                                    reporterName = currentUser?.name ?: "Ẩn danh",
+                                    commentId = reportTargetComment?.id,
+                                    reportedUserId = reportTargetComment?.userId,
+                                    reportedUserName = reportTargetComment?.userName,
+                                    commentContent = reportTargetComment?.content,
+                                    reason = reportReason
+                                )
+                            }
+                            
+                            articleViewModel.sendReport(report) { success ->
+                                if (success) {
+                                    Toast.makeText(context, "Đã gửi báo cáo thành công", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "Gửi báo cáo thất bại", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            showReportDialog = false
+                        } else {
+                            Toast.makeText(context, "Vui lòng nhập lý do", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Gửi báo cáo", color = Color.White)
                 }
             },
             dismissButton = {
@@ -300,7 +372,7 @@ fun ContentSection(title: String, description: String, imageUrl: String?) {
 @Composable
 fun CommentSection(
     isLoggedIn: Boolean,
-    onReportClick: () -> Unit,
+    onReportClick: (Comment) -> Unit,
     comments: List<Comment>,
     currentUserId: String,
     onPostComment: (String) -> Unit,
@@ -377,7 +449,7 @@ fun CommentSection(
                 CommentItem(
                     comment = comment,
                     currentUserId = currentUserId,
-                    onReportClick = onReportClick,
+                    onReportClick = { onReportClick(comment) },
                     onDeleteClick = { onDeleteComment(comment) },
                     onLikeClick = { isLiked -> onLikeComment(comment, isLiked) }
                 )

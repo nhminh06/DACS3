@@ -5,7 +5,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
@@ -17,9 +21,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dacs3.R
@@ -29,6 +36,7 @@ import com.example.dacs3.ui.components.tours.FilterContent
 import com.example.dacs3.ui.components.tours.FilterTag
 import com.example.dacs3.ui.components.tours.TourCard
 import com.example.dacs3.ui.viewmodel.MainViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,9 +47,32 @@ fun TourScreen(
 ) {
     val tours by viewModel.tours.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
     
     var showFilterSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+
+    // Phân trang
+    var currentPage by remember { mutableIntStateOf(1) }
+    val itemsPerPage = 6
+    val totalPages = maxOf(1, (tours.size + itemsPerPage - 1) / itemsPerPage)
+
+    // Filter states for chips
+    val selectedTourType by viewModel.selectedTourType.collectAsState()
+    val selectedRating by viewModel.selectedRating.collectAsState()
+
+    // Reset về trang 1 khi danh sách tour thay đổi (do filter)
+    LaunchedEffect(tours) {
+        currentPage = 1
+    }
+
+    val pagedTours = remember(tours, currentPage) {
+        val startIndex = (currentPage - 1) * itemsPerPage
+        tours.drop(startIndex).take(itemsPerPage)
+    }
 
     Scaffold(
         bottomBar = {
@@ -50,6 +81,7 @@ fun TourScreen(
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFFF8FAFC))
@@ -93,7 +125,21 @@ fun TourScreen(
                             ) {
                                 Icon(Icons.Default.Search, null, tint = Color(0xFF2563EB))
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Text("Tìm tour, địa điểm...", color = Color(0xFF475569), fontSize = 14.sp, modifier = Modifier.weight(1f))
+                                
+                                Box(modifier = Modifier.weight(1f)) {
+                                    if (searchQuery.isEmpty()) {
+                                        Text("Tìm tour, địa điểm...", color = Color(0xFF475569), fontSize = 14.sp)
+                                    }
+                                    BasicTextField(
+                                        value = searchQuery,
+                                        onValueChange = { viewModel.setSearchQuery(it) },
+                                        textStyle = TextStyle(color = Color(0xFF1E293B), fontSize = 14.sp),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
+                                    )
+                                }
                                 
                                 VerticalDivider(modifier = Modifier.padding(vertical = 12.dp).width(1.dp), color = Color.LightGray)
                                 
@@ -125,11 +171,36 @@ fun TourScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp, vertical = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        FilterTag("Đà Nẵng", true)
-                        FilterTag("Giá tốt nhất", false)
-                        FilterTag("≥ 8.0", false)
+                        Text(
+                            text = "Lọc nhanh:",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF64748B),
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                        
+                        FilterTag(
+                            text = "Trong ngày", 
+                            isSelected = selectedTourType == "Trong ngày",
+                            onClick = { 
+                                if (selectedTourType == "Trong ngày") viewModel.setTourType("Tất cả")
+                                else viewModel.setTourType("Trong ngày")
+                                viewModel.applyFilters()
+                            }
+                        )
+                        
+                        FilterTag(
+                            text = "Dài ngày", 
+                            isSelected = selectedTourType == "Dài ngày",
+                            onClick = {
+                                if (selectedTourType == "Dài ngày") viewModel.setTourType("Tất cả")
+                                else viewModel.setTourType("Dài ngày")
+                                viewModel.applyFilters()
+                            }
+                        )
                     }
                 }
 
@@ -141,11 +212,71 @@ fun TourScreen(
                     }
                 }
 
-                items(tours) { tour ->
+                items(pagedTours) { tour ->
                     TourCard(
                         tour = tour,
                         onClick = { onTourClick(tour) }
                     )
+                }
+
+                if (totalPages > 1) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp, horizontal = 24.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            FilledTonalButton(
+                                onClick = {
+                                    if (currentPage > 1) {
+                                        currentPage--
+                                        coroutineScope.launch { listState.animateScrollToItem(1) }
+                                    }
+                                },
+                                enabled = currentPage > 1,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = Color(0xFFE2E8F0),
+                                    contentColor = Color(0xFF1E293B)
+                                )
+                            ) {
+                                Text("Trước", fontWeight = FontWeight.Bold)
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 20.dp)
+                                    .background(Color(0xFF2563EB).copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "$currentPage / $totalPages",
+                                    color = Color(0xFF2563EB),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                            }
+
+                            FilledTonalButton(
+                                onClick = {
+                                    if (currentPage < totalPages) {
+                                        currentPage++
+                                        coroutineScope.launch { listState.animateScrollToItem(1) }
+                                    }
+                                },
+                                enabled = currentPage < totalPages,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = Color(0xFFE2E8F0),
+                                    contentColor = Color(0xFF1E293B)
+                                )
+                            ) {
+                                Text("Sau", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
                 
                 item { Spacer(modifier = Modifier.height(32.dp)) }

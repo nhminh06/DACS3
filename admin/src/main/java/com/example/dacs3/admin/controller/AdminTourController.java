@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,18 +34,19 @@ public class AdminTourController {
     @GetMapping
     public String listTours(Model model, 
                             @RequestParam(required = false) String search,
-                            @RequestParam(required = false) String sort) {
+                            @RequestParam(required = false) String sort,
+                            @RequestParam(defaultValue = "1") int page) {
         try {
             ApiFuture<QuerySnapshot> future = firestore.collection("tours").get();
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
 
-            long total = documents.size();
-            long active = documents.stream().filter(d -> {
+            long totalCount = documents.size();
+            long activeCount = documents.stream().filter(d -> {
                 Object status = d.get("trang_thai");
                 return status == null || "active".equals(status) || Integer.valueOf(1).equals(status);
             }).count();
             
-            long hidden = total - active;
+            long hiddenCount = totalCount - activeCount;
             
             double avgPrice = documents.stream()
                     .mapToLong(d -> {
@@ -60,17 +60,22 @@ public class AdminTourController {
                     })
                     .average().orElse(0.0);
 
-            model.addAttribute("total", total);
-            model.addAttribute("activeCount", active);
-            model.addAttribute("hiddenCount", hidden);
+            model.addAttribute("total", totalCount);
+            model.addAttribute("activeCount", activeCount);
+            model.addAttribute("hiddenCount", hiddenCount);
             model.addAttribute("avgPrice", avgPrice);
 
-            List<QueryDocumentSnapshot> filteredTours = new ArrayList<>(documents);
+            List<Map<String, Object>> tourList = documents.stream().map(d -> {
+                Map<String, Object> map = new HashMap<>(d.getData());
+                map.put("id", d.getId());
+                return map;
+            }).collect(Collectors.toList());
+
             if (search != null && !search.isEmpty()) {
                 String searchLower = search.toLowerCase();
-                filteredTours = filteredTours.stream()
-                        .filter(d -> {
-                            String title = d.getString("title");
+                tourList = tourList.stream()
+                        .filter(t -> {
+                            String title = (String) t.get("title");
                             return title != null && title.toLowerCase().contains(searchLower);
                         })
                         .collect(Collectors.toList());
@@ -79,43 +84,42 @@ public class AdminTourController {
             if (sort != null) {
                 switch (sort) {
                     case "name":
-                        filteredTours.sort(Comparator.comparing(d -> {
-                            String t = d.getString("title");
-                            return t != null ? t : "";
+                        tourList.sort(Comparator.comparing(t -> {
+                            String title = (String) t.get("title");
+                            return title != null ? title : "";
                         }));
                         break;
                     case "price_asc":
-                        filteredTours.sort(Comparator.comparingLong(d -> {
-                            Object p = d.get("price");
-                            if (p instanceof Long) return (Long) p;
-                            if (p instanceof Integer) return ((Integer) p).longValue();
-                            if (p instanceof String) {
-                                try { return Long.parseLong((String)p); } catch(Exception e) {}
-                            }
-                            return 0L;
-                        }));
+                        tourList.sort(Comparator.comparingLong(t -> getPriceAsLong(t.get("price"))));
                         break;
                     case "price_desc":
-                        filteredTours.sort((d1, d2) -> {
-                            Long p1 = 0L;
-                            Object obj1 = d1.get("price");
-                            if (obj1 instanceof Long) p1 = (Long) obj1;
-                            else if (obj1 instanceof Integer) p1 = ((Integer) obj1).longValue();
-                            else if (obj1 instanceof String) { try { p1 = Long.parseLong((String)obj1); } catch(Exception e) {} }
-
-                            Long p2 = 0L;
-                            Object obj2 = d2.get("price");
-                            if (obj2 instanceof Long) p2 = (Long) obj2;
-                            else if (obj2 instanceof Integer) p2 = ((Integer) obj2).longValue();
-                            else if (obj2 instanceof String) { try { p2 = Long.parseLong((String)obj2); } catch(Exception e) {} }
-
+                        tourList.sort((t1, t2) -> {
+                            Long p1 = getPriceAsLong(t1.get("price"));
+                            Long p2 = getPriceAsLong(t2.get("price"));
                             return Long.compare(p2, p1);
                         });
+                        break;
+                    case "newest":
+                    default:
                         break;
                 }
             }
 
-            model.addAttribute("tours", filteredTours);
+            int pageSize = 6; // Đổi lại thành 6 theo yêu cầu
+            int totalFiltered = tourList.size();
+            int totalPages = (int) Math.ceil((double) totalFiltered / pageSize);
+            
+            page = Math.max(1, Math.min(page, totalPages > 0 ? totalPages : 1));
+            
+            int start = (page - 1) * pageSize;
+            int end = Math.min(start + pageSize, totalFiltered);
+            
+            List<Map<String, Object>> pagedTours = (start < totalFiltered) ? tourList.subList(start, end) : new ArrayList<>();
+
+            model.addAttribute("tours", pagedTours);
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", totalPages);
+            model.addAttribute("totalFiltered", totalFiltered);
             model.addAttribute("search", search);
             model.addAttribute("sort", sort);
 
@@ -123,6 +127,15 @@ public class AdminTourController {
             e.printStackTrace();
         }
         return "tours/list";
+    }
+
+    private Long getPriceAsLong(Object p) {
+        if (p instanceof Long) return (Long) p;
+        if (p instanceof Integer) return ((Integer) p).longValue();
+        if (p instanceof String) {
+            try { return Long.parseLong((String)p); } catch(Exception e) {}
+        }
+        return 0L;
     }
 
     @GetMapping("/add")
@@ -182,7 +195,14 @@ public class AdminTourController {
             finalMainImageUrl = (String) uploadResult.get("secure_url");
         }
 
-        List<String> bannerUrls = (List<String>) data.getOrDefault("banners", new ArrayList<>());
+        Object bannersObj = data.getOrDefault("banners", new ArrayList<>());
+        List<String> bannerUrls = new ArrayList<>();
+        if (bannersObj instanceof List) {
+            for (Object item : (List<?>) bannersObj) {
+                if (item instanceof String) bannerUrls.add((String) item);
+            }
+        }
+
         if (bannerImageFiles != null && bannerImageFiles.length > 0) {
             for (MultipartFile file : bannerImageFiles) {
                 if (!file.isEmpty()) {
@@ -201,12 +221,9 @@ public class AdminTourController {
         data.put("startDate", ngayKhoiHanh);
         data.put("diemKhoiHanh", diemKhoiHanh);
         data.put("duration", soNgay + " ngày");
-        
-        // Lưu giá theo kiểu Number (Long) để Firestore có thể sắp xếp và tính toán
         data.put("price", parsePriceToLong(giaNguoiLon));
         data.put("giaTreEm", parsePriceToLong(giaTreEm));
         data.put("giaTreNho", parsePriceToLong(giaTreNho));
-        
         data.put("location", vitri);
         data.put("imageUrl", finalMainImageUrl); 
         data.put("banners", bannerUrls);
@@ -228,7 +245,6 @@ public class AdminTourController {
     private Long parsePriceToLong(String priceStr) {
         if (priceStr == null || priceStr.isEmpty()) return 0L;
         try {
-            // Loại bỏ các ký tự không phải số (như dấu chấm, dấu phẩy nếu người dùng nhập nhầm)
             String cleanPrice = priceStr.replaceAll("[^0-9]", "");
             return Long.parseLong(cleanPrice);
         } catch (Exception e) {

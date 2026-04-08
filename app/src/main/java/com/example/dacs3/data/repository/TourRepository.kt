@@ -19,13 +19,22 @@ class TourRepository {
     suspend fun getActiveTours(): List<Tour> {
         return try {
             val querySnapshot = toursCollection
-                .whereEqualTo("trang_thai", "active")
                 .get()
                 .await()
             
-            querySnapshot.documents.mapNotNull { doc ->
+            val allTours = querySnapshot.documents.mapNotNull { doc ->
                 doc.toObject(Tour::class.java)?.copy(id = doc.id)
             }
+            
+            // Log for debugging
+            Log.d("TourRepository", "Total tours fetched: ${allTours.size}")
+            allTours.forEach { tour ->
+                Log.d("TourRepository", "Tour: ${tour.title}, Status: ${tour.trang_thai}")
+            }
+
+            // Filter manually to be safe with field names or missing fields
+            allTours.filter { it.trang_thai == "active" || it.trang_thai.isEmpty() }
+
         } catch (e: Exception) {
             Log.e("TourRepository", "Lỗi lấy danh sách tour: ${e.message}")
             emptyList()

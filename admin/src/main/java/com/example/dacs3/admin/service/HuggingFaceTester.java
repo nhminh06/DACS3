@@ -7,7 +7,7 @@ import java.util.*;
 
 public class HuggingFaceTester {
 
-    private static final String API_KEY = "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";
+    private static final String API_KEY = "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";
 
     private static final String URL =
             "https://router.huggingface.co/hf-inference/models/facebook/bart-large-mnli";

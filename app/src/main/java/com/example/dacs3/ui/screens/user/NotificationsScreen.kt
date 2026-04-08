@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.CardTravel
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Report
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dacs3.data.model.Contact
+import com.example.dacs3.data.repository.ReportRepository
 import com.example.dacs3.ui.viewmodel.ContactViewModel
 import com.example.dacs3.ui.viewmodel.UserViewModel
 import com.google.firebase.firestore.FirebaseFirestore
@@ -43,7 +45,10 @@ fun NotificationsScreen(
     val userContacts by contactViewModel.userContacts.collectAsState()
     
     var systemNotifications by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var reportNotifications by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+
+    val reportRepository = remember { ReportRepository() }
 
     LaunchedEffect(user?.id) {
         if (user?.id != null) {
@@ -51,6 +56,7 @@ fun NotificationsScreen(
             contactViewModel.fetchUserContacts(currentUserId)
             
             try {
+                // Fetch system notifications
                 val snapshot = FirebaseFirestore.getInstance()
                     .collection("notifications")
                     .whereEqualTo("userId", currentUserId)
@@ -62,6 +68,10 @@ fun NotificationsScreen(
                     data["id"] = doc.id
                     data
                 }.sortedByDescending { (it["timestamp"] as? com.google.firebase.Timestamp)?.seconds ?: 0L }
+
+                // Fetch report notifications
+                reportNotifications = reportRepository.getUserReports(currentUserId)
+                    .filter { it["reply"] != null } // Only show responded reports
             } catch (e: Exception) {
                 Log.e("NOTIF_DEBUG", "Error: ${e.message}")
             } finally {
@@ -106,7 +116,7 @@ fun NotificationsScreen(
             } else {
                 val repliedContacts = userContacts.filter { it.reply != null }
 
-                if (repliedContacts.isEmpty() && systemNotifications.isEmpty()) {
+                if (repliedContacts.isEmpty() && systemNotifications.isEmpty() && reportNotifications.isEmpty()) {
                     EmptyNotifications()
                 } else {
                     LazyColumn(
@@ -119,7 +129,12 @@ fun NotificationsScreen(
                             SystemNotificationItem(notification)
                         }
                         
-                        // 2. Phản hồi liên hệ
+                        // 2. Phản hồi báo cáo (Reports)
+                        items(reportNotifications) { report ->
+                            ReportReplyItem(report, primaryColor)
+                        }
+                        
+                        // 3. Phản hồi liên hệ (Contacts)
                         items(repliedContacts) { contact ->
                             AdminReplyItem(contact, primaryColor)
                         }
@@ -214,6 +229,50 @@ fun AdminReplyItem(contact: com.example.dacs3.data.model.Contact, primaryColor: 
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 contact.replyAt?.let { sdf.format(it.toDate()) } ?: sdf.format(contact.timestamp.toDate()),
+                fontSize = 10.sp, color = Color(0xFF64748B), modifier = Modifier.align(Alignment.End)
+            )
+        }
+    }
+}
+
+@Composable
+fun ReportReplyItem(report: Map<String, Any>, primaryColor: Color) {
+    val sdf = remember { SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault()) }
+    val timestamp = report["createdAt"] as? com.google.firebase.Timestamp
+    val type = report["type"]?.toString() ?: ""
+    val targetName = if (type == "COMMENT") report["reportedUserName"] else report["articleTitle"]
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Report, null, tint = Color.Red, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Phản hồi báo cáo ${if(type == "COMMENT") "bình luận" else "bài viết"}", 
+                    fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF0F172A))
+            }
+            
+            Spacer(modifier = Modifier.height(10.dp))
+            
+            Box(modifier = Modifier.fillMaxWidth().background(Color(0xFFFFEBEE), RoundedCornerShape(8.dp)).padding(10.dp)) {
+                Column {
+                    Text("Đối tượng bị báo cáo:", fontSize = 11.sp, color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold)
+                    Text(targetName?.toString() ?: "", fontSize = 13.sp, color = Color(0xFF1E293B))
+                    Text("Lý do: ${report["reason"]}", fontSize = 12.sp, color = Color(0xFF475569), fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            Text("Admin phản hồi:", fontSize = 11.sp, color = primaryColor, fontWeight = FontWeight.ExtraBold)
+            Text(report["reply"]?.toString() ?: "", fontSize = 14.sp, color = Color(0xFF0F172A), fontWeight = FontWeight.Medium)
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                timestamp?.let { sdf.format(it.toDate()) } ?: "",
                 fontSize = 10.sp, color = Color(0xFF64748B), modifier = Modifier.align(Alignment.End)
             )
         }

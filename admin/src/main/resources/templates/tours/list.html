@@ -7,6 +7,36 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/admin-style.css}">
+    <style>
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #26263b;
+            border-radius: 8px;
+        }
+        .pagination-info {
+            color: #ccc;
+            font-size: 14px;
+        }
+        .pagination .page-link {
+            background: #1e1e2f;
+            border-color: #3f3f5f;
+            color: #fff;
+            padding: 8px 16px;
+        }
+        .pagination .page-item.active .page-link {
+            background: #667eea;
+            border-color: #667eea;
+        }
+        .pagination .page-item.disabled .page-link {
+            background: #161625;
+            border-color: #2f2f45;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
     <div th:replace="~{fragments/sidebar :: sidebar('tours')}"></div>
@@ -73,17 +103,17 @@
                 </thead>
                 <tbody>
                     <tr th:each="tour, iterStat : ${tours}">
-                        <td class="id-cell" th:text="'#' + ${tour.get('maTour') ?: iterStat.index + 1}"></td>
+                        <td class="id-cell" th:text="'#' + ${tour.maTour ?: (currentPage - 1) * 10 + iterStat.index + 1}"></td>
                         <td>
-                            <img th:if="${tour.get('imageUrl')}" th:src="${tour.get('imageUrl')}" class="thumbnail-img">
-                            <div th:unless="${tour.get('imageUrl')}" class="thumbnail-img bg-secondary d-flex align-items-center justify-content-center"><i class="bi bi-image"></i></div>
+                            <img th:if="${tour.imageUrl}" th:src="${tour.imageUrl}" class="thumbnail-img">
+                            <div th:unless="${tour.imageUrl}" class="thumbnail-img bg-secondary d-flex align-items-center justify-content-center"><i class="bi bi-image"></i></div>
                         </td>
-                        <td class="tour-title" th:text="${tour.get('title')}"></td>
-                        <td class="duration-cell"><i class="bi bi-calendar3"></i> <span th:text="${tour.get('duration')}"></span></td>
-                        <td class="price-cell" th:text="${#numbers.formatDecimal(tour.get('price'), 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                        <td class="tour-title" th:text="${tour.title}"></td>
+                        <td class="duration-cell"><i class="bi bi-calendar3"></i> <span th:text="${tour.duration}"></span></td>
+                        <td class="price-cell" th:text="${#numbers.formatDecimal(tour.price ?: 0, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
                         <td>
-                            <span th:if="${tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null}" class="badge badge-status status-confirmed">Đang hiển thị</span>
-                            <span th:unless="${tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null}" class="badge badge-status status-cancelled">Đang ẩn</span>
+                            <span th:if="${tour.trang_thai == 'active' || tour.trang_thai == null}" class="badge badge-status status-confirmed">Đang hiển thị</span>
+                            <span th:unless="${tour.trang_thai == 'active' || tour.trang_thai == null}" class="badge badge-status status-cancelled">Đang ẩn</span>
                         </td>
                         <td class="text-end">
                             <a th:href="@{/admin/tours/toggle-status/{id}(id=${tour.id})}" class="btn-action"><i class="bi bi-gear"></i></a>
@@ -91,8 +121,35 @@
                             <a th:href="@{/admin/tours/delete/{id}(id=${tour.id})}" class="btn-action" onclick="return confirm('Xóa tour?')"><i class="bi bi-trash"></i></a>
                         </td>
                     </tr>
+                    <tr th:if="${#lists.isEmpty(tours)}">
+                        <td colspan="7" class="text-center py-4 text-muted">Không tìm thấy tour nào.</td>
+                    </tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-container" th:if="${totalPages > 0}">
+            <div class="pagination-info">
+                Hiển thị <span th:text="${tours.size()}">0</span> / <span th:text="${totalFiltered}">0</span> tour
+            </div>
+            <nav aria-label="Page navigation">
+                <ul class="pagination mb-0">
+                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
+                        <a class="page-link" th:href="@{/admin/tours(page=${currentPage - 1}, search=${search}, sort=${sort})}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'">
+                        <a class="page-link" th:text="${i}" th:href="@{/admin/tours(page=${i}, search=${search}, sort=${sort})}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
+                        <a class="page-link" th:href="@{/admin/tours(page=${currentPage + 1}, search=${search}, sort=${sort})}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
         </div>
     </div>
     <script th:src="@{/js/admin-common.js}"></script>

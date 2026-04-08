@@ -39,7 +39,8 @@ public class AdminArticleController {
     public String listArticles(Model model,
                                @RequestParam(required = false) String search,
                                @RequestParam(required = false) Integer loai,
-                               @RequestParam(required = false, defaultValue = "newest") String sort) {
+                               @RequestParam(required = false, defaultValue = "newest") String sort,
+                               @RequestParam(defaultValue = "1") int page) {
         try {
             ApiFuture<QuerySnapshot> future = firestore.collection("articles").get();
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
@@ -99,7 +100,14 @@ public class AdminArticleController {
                 }
             }
 
-            List<Map<String, Object>> articleList = filteredArticles.stream().map(d -> {
+            int pageSize = 6;
+            int totalFiltered = filteredArticles.size();
+            int totalPages = (int) Math.ceil((double) totalFiltered / pageSize);
+            page = Math.max(1, Math.min(page, totalPages > 0 ? totalPages : 1));
+            int start = (page - 1) * pageSize;
+            int end = Math.min(start + pageSize, totalFiltered);
+
+            List<Map<String, Object>> articleList = filteredArticles.subList(start, end).stream().map(d -> {
                 Map<String, Object> map = new HashMap<>(d.getData());
                 map.put("id", d.getId());
                 return map;
@@ -109,6 +117,9 @@ public class AdminArticleController {
             model.addAttribute("search", search);
             model.addAttribute("loai", loai);
             model.addAttribute("sort", sort);
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", totalPages);
+            model.addAttribute("totalFiltered", totalFiltered);
 
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();

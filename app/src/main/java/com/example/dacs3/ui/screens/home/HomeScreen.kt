@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.dacs3.data.model.Tour
 import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.ui.components.AppBottomBar
@@ -33,8 +34,10 @@ fun AppHomeScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     
-    val tours by viewModel.tours.collectAsState()
+    // Sử dụng allTours để luôn hiển thị tour từ CSDL, không bị lọc ở trang Home
+    val allTours by viewModel.allTours.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
 
     Scaffold(
         containerColor = backgroundColor,
@@ -54,12 +57,40 @@ fun AppHomeScreen(
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 item { TopHeader(onProfileClick = { onNavigate("profile") }) }
-                item { HomePaddingWrapper { SearchBar() } }
+                item { 
+                    HomePaddingWrapper { 
+                        SearchBar(
+                            query = searchQuery,
+                            onQueryChange = { 
+                                // Cập nhật query nhưng không làm lọc tour ở dưới
+                                viewModel.setSearchQuery(it) 
+                            },
+                            onSearchClick = {
+                                val query = searchQuery.trim().lowercase()
+                                if (query.isNotEmpty()) {
+                                    val articles = articleViewModel.explorerArticles.value
+                                    val hasMatchingArticle = articles.any { 
+                                        it.tieu_de.lowercase().contains(query) 
+                                    }
+                                    
+                                    if (hasMatchingArticle) {
+                                        // Chuyển sang trang bài viết và lọc theo từ khóa
+                                        articleViewModel.setSearchQuery(searchQuery)
+                                        onNavigate("explore")
+                                    } else {
+                                        // Chuyển sang trang tour và lọc theo từ khóa
+                                        onNavigate("tours")
+                                    }
+                                }
+                            }
+                        ) 
+                    } 
+                }
+                
                 item { 
                     HomePaddingWrapper { 
                         QuickNavSection(onItemClick = { index ->
                             coroutineScope.launch {
-                                // Cuộn đến các vị trí tương ứng trong LazyColumn
                                 listState.animateScrollToItem(index)
                             }
                         }) 
@@ -71,18 +102,17 @@ fun AppHomeScreen(
                     } 
                 }
 
-                if (tours.isNotEmpty()) {
+                // Luôn hiển thị tour từ CSDL (allTours), không dùng tour ảo và không bị lọc mất
+                if (allTours.isNotEmpty()) {
                     item {
                         HomePaddingWrapper {
                             FeaturedToursSection(
-                                tours = tours, 
+                                tours = allTours, 
                                 onTourClick = onTourClick,
                                 onSeeAllClick = { onNavigate("tours") }
                             )
                         }
                     }
-                } else if (!isLoading) {
-                    item { HomePaddingWrapper { FeaturedDestinationsSection() } }
                 }
 
                 item {
@@ -100,7 +130,7 @@ fun AppHomeScreen(
                 item { Spacer(modifier = Modifier.height(24.dp)) }
             }
             
-            if (isLoading) {
+            if (isLoading && allTours.isEmpty()) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }

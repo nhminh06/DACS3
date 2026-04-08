@@ -34,3 +34,5 @@ application.properties
 
 # hoặc nếu chỉ muốn ignore 1 file cụ thể
 admin/src/main/resources/application.properties
+
+admin/src/main/java/com/example/dacs3/admin/service/HuggingFaceTester.java
