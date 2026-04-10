@@ -30,11 +30,18 @@
         .badge-started { background: #1e40af; color: #dbeafe; }
         .badge-completed { background: #064e3b; color: #d1fae5; }
         .badge-cancelled { background: #7c2d12; color: #fee2e2; }
+
+        /* Eligibility Indicators */
+        .eligibility-tag { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; margin-left: 10px; }
+        .tag-eligible { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .tag-not-eligible { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
         .status-badge-top { position: absolute; top: 20px; right: 20px; padding: 6px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .status-preparing { background: #78350f; color: #fef9c3; }
         .status-started { background: #1e40af; color: #dbeafe; }
         .status-completed { background: #064e3b; color: #d1fae5; }
         .status-cancelled { background: #7c2d12; color: #fee2e2; }
+
         .trip-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); background: #0f172a; padding: 15px 0; }
         .trip-stat-item { text-align: center; border-right: 1px solid #334155; }
         .trip-stat-item:last-child { border-right: none; }
@@ -45,10 +52,12 @@
         .btn-trip-cyan:hover { background: #0284c7; color: white; }
         .btn-trip-green { background: #10b981; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; transition: 0.3s; }
         .btn-trip-green:hover { background: #059669; color: white; }
+        .btn-trip-danger { background: #991b1b; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; transition: 0.3s; }
+        .btn-trip-danger:hover { background: #7f1d1d; color: white; }
+
         .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 15px; background: #1e293b; border-radius: 8px; border: 1px solid #334155; }
         .pagination .page-link { background: #0f172a; border-color: #334155; color: #fff; }
         .pagination .page-item.active .page-link { background: #3b82f6; border-color: #3b82f6; }
-        .pagination .page-item.disabled .page-link { background: #1e293b; border-color: #334155; color: #64748b; }
     </style>
 </head>
 <body>
@@ -62,6 +71,8 @@
                 <a href="/admin/bookings" class="btn-back">Trở lại</a>
             </div>
         </header>
+
+        <div id="alertContainer" class="mb-3"></div>
 
         <div class="stats-cards-custom">
             <div class="stat-card-custom">
@@ -110,7 +121,14 @@
             <div class="trip-header">
                 <img th:src="${trip.tour != null ? trip.tour['imageUrl'] : 'https://placehold.co/600x400?text=No+Image'}" class="trip-img">
                 <div class="trip-info">
-                    <h3 th:text="${trip.tour != null ? trip.tour['title'] : 'Chuyến đi ' + trip.startDate}">Tên Chuyến Đi</h3>
+                    <h3>
+                        <span th:text="${trip.tour != null ? trip.tour['title'] : 'Chuyến đi ' + trip.startDate}">Tên Chuyến Đi</span>
+                        <span th:with="isEligible=${trip.totalPassengers >= trip.minGuests and trip.totalPassengers <= trip.maxGuests + 3}"
+                              class="eligibility-tag"
+                              th:classappend="${isEligible ? 'tag-eligible' : 'tag-not-eligible'}"
+                              th:text="${isEligible ? 'Đủ điều kiện' : 'Không đạt chuẩn'}">
+                        </span>
+                    </h3>
                     <div class="trip-meta">
                         <span class="meta-item"><i class="bi bi-calendar-event"></i> Khởi hành: <span th:text="${trip.startDate}"></span></span>
                         <span class="meta-item"><i class="bi bi-journal-check"></i> Đơn hàng: <span th:text="${trip.bookingCount}"></span></span>
@@ -130,7 +148,7 @@
             <div class="trip-stats-grid">
                 <div class="trip-stat-item">
                     <div class="stat-value" th:text="${trip.totalPassengers}">0</div>
-                    <div class="stat-label">Tổng khách</div>
+                    <div class="stat-label">Tổng khách / <span th:text="${trip.minGuests}"></span>-<span th:text="${trip.maxGuests}"></span></div>
                 </div>
                 <div class="trip-stat-item">
                     <div class="stat-value" th:text="${#numbers.formatDecimal(trip.totalRevenue, 0, 'COMMA', 0, 'POINT') + ' đ'}">0 đ</div>
@@ -146,11 +164,27 @@
                 </div>
             </div>
             <div class="trip-footer">
-                <a th:href="@{/admin/bookings/booking-detail/{id}(id=${trip.id})}" class="btn-trip-cyan">
+                <a th:href="@{/admin/bookings/grouped-trip-detail/{id}(id=${trip.id})}" class="btn-trip-cyan">
                     <i class="bi bi-list-ul me-2"></i>Xem danh sách booking
                 </a>
                 <a th:href="@{/admin/bookings/trip-schedule/{id}(id=${trip.id})}" class="btn-trip-green">
                     <i class="bi bi-calendar-range me-2"></i>Quản lý lịch trình
+                </a>
+
+                <button th:if="${trip.canCancelBatch}"
+                        class="btn-trip-danger ms-auto"
+                        th:data-tour-id="${trip.tourId}"
+                        th:data-start-date="${trip.startDate}"
+                        onclick="batchCancelTrip(this.getAttribute('data-tour-id'), this.getAttribute('data-start-date'))">
+                    <i class="bi bi-x-circle me-2"></i>Hủy chuyến (Thiếu khách)
+                </button>
+
+                <!-- Delete button for completed or cancelled trips -->
+                <a th:if="${(trip.tripStatus == 'completed' or trip.tripStatus == 'cancelled') and !trip.canCancelBatch}"
+                   th:href="@{/admin/bookings/trip-delete/{tourId}/{startDate}(tourId=${trip.tourId}, startDate=${trip.startDate})}"
+                   class="btn-trip-danger ms-auto"
+                   onclick="return confirm('Bạn có chắc chắn muốn xóa toàn bộ thông tin chuyến đi này không?')">
+                    <i class="bi bi-trash me-2"></i>Xóa chuyến đi
                 </a>
             </div>
         </div>
@@ -173,11 +207,40 @@
                 </ul>
             </nav>
         </div>
-
-        <div th:if="${trips.empty}" class="alert alert-info border-0 bg-opacity-10 bg-info text-info">
-            <i class="bi bi-info-circle me-2"></i> Không tìm thấy chuyến đi nào phù hợp với bộ lọc.
-        </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            container.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        }
+
+        async function batchCancelTrip(tourId, startDate) {
+            if (!confirm('Xác nhận hủy toàn bộ đơn hàng của chuyến đi này do không đủ khách? Hệ thống sẽ gửi email thông báo cho tất cả khách hàng.')) return;
+
+            const formData = new FormData();
+            formData.append('tourId', tourId);
+            formData.append('startDate', startDate);
+
+            try {
+                const response = await fetch('/admin/bookings/trip-batch-cancel', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showAlert(result.message, 'danger');
+                }
+            } catch (error) {
+                showAlert('Có lỗi xảy ra khi thực hiện hủy chuyến!', 'danger');
+            }
+        }
+    </script>
 </body>
 </html>

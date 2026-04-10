@@ -105,7 +105,7 @@ public class AdminTourController {
                 }
             }
 
-            int pageSize = 6; // Đổi lại thành 6 theo yêu cầu
+            int pageSize = 6; 
             int totalFiltered = tourList.size();
             int totalPages = (int) Math.ceil((double) totalFiltered / pageSize);
             
@@ -176,7 +176,10 @@ public class AdminTourController {
                            @RequestParam(required = false) MultipartFile[] bannerImageFiles,
                            @RequestParam String dichVu,
                            @RequestParam String loTrinh,
-                           @RequestParam String traiNghiem) throws IOException, ExecutionException, InterruptedException {
+                           @RequestParam String traiNghiem,
+                           @RequestParam(defaultValue = "1") Integer minGuests,
+                           @RequestParam(defaultValue = "50") Integer maxGuests,
+                           @RequestParam(required = false) String tourScale) throws IOException, ExecutionException, InterruptedException {
         
         Map<String, Object> data = new HashMap<>();
 
@@ -230,6 +233,9 @@ public class AdminTourController {
         data.put("dichVu", dichVu);
         data.put("loTrinh", loTrinh);
         data.put("traiNghiem", traiNghiem);
+        data.put("minGuests", minGuests);
+        data.put("maxGuests", maxGuests);
+        data.put("scale", tourScale); // Lưu loại quy mô tour
         data.put("trang_thai", data.getOrDefault("trang_thai", "active"));
         data.put("rating", data.getOrDefault("rating", 5.0));
         data.put("reviewCount", data.getOrDefault("reviewCount", 0));

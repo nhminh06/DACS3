@@ -7,6 +7,7 @@ import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -134,6 +135,7 @@ public class AdminArticleController {
             if (doc.exists()) {
                 Map<String, Object> articleData = new HashMap<>(doc.getData());
                 articleData.put("id", doc.getId());
+                ensureSectionsExist(articleData);
                 model.addAttribute("article", articleData);
                 return "articles/detail";
             }
@@ -154,7 +156,6 @@ public class AdminArticleController {
                 String title = (String) articleData.getOrDefault("tieu_de", "Không có tiêu đề");
                 List<Map<String, Object>> sections = (List<Map<String, Object>>) articleData.get("sections");
                 
-                // Tối ưu việc gộp nội dung để gửi sang AI
                 StringBuilder fullContent = new StringBuilder();
                 if (sections != null) {
                     for (Map<String, Object> section : sections) {
@@ -170,7 +171,6 @@ public class AdminArticleController {
                     }
                 }
 
-                // Gửi sang HuggingFaceService đã được tối ưu stripHtml và Regex
                 Map<String, Object> result = huggingFaceService.reviewArticle(title, fullContent.toString());
                 if (result != null) {
                     return ResponseEntity.ok(result);
@@ -220,14 +220,17 @@ public class AdminArticleController {
             if (doc.exists()) {
                 Map<String, Object> articleData = new HashMap<>(doc.getData());
                 articleData.put("id", doc.getId());
+                ensureSectionsExist(articleData);
                 model.addAttribute("article", articleData);
                 
                 ApiFuture<QuerySnapshot> tourFuture = firestore.collection("tours").get();
-                List<Map<String, Object>> tourList = tourFuture.get().getDocuments().stream().map(d -> {
+                List<QueryDocumentSnapshot> tourDocs = tourFuture.get().getDocuments();
+                List<Map<String, Object>> tourList = new ArrayList<>();
+                for (QueryDocumentSnapshot d : tourDocs) {
                     Map<String, Object> map = new HashMap<>(d.getData());
                     map.put("id", d.getId());
-                    return map;
-                }).collect(Collectors.toList());
+                    tourList.add(map);
+                }
                 model.addAttribute("tours", tourList);
                 return "articles/form";
             }
@@ -237,33 +240,51 @@ public class AdminArticleController {
         return "redirect:/admin/articles";
     }
 
+    private void ensureSectionsExist(Map<String, Object> data) {
+        if (data.get("sections") == null || !(data.get("sections") instanceof List)) {
+            List<Map<String, Object>> sections = new ArrayList<>();
+            Map<String, Object> section = new HashMap<>();
+            section.put("tieu_de", "");
+            Object content = data.getOrDefault("noi_dung", data.getOrDefault("content", data.getOrDefault("description", "")));
+            section.put("noi_dung", content != null ? content.toString() : "");
+            section.put("hinh_anh", data.get("hinh_anh"));
+            sections.add(section);
+            data.put("sections", sections);
+        }
+    }
+
     @PostMapping("/save")
-    public String saveArticle(@RequestParam(required = false) String id,
+    public String saveArticle(HttpServletRequest request,
+                              @RequestParam(required = false) String id,
                               @RequestParam String tieu_de,
                               @RequestParam Integer loai_id,
                               @RequestParam(required = false) String tac_gia,
                               @RequestParam(required = false) String tour_id,
-                              @RequestParam("tieu_de_muc[]") String[] tieuDeMuc,
-                              @RequestParam("noi_dung_muc[]") String[] noiDungMuc,
-                              @RequestParam(value = "hinh_anh_muc[]", required = false) MultipartFile[] hinhAnhMuc,
-                              @RequestParam(value = "hinh_anh_cu[]", required = false) String[] hinhAnhCu) throws IOException, ExecutionException, InterruptedException {
+                              @RequestParam(value = "hinh_anh_muc[]", required = false) MultipartFile[] hinhAnhMuc) throws IOException, ExecutionException, InterruptedException {
+
+        // Sử dụng HttpServletRequest.getParameterValues để tránh việc Spring tự động tách chuỗi theo dấu phẩy
+        String[] tieuDeMuc = request.getParameterValues("tieu_de_muc[]");
+        String[] noiDungMuc = request.getParameterValues("noi_dung_muc[]");
+        String[] hinhAnhCu = request.getParameterValues("hinh_anh_cu[]");
 
         List<Map<String, Object>> mucList = new ArrayList<>();
-        for (int i = 0; i < tieuDeMuc.length; i++) {
-            Map<String, Object> muc = new HashMap<>();
-            muc.put("tieu_de", tieuDeMuc[i]);
-            muc.put("noi_dung", noiDungMuc[i]);
-            
-            String currentImageUrl = (hinhAnhCu != null && i < hinhAnhCu.length) ? hinhAnhCu[i] : null;
+        if (tieuDeMuc != null) {
+            for (int i = 0; i < tieuDeMuc.length; i++) {
+                Map<String, Object> muc = new HashMap<>();
+                muc.put("tieu_de", tieuDeMuc[i]);
+                muc.put("noi_dung", (noiDungMuc != null && i < noiDungMuc.length) ? noiDungMuc[i] : "");
+                
+                String currentImageUrl = (hinhAnhCu != null && i < hinhAnhCu.length) ? hinhAnhCu[i] : null;
 
-            if (hinhAnhMuc != null && i < hinhAnhMuc.length && !hinhAnhMuc[i].isEmpty()) {
-                @SuppressWarnings("rawtypes")
-                Map uploadResult = cloudinary.uploader().upload(hinhAnhMuc[i].getBytes(), ObjectUtils.emptyMap());
-                muc.put("hinh_anh", uploadResult.get("secure_url"));
-            } else {
-                muc.put("hinh_anh", currentImageUrl);
+                if (hinhAnhMuc != null && i < hinhAnhMuc.length && !hinhAnhMuc[i].isEmpty()) {
+                    @SuppressWarnings("rawtypes")
+                    Map uploadResult = cloudinary.uploader().upload(hinhAnhMuc[i].getBytes(), ObjectUtils.emptyMap());
+                    muc.put("hinh_anh", uploadResult.get("secure_url"));
+                } else {
+                    muc.put("hinh_anh", currentImageUrl);
+                }
+                mucList.add(muc);
             }
-            mucList.add(muc);
         }
 
         String author = (tac_gia == null || tac_gia.isEmpty()) ? "Admin" : tac_gia;

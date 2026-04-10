@@ -46,6 +46,9 @@ class MainViewModel : ViewModel() {
     private val _selectedTourType = MutableStateFlow("Tất cả")
     val selectedTourType = _selectedTourType.asStateFlow()
 
+    private val _selectedScale = MutableStateFlow("Tất cả")
+    val selectedScale = _selectedScale.asStateFlow()
+
     private val _selectedLocations = MutableStateFlow<Set<String>>(emptySet())
     val selectedLocations = _selectedLocations.asStateFlow()
 
@@ -109,6 +112,12 @@ class MainViewModel : ViewModel() {
 
     fun setTourType(type: String) {
         _selectedTourType.value = type
+        applyFilters()
+    }
+
+    fun setTourScale(scale: String) {
+        _selectedScale.value = scale
+        applyFilters()
     }
 
     fun toggleLocation(location: String) {
@@ -119,29 +128,35 @@ class MainViewModel : ViewModel() {
             current.add(location)
         }
         _selectedLocations.value = current
+        applyFilters()
     }
 
     fun setMinPrice(price: Float?) {
         val currentRange = _priceRange.value
         _priceRange.value = (price ?: 0f)..currentRange.endInclusive
+        applyFilters()
     }
 
     fun setMaxPrice(price: Float?) {
         val currentRange = _priceRange.value
         _priceRange.value = currentRange.start..(price ?: DEFAULT_MAX_PRICE)
+        applyFilters()
     }
 
     fun setDuration(duration: String) {
         _selectedDuration.value = duration
+        applyFilters()
     }
 
     fun setRating(rating: Float) {
         _selectedRating.value = rating
+        applyFilters()
     }
 
     fun resetFilters() {
         _searchQuery.value = ""
         _selectedTourType.value = "Tất cả"
+        _selectedScale.value = "Tất cả"
         _selectedLocations.value = emptySet()
         _priceRange.value = 0f..DEFAULT_MAX_PRICE
         _selectedDuration.value = "Tất cả"
@@ -174,6 +189,13 @@ class MainViewModel : ViewModel() {
                 val singleDay = isSingleDay(tour)
                 if (_selectedTourType.value == "Trong ngày") singleDay
                 else !singleDay
+            }
+        }
+
+        if (_selectedScale.value != "Tất cả") {
+            filteredList = filteredList.filter { tour ->
+                val scale = tour.getTourScaleInfo()?.label ?: "Tùy chỉnh"
+                scale == _selectedScale.value
             }
         }
 

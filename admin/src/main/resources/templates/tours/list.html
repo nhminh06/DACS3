@@ -36,6 +36,17 @@
             border-color: #2f2f45;
             color: #666;
         }
+        .scale-badge {
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .scale-small { background: #0ea5e9; color: white; }
+        .scale-medium { background: #8b5cf6; color: white; }
+        .scale-large { background: #f59e0b; color: white; }
+        .scale-custom { background: #64748b; color: white; }
     </style>
 </head>
 <body>
@@ -95,34 +106,43 @@
                         <th style="width: 80px;">ID</th>
                         <th style="width: 100px;">HÌNH ẢNH</th>
                         <th>TÊN TOUR</th>
-                        <th style="width: 150px;">SỐ NGÀY</th>
+                        <th style="width: 120px;">QUY MÔ</th>
+                        <th style="width: 120px;">KHÁCH</th>
                         <th style="width: 150px;">GIÁ</th>
-                        <th style="width: 150px;">TRẠNG THÁI</th>
+                        <th style="width: 130px;">TRẠNG THÁI</th>
                         <th style="width: 150px;" class="text-end">THAO TÁC</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:each="tour, iterStat : ${tours}">
-                        <td class="id-cell" th:text="'#' + ${tour.maTour ?: (currentPage - 1) * 10 + iterStat.index + 1}"></td>
+                        <td class="id-cell" th:text="'#' + ${tour.get('maTour') ?: (currentPage - 1) * 10 + iterStat.index + 1}"></td>
                         <td>
-                            <img th:if="${tour.imageUrl}" th:src="${tour.imageUrl}" class="thumbnail-img">
-                            <div th:unless="${tour.imageUrl}" class="thumbnail-img bg-secondary d-flex align-items-center justify-content-center"><i class="bi bi-image"></i></div>
+                            <img th:if="${tour.get('imageUrl')}" th:src="${tour.get('imageUrl')}" class="thumbnail-img">
+                            <div th:unless="${tour.get('imageUrl')}" class="thumbnail-img bg-secondary d-flex align-items-center justify-content-center"><i class="bi bi-image"></i></div>
                         </td>
-                        <td class="tour-title" th:text="${tour.title}"></td>
-                        <td class="duration-cell"><i class="bi bi-calendar3"></i> <span th:text="${tour.duration}"></span></td>
-                        <td class="price-cell" th:text="${#numbers.formatDecimal(tour.price ?: 0, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                        <td class="tour-title">
+                            <div th:text="${tour.get('title')}"></div>
+                            <small class="text-muted" th:text="${tour.get('location')}"></small>
+                        </td>
                         <td>
-                            <span th:if="${tour.trang_thai == 'active' || tour.trang_thai == null}" class="badge badge-status status-confirmed">Đang hiển thị</span>
-                            <span th:unless="${tour.trang_thai == 'active' || tour.trang_thai == null}" class="badge badge-status status-cancelled">Đang ẩn</span>
+                            <span th:if="${tour.get('scale') == 'small'}" class="scale-badge scale-small">Nhỏ</span>
+                            <span th:if="${tour.get('scale') == 'medium'}" class="scale-badge scale-medium">Vừa</span>
+                            <span th:if="${tour.get('scale') == 'large'}" class="scale-badge scale-large">Lớn</span>
+                            <span th:if="${tour.get('scale') == 'custom' || tour.get('scale') == null}" class="scale-badge scale-custom">Tùy chỉnh</span>
+                        </td>
+                        <td class="guests-cell">
+                            <span class="badge bg-dark text-info" th:text="|${tour.get('minGuests') ?: 1} - ${tour.get('maxGuests') ?: 50}|">1 - 50</span>
+                        </td>
+                        <td class="price-cell" th:text="${#numbers.formatDecimal(tour.get('price') ?: 0, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                        <td>
+                            <span th:if="${tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null}" class="badge badge-status status-confirmed">Đang hiển thị</span>
+                            <span th:unless="${tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null}" class="badge badge-status status-cancelled">Đang ẩn</span>
                         </td>
                         <td class="text-end">
-                            <a th:href="@{/admin/tours/toggle-status/{id}(id=${tour.id})}" class="btn-action"><i class="bi bi-gear"></i></a>
-                            <a th:href="@{/admin/tours/edit/{id}(id=${tour.id})}" class="btn-action"><i class="bi bi-pencil"></i></a>
-                            <a th:href="@{/admin/tours/delete/{id}(id=${tour.id})}" class="btn-action" onclick="return confirm('Xóa tour?')"><i class="bi bi-trash"></i></a>
+                            <a th:href="@{/admin/tours/toggle-status/{id}(id=${tour.get('id')})}" class="btn-action"><i class="bi bi-gear"></i></a>
+                            <a th:href="@{/admin/tours/edit/{id}(id=${tour.get('id')})}" class="btn-action"><i class="bi bi-pencil"></i></a>
+                            <a th:href="@{/admin/tours/delete/{id}(id=${tour.get('id')})}" class="btn-action" onclick="return confirm('Xóa tour?')"><i class="bi bi-trash"></i></a>
                         </td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(tours)}">
-                        <td colspan="7" class="text-center py-4 text-muted">Không tìm thấy tour nào.</td>
                     </tr>
                 </tbody>
             </table>

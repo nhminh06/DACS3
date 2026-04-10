@@ -25,15 +25,14 @@
         .section-title-v4 { font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-left: 4px solid #ffffff; padding-left: 12px; color: white !important; }
         .card-dark-v4 { background: #1e293b; border-radius: 12px; padding: 25px; margin-bottom: 25px; border: 1px solid #334155; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
 
-        .guide-info-box { background: #1e3a8a; padding: 20px; border-radius: 12px; display: flex; align-items: center; gap: 20px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .guide-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid white; }
+        .guide-info-box { background: #1e3a8a; padding: 15px; border-radius: 12px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .guide-avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid white; }
 
         .btn-v4 { padding: 10px; border-radius: 8px; font-weight: 700; border: 1px solid #ffffff; width: 100%; font-size: 13px; transition: 0.3s; background: transparent; color: white; }
         .btn-v4:hover { background: #ffffff; color: #0f172a !important; }
 
         .booking-item-simple { background: #111827; border-radius: 10px; padding: 15px 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
 
-        /* Timeline styles */
         .timeline-steps { display: flex; justify-content: space-between; align-items: center; margin: 2rem 0; position: relative; }
         .timeline-steps::before { content: ''; position: absolute; top: 25px; left: 0; right: 0; height: 2px; background: #334155; z-index: 1; }
         .timeline-step { position: relative; z-index: 2; text-align: center; flex: 1; }
@@ -46,11 +45,11 @@
         input, select, textarea { background-color: #0f172a !important; color: white !important; border: 1px solid #334155 !important; }
         .form-control:focus, .form-select:focus { background-color: #0f172a; border-color: #3b82f6; box-shadow: none; color: white; }
 
-        /* Select option styles for busy guides */
-        #guideSelect option.busy-guide {
-            color: #f87171 !important;
-            background-color: #450a0a !important;
-        }
+        #guideSelect option.busy-guide { color: #f87171 !important; background-color: #450a0a !important; }
+
+        .eligibility-tag { font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-top: 10px; display: inline-block; }
+        .tag-eligible { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+        .tag-not-eligible { background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; }
     </style>
 </head>
 <body>
@@ -66,14 +65,18 @@
 
         <div id="alertContainer"></div>
 
-        <!-- Banner nạp từ CSDL -->
         <div th:if="${booking != null}" class="trip-header-v4" id="tripHeader">
             <img th:src="${booking.tour != null ? booking.tour['imageUrl'] : 'https://placehold.co/600x400'}" class="trip-img-v4">
             <div class="trip-info-v4">
                 <h2 th:text="${booking.tour != null ? booking.tour['title'] : 'N/A'}"></h2>
                 <div class="mt-2">
                     <span class="me-4"><i class="bi bi-calendar-event me-2"></i><strong>Khởi hành:</strong> <span th:text="${booking.startDate}"></span></span>
-                    <span><i class="bi bi-people me-2"></i><strong>Tổng đoàn:</strong> <span th:text="${totalPassengers}"></span> người</span>
+                    <span><i class="bi bi-people me-2"></i><strong>Tổng đoàn:</strong> <span th:text="${totalPassengers}"></span>/<span th:text="${trip.minGuests}"></span>-<span th:text="${trip.maxGuests}"></span> người</span>
+                </div>
+
+                <div th:with="isEligible=${totalPassengers >= trip.minGuests and totalPassengers <= trip.maxGuests + 3}">
+                    <span th:if="${isEligible}" class="eligibility-tag tag-eligible"><i class="bi bi-check-circle-fill me-1"></i> Đủ điều kiện khởi hành</span>
+                    <span th:unless="${isEligible}" class="eligibility-tag tag-not-eligible"><i class="bi bi-exclamation-triangle-fill me-1"></i> Không đạt tiêu chuẩn</span>
                 </div>
 
                 <div id="statusBadgeContainer">
@@ -93,7 +96,6 @@
             </div>
         </div>
 
-        <!-- Timeline Section -->
         <div class="card-dark-v4">
             <h3 class="section-title-v4"><i class="bi bi-clock-history"></i> Tiến trình chuyến đi</h3>
             <div class="timeline-steps" id="timelineContainer">
@@ -117,45 +119,48 @@
 
         <div class="row">
             <div class="col-md-7">
-                <!-- Guide Assignment -->
                 <div class="card-dark-v4" id="guideCard">
-                    <h3 class="section-title-v4"><i class="bi bi-person-badge"></i> Hướng dẫn viên</h3>
+                    <h3 class="section-title-v4"><i class="bi bi-person-badge"></i> Nhân viên phụ trách (<span th:text="${booking.guidesList.size()}">0</span>)</h3>
 
                     <div id="guideDisplay">
-                        <div th:if="${booking.guide != null}" class="guide-info-box">
-                            <img th:src="${booking.guide['avatar'] != null ? booking.guide['avatar'] : 'https://ui-avatars.com/api/?name=' + booking.guide['name']}" class="guide-avatar">
+                        <!-- List of assigned guides -->
+                        <div th:each="g : ${booking.guidesList}" class="guide-info-box">
+                            <img th:src="${g['avatar'] != null ? g['avatar'] : 'https://ui-avatars.com/api/?name=' + g['name']}" class="guide-avatar">
                             <div class="flex-grow-1">
-                                <h4 class="mb-1" th:text="${booking.guide['name']}"></h4>
-                                <p class="small mb-0 opacity-75"><i class="bi bi-telephone me-2"></i><span th:text="${booking.guide['sdt']}"></span></p>
-                                <p class="small mb-0 opacity-75"><i class="bi bi-envelope me-2"></i><span th:text="${booking.guide['email']}"></span></p>
+                                <h5 class="mb-0 fw-bold" th:text="${g['name']}"></h5>
+                                <p class="small mb-0 opacity-75"><i class="bi bi-telephone me-1"></i><span th:text="${g['sdt']}"></span></p>
                             </div>
-                            <button th:if="${booking.tripStatus == 'preparing'}" class="btn btn-sm btn-outline-light" onclick="assignGuide('')">Bỏ gán</button>
+                            <button th:if="${booking.tripStatus == 'preparing'}"
+                                    class="btn btn-sm btn-outline-danger"
+                                    th:data-guide-id="${g['id']}"
+                                    onclick="assignGuide(this.getAttribute('data-guide-id'), 'remove')">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </div>
 
-                        <div th:if="${booking.guide == null && booking.tripStatus == 'preparing'}">
+                        <div th:if="${booking.guidesList.isEmpty()}" class="alert alert-warning py-2 small">
+                            <i class="bi bi-info-circle me-2"></i> Chưa có nhân viên nào được gán cho đoàn này.
+                        </div>
+
+                        <div th:if="${booking.tripStatus == 'preparing'}" class="mt-3">
                             <div class="d-flex gap-2">
-                                <select id="guideSelect" class="form-select">
-                                    <option value="">-- Chọn hướng dẫn viên --</option>
+                                <select id="guideSelect" class="form-select form-select-sm">
+                                    <option value="">-- Thêm nhân viên --</option>
                                     <option th:each="g : ${guides}" th:value="${g['id']}"
                                             th:text="${g['name'] + (g['isBusy'] ? ' [BẬN: ' + g['busyReason'] + ']' : '')}"
                                             th:classappend="${g['isBusy'] ? 'busy-guide' : ''}"></option>
                                 </select>
-                                <button onclick="assignGuide(document.getElementById('guideSelect').value)" class="btn btn-primary" style="white-space: nowrap;">Gán HDV</button>
+                                <button onclick="assignGuide(document.getElementById('guideSelect').value, 'add')" class="btn btn-primary btn-sm" style="white-space: nowrap;">Thêm</button>
                             </div>
                             <small class="text-danger mt-1 d-block" id="guideBusyWarning" style="display:none !important;">
-                                <i class="bi bi-exclamation-triangle"></i> HDV này đang bận dẫn tour khác hoặc đã được gán.
+                                <i class="bi bi-exclamation-triangle"></i> Nhân viên này đang bận dẫn tour khác.
                             </small>
-                        </div>
-
-                        <div th:if="${booking.guide == null && booking.tripStatus != 'preparing'}" class="alert alert-danger">
-                            <i class="bi bi-exclamation-triangle me-2"></i> Lỗi: Chuyến đi đã bắt đầu mà chưa có HDV!
                         </div>
                     </div>
                 </div>
 
-                <!-- Booking List -->
                 <div class="card-dark-v4">
-                    <h3 class="section-title-v4"><i class="bi bi-list-ul"></i> Danh sách đoàn khách thực tế</h3>
+                    <h3 class="section-title-v4"><i class="bi bi-list-ul"></i> Danh sách đoàn khách</h3>
                     <div th:each="bk : ${bookings}" class="booking-item-simple">
                         <div class="d-flex align-items-center gap-3">
                             <i class="bi bi-person-circle fs-5"></i>
@@ -170,17 +175,15 @@
             </div>
 
             <div class="col-md-5">
-                <!-- Trip Controls -->
                 <div class="card-dark-v4" id="controlsCard">
                     <h3 class="section-title-v4"><i class="bi bi-gear-fill"></i> Điều khiển chuyến đi</h3>
 
                     <div id="controlForms">
-                        <!-- Start Trip -->
                         <div class="mb-4 control-start-section" th:style="${booking.tripStatus == 'preparing' ? '' : 'display:none'}">
-                            <h4 class="small fw-bold mb-3"><i class="bi bi-play-circle me-2"></i>BẮT ĐẦU CHUYẾN ĐI</h4>
-                            <label class="small opacity-75 mb-1">Thời gian bắt đầu thực tế:</label>
+                            <h4 class="small fw-bold mb-3"><i class="bi bi-play-circle me-2"></i>KHỞI HÀNH</h4>
+                            <label class="small opacity-75 mb-1">Thời gian khởi hành:</label>
                             <input type="datetime-local" id="startTimeInput" class="form-control mb-3">
-                            <textarea id="startNoteInput" class="form-control mb-3" rows="2" placeholder="Ghi chú bắt đầu..."></textarea>
+                            <textarea id="startNoteInput" class="form-control mb-3" rows="2" placeholder="Ghi chú khởi hành..."></textarea>
                             <button onclick="updateTripStatus('started')" class="btn-v4">XÁC NHẬN KHỞI HÀNH</button>
                         </div>
 
@@ -188,10 +191,9 @@
                             <i class="bi bi-info-circle me-2"></i> Đã bắt đầu lúc: <strong class="startTimeValue" th:text="${booking.startTime}"></strong>
                         </div>
 
-                        <!-- Complete Trip -->
                         <div class="mb-4 control-complete-section" th:style="${booking.tripStatus == 'started' ? '' : 'display:none'}">
-                            <h4 class="small fw-bold mb-3"><i class="bi bi-check-circle me-2"></i>KẾT THÚC CHUYẾN ĐI</h4>
-                            <label class="small opacity-75 mb-1">Thời gian kết thúc thực tế:</label>
+                            <h4 class="small fw-bold mb-3"><i class="bi bi-check-circle me-2"></i>KẾT THÚC</h4>
+                            <label class="small opacity-75 mb-1">Thời gian kết thúc:</label>
                             <input type="datetime-local" id="endTimeInput" class="form-control mb-3">
                             <textarea id="endNoteInput" class="form-control mb-3" rows="2" placeholder="Nhận xét chuyến đi..."></textarea>
                             <button onclick="updateTripStatus('completed')" class="btn-v4" style="border-color: #10b981;">XÁC NHẬN HOÀN THÀNH</button>
@@ -201,7 +203,6 @@
                             <i class="bi bi-check-circle-fill me-2"></i> Chuyến đi đã hoàn thành!
                         </div>
 
-                        <!-- Cancel Trip -->
                         <div class="control-cancel-section" th:style="${booking.tripStatus != 'completed' && booking.tripStatus != 'cancelled' ? '' : 'display:none'}">
                             <h4 class="small fw-bold mb-3"><i class="bi bi-x-octagon me-2"></i>HỦY CHUYẾN ĐI</h4>
                             <textarea id="cancelNoteInput" class="form-control mb-3" rows="2" placeholder="Lý do hủy..."></textarea>
@@ -227,13 +228,7 @@
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>`;
-            setTimeout(() => {
-                const alert = document.querySelector('.alert');
-                if (alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                }
-            }, 5000);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         async function updateTripStatus(status) {
@@ -262,7 +257,7 @@
 
                 if (result.success) {
                     showAlert(result.message, 'success');
-                    updateUI(status, formData);
+                    setTimeout(() => location.reload(), 1000);
                 } else {
                     showAlert(result.message, 'danger');
                 }
@@ -271,18 +266,21 @@
             }
         }
 
-        async function assignGuide(guideId) {
-            if (guideId) {
+        async function assignGuide(guideId, action) {
+            if (!guideId && action === 'add') return;
+
+            if (action === 'add') {
                 const select = document.getElementById('guideSelect');
                 const selectedOption = select.options[select.selectedIndex];
                 if (selectedOption.classList.contains('busy-guide')) {
-                    if (!confirm("Hướng dẫn viên này đang bận. Bạn vẫn muốn gán?")) return;
+                    if (!confirm("Nhân viên này đang bận. Bạn vẫn muốn gán?")) return;
                 }
             }
 
             const formData = new FormData();
             formData.append('bookingId', bookingId);
             formData.append('guideId', guideId);
+            formData.append('action', action);
 
             try {
                 const response = await fetch('/admin/bookings/trip-schedule/assign-guide', {
@@ -291,7 +289,6 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    showAlert(result.message, 'success');
                     location.reload();
                 } else {
                     showAlert(result.message, 'danger');
@@ -301,7 +298,6 @@
             }
         }
 
-        // Show warning when selecting busy guide
         document.getElementById('guideSelect')?.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             const warning = document.getElementById('guideBusyWarning');
@@ -313,39 +309,6 @@
                 warning.style.setProperty('display', 'none', 'important');
             }
         });
-
-        function updateUI(status, formData) {
-            const container = document.getElementById('statusBadgeContainer');
-            let badgeHtml = '';
-            if (status === 'started') badgeHtml = '<span class="status-badge-big badge-started"><i class="bi bi-play-circle"></i> ĐANG DIỄN RA</span>';
-            else if (status === 'completed') badgeHtml = '<span class="status-badge-big badge-completed"><i class="bi bi-check-circle"></i> ĐÃ HOÀN THÀNH</span>';
-            else if (status === 'cancelled') badgeHtml = '<span class="status-badge-big badge-cancelled"><i class="bi bi-x-circle"></i> ĐÃ HỦY</span>';
-            container.innerHTML = badgeHtml;
-
-            if (status === 'started') {
-                document.querySelector('.step-started-ui').classList.add('active');
-                document.querySelector('.startTimeLabel').innerText = formData.get('startTime');
-                document.querySelector('.startTimeValue').innerText = formData.get('startTime');
-                document.querySelector('.control-start-section').style.display = 'none';
-                document.querySelector('.startTimeAlert').style.display = 'block';
-                document.querySelector('.control-complete-section').style.display = 'block';
-            } else if (status === 'completed') {
-                document.querySelector('.step-started-ui').classList.remove('active');
-                document.querySelector('.step-started-ui').classList.add('completed');
-                document.querySelector('.step-completed-ui').classList.add('completed');
-                document.querySelector('.endTimeLabel').innerText = formData.get('endTime');
-                document.querySelector('.control-complete-section').style.display = 'none';
-                document.querySelector('.endTimeAlert').style.display = 'block';
-                document.querySelector('.control-cancel-section').style.display = 'none';
-            } else if (status === 'cancelled') {
-                container.innerHTML = '<span class="status-badge-big badge-cancelled"><i class="bi bi-x-circle"></i> ĐÃ HỦY</span>';
-                document.querySelector('.control-start-section').style.display = 'none';
-                document.querySelector('.control-complete-section').style.display = 'none';
-                document.querySelector('.control-cancel-section').style.display = 'none';
-                document.querySelector('.cancelAlert').style.display = 'block';
-                document.querySelector('.tripNoteValue').innerText = 'Lý do: ' + formData.get('tripNote');
-            }
-        }
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
@@ -60,6 +61,7 @@ fun FilterTag(text: String, isSelected: Boolean, onClick: () -> Unit = {}) {
 @Composable
 fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
     val currencyFormatter = remember { NumberFormat.getCurrencyInstance(Locale("vi", "VN")) }
+    val scaleInfo = tour.getTourScaleInfo()
     
     Card(
         modifier = Modifier
@@ -89,7 +91,7 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-                
+
                 Surface(
                     modifier = Modifier
                         .padding(8.dp)
@@ -130,8 +132,17 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                         overflow = TextOverflow.Ellipsis,
                         lineHeight = 20.sp
                     )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    if (scaleInfo != null) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.DirectionsBus, null, tint = Color(0xFF2563EB), modifier = Modifier.size(10.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(scaleInfo.transport, color = Color(0xFF2563EB), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
                     
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.LocationOn, null, tint = Color(0xFF475569), modifier = Modifier.size(12.dp))

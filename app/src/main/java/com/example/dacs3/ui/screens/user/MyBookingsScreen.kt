@@ -5,9 +5,12 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.Note
 import androidx.compose.material3.*
@@ -37,6 +40,7 @@ import com.example.dacs3.ui.viewmodel.ReviewViewModel
 import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlinx.coroutines.delay
+import kotlin.math.ceil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +65,10 @@ fun MyBookingsScreen(
     var showAlert by remember { mutableStateOf<Pair<Boolean, String>?>(null) } // Pair(isSuccess, message)
     var bookingToCancel by remember { mutableStateOf<Booking?>(null) }
     var bookingToReview by remember { mutableStateOf<Booking?>(null) }
+
+    // Pagination state
+    var currentPage by remember { mutableStateOf(1) }
+    val pageSize = 3
 
     // Load real bookings when screen opens
     LaunchedEffect(user) {
@@ -95,20 +103,28 @@ fun MyBookingsScreen(
         else -> bookings
     }
 
+    // Update current page when tab changes or data changes
+    LaunchedEffect(selectedTab, filteredBookings.size) {
+        currentPage = 1
+    }
+
+    val totalPages = if (filteredBookings.isEmpty()) 1 else ceil(filteredBookings.size.toDouble() / pageSize).toInt()
+    val paginatedBookings = filteredBookings.drop((currentPage - 1) * pageSize).take(pageSize)
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            Icons.Default.ConfirmationNumber, 
-                            contentDescription = null, 
+                            Icons.Default.ConfirmationNumber,
+                            contentDescription = null,
                             modifier = Modifier.size(24.dp),
                             tint = primaryColor
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            "Đặt Chỗ Của Tôi", 
+                            "Đặt Chỗ Của Tôi",
                             fontWeight = FontWeight.ExtraBold,
                             color = Color(0xFF1E293B),
                             fontSize = 20.sp
@@ -152,7 +168,7 @@ fun MyBookingsScreen(
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                alert.second, 
+                                alert.second,
                                 color = if (alert.first) Color(0xFF166534) else Color(0xFF991B1B),
                                 fontWeight = FontWeight.Medium
                             )
@@ -207,10 +223,10 @@ fun MyBookingsScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    items(filteredBookings) { booking ->
+                    items(paginatedBookings) { booking ->
                         BookingCard(
                             booking = booking,
                             onCancelClick = { bookingToCancel = it },
@@ -218,6 +234,18 @@ fun MyBookingsScreen(
                             onDetailClick = { onBookingClick(booking.id) },
                             primaryColor = primaryColor
                         )
+                    }
+
+                    // Pagination Controls moved inside LazyColumn to prevent covering content
+                    if (totalPages > 1) {
+                        item {
+                            PaginationControls(
+                                currentPage = currentPage,
+                                totalPages = totalPages,
+                                onPageChange = { currentPage = it },
+                                primaryColor = primaryColor
+                            )
+                        }
                     }
                 }
             }
@@ -286,6 +314,74 @@ fun MyBookingsScreen(
 }
 
 @Composable
+fun PaginationControls(
+    currentPage: Int,
+    totalPages: Int,
+    onPageChange: (Int) -> Unit,
+    primaryColor: Color
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = { if (currentPage > 1) onPageChange(currentPage - 1) },
+            enabled = currentPage > 1
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Previous",
+                tint = if (currentPage > 1) primaryColor else Color.Gray
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Page Numbers logic
+        val maxVisiblePages = 5
+        val startPage = maxOf(1, currentPage - 2)
+        val endPage = minOf(totalPages, startPage + maxVisiblePages - 1)
+        val actualStartPage = maxOf(1, endPage - maxVisiblePages + 1)
+
+        for (i in actualStartPage..endPage) {
+            val isSelected = i == currentPage
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(if (isSelected) primaryColor else Color.Transparent)
+                    .clickable { onPageChange(i) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = i.toString(),
+                    color = if (isSelected) Color.White else Color(0xFF475569),
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    fontSize = 14.sp
+                )
+            }
+            Spacer(modifier = Modifier.width(4.dp))
+        }
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        IconButton(
+            onClick = { if (currentPage < totalPages) onPageChange(currentPage + 1) },
+            enabled = currentPage < totalPages
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Next",
+                tint = if (currentPage < totalPages) primaryColor else Color.Gray
+            )
+        }
+    }
+}
+
+@Composable
 fun ReviewDialog(
     booking: Booking,
     onDismiss: () -> Unit,
@@ -303,7 +399,7 @@ fun ReviewDialog(
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(booking.tour.title, fontWeight = FontWeight.Medium, color = Color(0xFF334155))
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Text("Bạn đánh giá thế nào?", fontSize = 14.sp, color = Color(0xFF0F172A), fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -321,7 +417,7 @@ fun ReviewDialog(
                         }
                     }
                 }
-                
+
                 OutlinedTextField(
                     value = comment,
                     onValueChange = { comment = it },
@@ -364,14 +460,14 @@ fun ReviewDialog(
 
 @Composable
 fun BookingCard(
-    booking: Booking, 
-    onCancelClick: (Booking) -> Unit, 
+    booking: Booking,
+    onCancelClick: (Booking) -> Unit,
     onReviewClick: (Booking) -> Unit,
-    onDetailClick: () -> Unit, 
+    onDetailClick: () -> Unit,
     primaryColor: Color
 ) {
     val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    
+
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onDetailClick() },
         shape = RoundedCornerShape(24.dp),
@@ -387,7 +483,7 @@ fun BookingCard(
                     modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
                     contentScale = ContentScale.Crop
                 )
-                
+
                 // Gradient Overlay
                 Box(
                     modifier = Modifier
@@ -398,7 +494,7 @@ fun BookingCard(
                             )
                         )
                 )
-                
+
                 // Status Badge
                 val (statusColor, statusText) = when {
                     booking.status == BookingStatus.CANCELLED -> Color(0xFFEF4444) to "Đã hủy"
@@ -406,7 +502,7 @@ fun BookingCard(
                     booking.status == BookingStatus.CONFIRMED -> Color(0xFF2563EB) to "Đã xác nhận"
                     else -> Color(0xFFF59E0B) to "Chờ xác nhận"
                 }
-                
+
                 Surface(
                     modifier = Modifier.padding(16.dp).align(Alignment.TopEnd),
                     color = statusColor,
@@ -425,9 +521,9 @@ fun BookingCard(
 
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
-                    booking.tour.title, 
-                    fontSize = 20.sp, 
-                    fontWeight = FontWeight.ExtraBold, 
+                    booking.tour.title,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold,
                     color = Color(0xFF1E293B),
                     lineHeight = 26.sp
                 )
@@ -437,7 +533,7 @@ fun BookingCard(
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Mã đặt chỗ: ${booking.id}", fontSize = 13.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
                 }
-                
+
                 Spacer(modifier = Modifier.height(20.dp))
                 HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
                 Spacer(modifier = Modifier.height(20.dp))
@@ -445,14 +541,14 @@ fun BookingCard(
                 // Details
                 BookingDetailRow(Icons.Default.CalendarMonth, "Thời gian", "${booking.startDate.format(dateFormatter)} - ${booking.endDate.format(dateFormatter)}")
                 BookingDetailRow(
-                    Icons.Default.Groups, 
-                    "Hành khách", 
+                    Icons.Default.Groups,
+                    "Hành khách",
                     "${booking.totalPeople} người (NL: ${booking.adults}, TE: ${booking.children}, SS: ${booking.infants})"
                 )
                 BookingDetailRow(Icons.Default.HistoryToggleOff, "Độ dài", booking.tour.duration)
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -468,7 +564,7 @@ fun BookingCard(
                         color = primaryColor
                     )
                 }
-                
+
                 if (!booking.note.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(verticalAlignment = Alignment.Top) {
@@ -490,7 +586,7 @@ fun BookingCard(
                     ) {
                         Text("Chi tiết", fontWeight = FontWeight.Bold)
                     }
-                    
+
                     if (booking.status != BookingStatus.CANCELLED) {
                         if (booking.tripStatus == "completed") {
                             Button(

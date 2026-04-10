@@ -3,7 +3,9 @@ package com.example.dacs3.admin.model;
 import com.google.cloud.firestore.annotation.Exclude;
 import com.google.cloud.firestore.annotation.IgnoreExtraProperties;
 import com.google.cloud.firestore.annotation.PropertyName;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 @IgnoreExtraProperties
@@ -37,7 +39,8 @@ public class Booking {
     private String tripStatus; // preparing, started, completed, cancelled
     private String startTime;
     private String endTime;
-    private String guideId;
+    private String guideId; // Legacy field for single guide
+    private List<String> guideIds = new ArrayList<>(); // For multiple staff/guides
     private String tripNote;
     
     @Exclude
@@ -47,7 +50,10 @@ public class Booking {
     private Map<String, Object> tour;
     
     @Exclude
-    private Map<String, Object> guide;
+    private Map<String, Object> guide; // Legacy single guide data
+    
+    @Exclude
+    private List<Map<String, Object>> guidesList = new ArrayList<>(); // Multiple guides data
 
     public Booking() {}
 
@@ -104,8 +110,16 @@ public class Booking {
     public void setStartTime(String startTime) { this.startTime = startTime; }
     public String getEndTime() { return endTime; }
     public void setEndTime(String endTime) { this.endTime = endTime; }
+    
     public String getGuideId() { return guideId; }
     public void setGuideId(String guideId) { this.guideId = guideId; }
+    
+    public List<String> getGuideIds() { 
+        if (guideIds == null) guideIds = new ArrayList<>();
+        return guideIds; 
+    }
+    public void setGuideIds(List<String> guideIds) { this.guideIds = guideIds; }
+    
     public String getTripNote() { return tripNote; }
     public void setTripNote(String tripNote) { this.tripNote = tripNote; }
 
@@ -120,4 +134,9 @@ public class Booking {
     @Exclude
     public Map<String, Object> getGuide() { return guide; }
     public void setGuide(Map<String, Object> guide) { this.guide = guide; }
+
+    @Exclude
+    public List<Map<String, Object>> getGuidesList() { return guidesList; }
+    @Exclude
+    public void setGuidesList(List<Map<String, Object>> guidesList) { this.guidesList = guidesList; }
 }

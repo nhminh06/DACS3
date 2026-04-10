@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -60,11 +61,11 @@ fun TourScreen(
     val itemsPerPage = 6
     val totalPages = maxOf(1, (tours.size + itemsPerPage - 1) / itemsPerPage)
 
-    // Filter states for chips
+    // Filter states
     val selectedTourType by viewModel.selectedTourType.collectAsState()
-    val selectedRating by viewModel.selectedRating.collectAsState()
+    val selectedScale by viewModel.selectedScale.collectAsState()
 
-    // Reset về trang 1 khi danh sách tour thay đổi (do filter)
+    // Reset về trang 1 khi danh sách tour thay đổi
     LaunchedEffect(tours) {
         currentPage = 1
     }
@@ -102,11 +103,7 @@ fun TourScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(
-                                    Brush.verticalGradient(
-                                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
-                                    )
-                                )
+                                .background(Brush.verticalGradient(colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))
                         )
 
                         Surface(
@@ -167,40 +164,55 @@ fun TourScreen(
                 }
 
                 item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Lọc nhanh:",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF64748B),
-                            modifier = Modifier.padding(end = 4.dp)
-                        )
+                    Column(modifier = Modifier.padding(vertical = 16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Lọc nhanh:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                        }
                         
-                        FilterTag(
-                            text = "Trong ngày", 
-                            isSelected = selectedTourType == "Trong ngày",
-                            onClick = { 
-                                if (selectedTourType == "Trong ngày") viewModel.setTourType("Tất cả")
-                                else viewModel.setTourType("Trong ngày")
-                                viewModel.applyFilters()
+                        LazyRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            item {
+                                FilterTag(
+                                    text = "Trong ngày", 
+                                    isSelected = selectedTourType == "Trong ngày",
+                                    onClick = { viewModel.setTourType(if (selectedTourType == "Trong ngày") "Tất cả" else "Trong ngày") }
+                                )
                             }
-                        )
-                        
-                        FilterTag(
-                            text = "Dài ngày", 
-                            isSelected = selectedTourType == "Dài ngày",
-                            onClick = {
-                                if (selectedTourType == "Dài ngày") viewModel.setTourType("Tất cả")
-                                else viewModel.setTourType("Dài ngày")
-                                viewModel.applyFilters()
+                            item {
+                                FilterTag(
+                                    text = "Dài ngày", 
+                                    isSelected = selectedTourType == "Dài ngày",
+                                    onClick = { viewModel.setTourType(if (selectedTourType == "Dài ngày") "Tất cả" else "Dài ngày") }
+                                )
                             }
-                        )
+                            item {
+                                FilterTag(
+                                    text = "Tour nhỏ", 
+                                    isSelected = selectedScale == "Tour nhỏ",
+                                    onClick = { viewModel.setTourScale(if (selectedScale == "Tour nhỏ") "Tất cả" else "Tour nhỏ") }
+                                )
+                            }
+                            item {
+                                FilterTag(
+                                    text = "Tour vừa", 
+                                    isSelected = selectedScale == "Tour vừa",
+                                    onClick = { viewModel.setTourScale(if (selectedScale == "Tour vừa") "Tất cả" else "Tour vừa") }
+                                )
+                            }
+                            item {
+                                FilterTag(
+                                    text = "Tour lớn", 
+                                    isSelected = selectedScale == "Tour lớn",
+                                    onClick = { viewModel.setTourScale(if (selectedScale == "Tour lớn") "Tất cả" else "Tour lớn") }
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -213,72 +225,36 @@ fun TourScreen(
                 }
 
                 items(pagedTours) { tour ->
-                    TourCard(
-                        tour = tour,
-                        onClick = { onTourClick(tour) }
-                    )
+                    TourCard(tour = tour, onClick = { onTourClick(tour) })
                 }
 
                 if (totalPages > 1) {
                     item {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 24.dp, horizontal = 24.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp, horizontal = 24.dp),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             FilledTonalButton(
-                                onClick = {
-                                    if (currentPage > 1) {
-                                        currentPage--
-                                        coroutineScope.launch { listState.animateScrollToItem(1) }
-                                    }
-                                },
+                                onClick = { if (currentPage > 1) { currentPage--; coroutineScope.launch { listState.animateScrollToItem(1) } } },
                                 enabled = currentPage > 1,
                                 shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = Color(0xFFE2E8F0),
-                                    contentColor = Color(0xFF1E293B)
-                                )
-                            ) {
-                                Text("Trước", fontWeight = FontWeight.Bold)
-                            }
+                                colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFFE2E8F0), contentColor = Color(0xFF1E293B))
+                            ) { Text("Trước", fontWeight = FontWeight.Bold) }
 
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 20.dp)
-                                    .background(Color(0xFF2563EB).copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Text(
-                                    text = "$currentPage / $totalPages",
-                                    color = Color(0xFF2563EB),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                )
+                            Box(modifier = Modifier.padding(horizontal = 20.dp).background(Color(0xFF2563EB).copy(alpha = 0.1f), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 6.dp)) {
+                                Text(text = "$currentPage / $totalPages", color = Color(0xFF2563EB), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
 
                             FilledTonalButton(
-                                onClick = {
-                                    if (currentPage < totalPages) {
-                                        currentPage++
-                                        coroutineScope.launch { listState.animateScrollToItem(1) }
-                                    }
-                                },
+                                onClick = { if (currentPage < totalPages) { currentPage++; coroutineScope.launch { listState.animateScrollToItem(1) } } },
                                 enabled = currentPage < totalPages,
                                 shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = Color(0xFFE2E8F0),
-                                    contentColor = Color(0xFF1E293B)
-                                )
-                            ) {
-                                Text("Sau", fontWeight = FontWeight.Bold)
-                            }
+                                colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFFE2E8F0), contentColor = Color(0xFF1E293B))
+                            ) { Text("Sau", fontWeight = FontWeight.Bold) }
                         }
                     }
                 }
-                
                 item { Spacer(modifier = Modifier.height(32.dp)) }
             }
 
@@ -294,10 +270,7 @@ fun TourScreen(
                 containerColor = Color.White,
                 dragHandle = { BottomSheetDefaults.DragHandle() }
             ) {
-                FilterContent(
-                    viewModel = viewModel,
-                    onApply = { showFilterSheet = false }
-                )
+                FilterContent(viewModel = viewModel, onApply = { showFilterSheet = false })
             }
         }
     }

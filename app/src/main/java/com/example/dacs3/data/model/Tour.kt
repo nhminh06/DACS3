@@ -22,8 +22,25 @@ data class Tour(
     val maTour: String = "",
     val diemKhoiHanh: String = "",
     val giaTreEm: Long = 0,
-    val giaTreNho: Long = 0
-)
+    val giaTreNho: Long = 0,
+    val minGuests: Int = 1,
+    val maxGuests: Int = 50
+) {
+    fun getTourScaleInfo(): TourScale? {
+        return when {
+            minGuests >= 5 && maxGuests <= 8 -> TourScale.SMALL
+            minGuests >= 10 && maxGuests <= 16 -> TourScale.MEDIUM
+            minGuests >= 20 && maxGuests <= 35 -> TourScale.LARGE
+            else -> null
+        }
+    }
+}
+
+enum class TourScale(val label: String, val transport: String) {
+    SMALL("Tour nhỏ", "Xe 4-7 chỗ"),
+    MEDIUM("Tour vừa", "Xe 16 chỗ"),
+    LARGE("Tour lớn", "Xe 29-45 chỗ")
+}
 
 enum class TourType {
     ALL, DAY_TOUR, MULTI_DAY

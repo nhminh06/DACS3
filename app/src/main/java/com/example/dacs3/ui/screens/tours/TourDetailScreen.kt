@@ -261,10 +261,15 @@ fun RatingSection(rating: Double, reviews: Int) {
 
 @Composable
 fun QuickInfoGrid(tour: Tour) {
+    val scaleInfo = tour.getTourScaleInfo()
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             InfoItem(Icons.Default.LocationOn, "Khởi hành", tour.diemKhoiHanh.ifEmpty { "Liên hệ" })
-            InfoItem(Icons.Default.DirectionsCar, "Phương tiện", "Xe du lịch")
+            InfoItem(
+                Icons.Default.DirectionsCar, 
+                if (scaleInfo != null) scaleInfo.label else "Phương tiện", 
+                if (scaleInfo != null) scaleInfo.transport else "Xe du lịch"
+            )
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             InfoItem(Icons.Default.ConfirmationNumber, "Mã tour", tour.maTour.ifEmpty { "N/A" })

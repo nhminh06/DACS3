@@ -11,11 +11,21 @@
         body { background-color: #0f172a; color: #cbd5e1; }
         .tour-detail-card { background: #1e3a8a; border-radius: 16px; padding: 25px; margin-bottom: 30px; display: flex; gap: 25px; align-items: center; border: 1px solid #334155; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
         .tour-detail-img { width: 140px; height: 100px; object-fit: cover; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
-        .stats-grid-v3 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 30px; }
+        .stats-grid-v3 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
         .stat-card-v3 { background: #111827; border-radius: 12px; padding: 20px 10px; text-align: center; border: 1px solid #1e293b; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
         .stat-icon-box { display: inline-flex; width: 40px; height: 40px; background: #1e293b; color: #3b82f6; border-radius: 10px; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 10px; }
         .stat-card-v3 .val { font-size: 20px; font-weight: 700; color: #3b82f6; display: block; }
         .stat-card-v3 .lab { font-size: 11px; color: #fff; font-weight: 700; text-transform: uppercase; margin-top: 4px; }
+
+        /* Departure Eligibility Styles */
+        .eligibility-box { background: #1e293b; border-radius: 12px; padding: 15px 20px; margin-bottom: 30px; border: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; }
+        .eligibility-status { display: flex; align-items: center; gap: 12px; }
+        .eligibility-icon { font-size: 24px; }
+        .status-badge-lg { padding: 8px 20px; border-radius: 30px; font-weight: 700; font-size: 14px; text-transform: uppercase; }
+        .eligible-yes { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+        .eligible-no { background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; }
+        .eligibility-detail { font-size: 13px; color: #94a3b8; }
+
         .booking-card-item { background: #111827; border-radius: 12px; margin-bottom: 20px; border: 1px solid #1e293b; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
         .bk-item-top { padding: 12px 20px; background: #0f172a; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
         .bk-main-id { color: #60a5fa; font-weight: 700; font-family: 'Consolas', monospace; font-size: 14px; }
@@ -71,14 +81,40 @@
                 <span class="lab">Đã Xác Nhận</span>
             </div>
             <div class="stat-card-v3">
-                <div class="stat-icon-box"><i class="bi bi-clock-history"></i></div>
-                <span class="val">0</span>
-                <span class="lab">Chờ Duyệt</span>
+                <div class="stat-icon-box"><i class="bi bi-person-down"></i></div>
+                <span class="val" th:text="${minGuests}">1</span>
+                <span class="lab">Tối thiểu</span>
             </div>
             <div class="stat-card-v3">
-                <div class="stat-icon-box"><i class="bi bi-cash-stack"></i></div>
-                <span class="val" th:text="${#numbers.formatDecimal(totalRevenue / 1000, 0, 'COMMA', 0, 'POINT') + 'k'}"></span>
-                <span class="lab">Doanh Thu</span>
+                <div class="stat-icon-box"><i class="bi bi-person-up"></i></div>
+                <span class="val" th:text="${maxGuests}">50</span>
+                <span class="lab">Tối đa</span>
+            </div>
+        </div>
+
+        <!-- Departure Assessment Part -->
+        <div class="eligibility-box" th:with="isEligible=${totalPassengers >= minGuests and totalPassengers <= maxGuests + 3}">
+            <div class="eligibility-status">
+                <div class="eligibility-icon">
+                    <i th:if="${isEligible}" class="bi bi-check-circle-fill text-success"></i>
+                    <i th:unless="${isEligible}" class="bi bi-exclamation-triangle-fill text-danger"></i>
+                </div>
+                <div>
+                    <div class="sec-title-v3 mb-1">Đánh giá tiêu chuẩn khởi hành</div>
+                    <span th:if="${isEligible}" class="status-badge-lg eligible-yes">Đủ điều kiện khởi hành</span>
+                    <span th:unless="${isEligible}" class="status-badge-lg eligible-no">Không đủ tiêu chuẩn khởi hành</span>
+                </div>
+            </div>
+            <div class="eligibility-detail text-end">
+                <div th:if="${totalPassengers < minGuests}">
+                    <i class="bi bi-info-circle me-1"></i> Thiếu <strong th:text="${minGuests - totalPassengers}"></strong> khách để đạt tối thiểu (<span th:text="${minGuests}"></span>)
+                </div>
+                <div th:if="${totalPassengers > maxGuests + 3}">
+                    <i class="bi bi-info-circle me-1"></i> Vượt quá giới hạn cho phép (Tối đa <span th:text="${maxGuests}"></span> + 3)
+                </div>
+                <div th:if="${isEligible}">
+                    <i class="bi bi-info-circle me-1"></i> Số lượng khách nằm trong phạm vi cho phép.
+                </div>
             </div>
         </div>
 

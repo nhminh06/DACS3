@@ -8,6 +8,8 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -107,94 +109,96 @@ fun FeaturedToursSection(
 @Composable
 fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    val mainColor = Color(0xFF2563EB) // Màu chính (màu giá)
     
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(250.dp)
+            .height(260.dp)
             .clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column {
-            Box(modifier = Modifier.height(130.dp)) {
+            // 1. Ảnh chiếm 1/2 khung
+            Box(modifier = Modifier.height(130.dp).fillMaxWidth()) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(tour.imageUrl.ifEmpty { tour.imageRes })
                         .crossfade(true)
                         .build(),
                     contentDescription = tour.title,
-                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-                
+
+                // Rating overlay: Nền đen bán trong suốt, chữ trắng
                 Surface(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .align(Alignment.TopStart),
-                    color = Color.Black.copy(alpha = 0.6f),
-                    shape = RoundedCornerShape(8.dp)
+                    modifier = Modifier.padding(6.dp).align(Alignment.TopStart),
+                    color = Color.Black.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(6.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            tint = Color(0xFFFACC15),
-                            modifier = Modifier.size(10.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = tour.rating.toString(),
-                            color = Color.White,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Icon(Icons.Default.Star, null, tint = Color(0xFFFACC15), modifier = Modifier.size(10.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(text = tour.rating.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
-            Column(modifier = Modifier.padding(10.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
+                // 2. Tên tour
                 Text(
                     text = tour.title,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
-                    color = Color(0xFF0F172A),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = 16.sp
+                    fontSize = 12.sp,
+                    color = Color(0xFF1E293B),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
+                // 3. Du khách & Địa điểm - Icon cùng màu với giá
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Groups, null, tint = mainColor, modifier = Modifier.size(11.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(text = "${tour.minGuests}-${tour.maxGuests}", color = Color(0xFF64748B), fontSize = 9.sp)
+                    }
+                    Row(modifier = Modifier.weight(1.2f), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.LocationOn, null, tint = mainColor, modifier = Modifier.size(11.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(text = tour.location, color = Color(0xFF64748B), fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                // 4. Thời gian - Icon cùng màu với giá
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = Color(0xFF64748B),
-                        modifier = Modifier.size(10.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = tour.location,
-                        color = Color(0xFF64748B),
-                        fontSize = 10.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Icon(Icons.Default.AccessTime, null, tint = mainColor, modifier = Modifier.size(11.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(text = tour.duration, color = Color(0xFF64748B), fontSize = 9.sp)
                 }
                 
-                Spacer(modifier = Modifier.weight(1f))
+                // Thu hẹp khoảng trống bằng cách sử dụng height thay vì weight(1f)
+                Spacer(modifier = Modifier.height(8.dp))
                 
+                // 5. Giá
                 Text(
                     text = currencyFormatter.format(tour.price),
-                    color = Color(0xFF2563EB),
+                    color = mainColor,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 14.sp
                 )
+                
+                // Đẩy phần trống xuống dưới cùng của thẻ nếu cần
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }
