@@ -77,6 +77,32 @@
 
         .help-text { font-size: 11px; color: #64748b; margin-top: 6px; display: block; }
         .required::after { content: " *"; color: #ef4444; }
+
+        /* Date Tags Styles */
+        .date-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            min-height: 45px;
+            padding: 10px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px dashed #334155;
+            border-radius: 8px;
+        }
+        .date-tag {
+            background: #2563eb;
+            color: white;
+            padding: 4px 14px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .date-tag i { cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .date-tag i:hover { color: #f87171; transform: scale(1.2); }
     </style>
 </head>
 <body>
@@ -122,24 +148,43 @@
                 </div>
 
                 <div class="row mb-4">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label required">Loại hình Tour</label>
                         <select name="loaiTour" class="form-select" required>
                             <option value="1" th:selected="${tour != null && tour.get('type') == 'DAY_TOUR'}">Trong ngày</option>
                             <option value="2" th:selected="${tour != null && tour.get('type') == 'MULTI_DAY'}">Nhiều ngày</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label required">Ngày khởi hành dự kiến</label>
-                        <input type="date" class="form-control" name="ngayKhoiHanh" th:value="${tour != null ? tour.get('startDate') : ''}" required>
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label required">Thời lượng (Số ngày)</label>
                         <input type="number" class="form-control" name="soNgay" th:value="${tour != null ? (tour.get('duration') != null ? tour.get('duration').split(' ')[0] : 1) : 1}" required>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Điểm khởi hành</label>
-                        <input type="text" class="form-control" name="diemKhoiHanh" th:value="${tour != null ? tour.get('diemKhoiHanh') : ''}" placeholder="TP. Hồ Chí Minh">
+                        <input type="text" class="form-control" name="diemKhoiHanh" th:value="${tour != null ? tour.get('diemKhoiHanh') : ''}" placeholder="VD: TP. Hồ Chí Minh">
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <label class="form-label required">Ngày khởi hành dự kiến</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <input type="date" class="form-control" id="datePicker">
+                                    <button class="btn btn-primary px-3" type="button" onclick="addDate()">
+                                        <i class="bi bi-plus-lg me-1"></i> Thêm
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="date-tags-container" id="dateTags">
+                                    <div class="text-muted small w-100 text-center py-1" id="emptyDateMsg">Chưa có ngày nào được chọn</div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="ngayKhoiHanh" id="ngayKhoiHanhInput" th:value="${tour != null ? tour.get('startDate') : ''}">
+                        <span class="help-text">Bạn có thể chọn và thêm nhiều ngày khởi hành khác nhau cho tour này.</span>
                     </div>
                 </div>
 
@@ -238,6 +283,57 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script th:src="@{/js/admin-common.js}"></script>
     <script>
+        let selectedDates = [];
+
+        window.onload = function() {
+            const initialDates = document.getElementById('ngayKhoiHanhInput').value;
+            if (initialDates) {
+                selectedDates = initialDates.split(',').filter(d => d.trim() !== "");
+                renderDateTags();
+            }
+        };
+
+        function addDate() {
+            const dateInput = document.getElementById('datePicker');
+            const dateValue = dateInput.value;
+            if (dateValue && !selectedDates.includes(dateValue)) {
+                selectedDates.push(dateValue);
+                selectedDates.sort();
+                renderDateTags();
+                dateInput.value = '';
+            }
+        }
+
+        function removeDate(date) {
+            selectedDates = selectedDates.filter(d => d !== date);
+            renderDateTags();
+        }
+
+        function renderDateTags() {
+            const container = document.getElementById('dateTags');
+            const hiddenInput = document.getElementById('ngayKhoiHanhInput');
+            const emptyMsg = document.getElementById('emptyDateMsg');
+
+            container.innerHTML = '';
+            if (selectedDates.length === 0) {
+                container.appendChild(emptyMsg);
+            } else {
+                selectedDates.forEach(date => {
+                    const tag = document.createElement('div');
+                    tag.className = 'date-tag';
+                    tag.innerHTML = `<span>${formatDate(date)}</span><i class="bi bi-x-circle-fill" onclick="removeDate('${date}')"></i>`;
+                    container.appendChild(tag);
+                });
+            }
+
+            hiddenInput.value = selectedDates.join(',');
+        }
+
+        function formatDate(dateStr) {
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}/${year}`;
+        }
+
         function updateGuestNumbers() {
             const scale = document.getElementById('tourScaleSelect').value;
             const minInput = document.getElementById('minGuests');
@@ -257,7 +353,6 @@
                     maxInput.value = 35;
                     break;
                 default:
-                    // Không thay đổi nếu là 'custom'
                     break;
             }
         }
@@ -293,6 +388,10 @@
             }
         }
         document.getElementById('tourForm').onsubmit = function() {
+            if (selectedDates.length === 0) {
+                alert("Vui lòng thêm ít nhất một ngày khởi hành!");
+                return false;
+            }
             const btn = this.querySelector('.btn-submit');
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang xử lý...';
             btn.disabled = true;

@@ -221,7 +221,7 @@ public class AdminTourController {
         data.put("maTour", maTour);
         data.put("title", tenTour);
         data.put("type", "1".equals(loaiTour) ? "DAY_TOUR" : "MULTI_DAY");
-        data.put("startDate", ngayKhoiHanh);
+        data.put("startDate", ngayKhoiHanh); // Now stores comma-separated dates
         data.put("diemKhoiHanh", diemKhoiHanh);
         data.put("duration", soNgay + " ngày");
         data.put("price", parsePriceToLong(giaNguoiLon));
@@ -235,7 +235,7 @@ public class AdminTourController {
         data.put("traiNghiem", traiNghiem);
         data.put("minGuests", minGuests);
         data.put("maxGuests", maxGuests);
-        data.put("scale", tourScale); // Lưu loại quy mô tour
+        data.put("scale", tourScale);
         data.put("trang_thai", data.getOrDefault("trang_thai", "active"));
         data.put("rating", data.getOrDefault("rating", 5.0));
         data.put("reviewCount", data.getOrDefault("reviewCount", 0));

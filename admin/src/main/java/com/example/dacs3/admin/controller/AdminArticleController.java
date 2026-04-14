@@ -300,6 +300,7 @@ public class AdminArticleController {
             data.put("trang_thai", 1);
             data.put("nguon_goc", "admin");
             data.put("tac_gia", author);
+            data.put("is_edited", false);
             firestore.collection("articles").add(data).get();
         } else {
             firestore.collection("articles").document(id).update(
@@ -324,6 +325,12 @@ public class AdminArticleController {
             int newStatus = (currentStatus != null && currentStatus.toString().equals("1")) ? 0 : 1;
             docRef.update("trang_thai", newStatus).get();
         }
+        return "redirect:/admin/articles";
+    }
+
+    @GetMapping("/confirm-edit/{id}")
+    public String confirmEdit(@PathVariable String id) throws ExecutionException, InterruptedException {
+        firestore.collection("articles").document(id).update("is_edited", false).get();
         return "redirect:/admin/articles";
     }
 

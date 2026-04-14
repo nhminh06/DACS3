@@ -6,11 +6,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
@@ -29,6 +32,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,6 +45,7 @@ import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.ui.components.AppBottomBar
 import com.example.dacs3.ui.components.articles.ArticleCategoryTabs
 import com.example.dacs3.ui.viewmodel.ArticleViewModel
+import kotlin.math.ceil
 
 @Composable
 fun ArticleExplorerScreen(
@@ -55,12 +60,14 @@ fun ArticleExplorerScreen(
     val searchQuery by articleViewModel.searchQuery.collectAsState()
     val focusManager = LocalFocusManager.current
     
+    // Phân trang: 3 bài mỗi trang
+    var currentPage by remember { mutableStateOf(1) }
+    val itemsPerPage = 3
+    
     val filteredArticles = allArticles.filter { article ->
-        // Nếu có tìm kiếm, chỉ lọc theo tiêu đề (không phụ thuộc category)
         if (searchQuery.isNotBlank()) {
             article.tieu_de.lowercase().contains(searchQuery.lowercase().trim())
         } else {
-            // Nếu không tìm kiếm, lọc theo category được chọn
             val category = when(article.loai_id) {
                 1 -> ArticleCategory.CRAFT_VILLAGE
                 2 -> ArticleCategory.CUISINE
@@ -69,6 +76,14 @@ fun ArticleExplorerScreen(
             }
             category == selectedCategory
         }
+    }
+
+    val totalPages = ceil(filteredArticles.size.toDouble() / itemsPerPage).toInt().coerceAtLeast(1)
+    val pagedArticles = filteredArticles.drop((currentPage - 1) * itemsPerPage).take(itemsPerPage)
+
+    // Reset trang khi đổi category hoặc tìm kiếm
+    LaunchedEffect(selectedCategory, searchQuery) {
+        currentPage = 1
     }
 
     Scaffold(
@@ -179,7 +194,6 @@ fun ArticleExplorerScreen(
                 }
             }
 
-            // Ẩn thanh chọn mục khi đang tìm kiếm để tập trung vào kết quả
             if (searchQuery.isBlank()) {
                 item {
                     Surface(
@@ -224,7 +238,7 @@ fun ArticleExplorerScreen(
                         }
                     }
                 } else {
-                    items(filteredArticles) { article ->
+                    items(pagedArticles) { article ->
                         Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)) {
                             ExplorerArticleItem(
                                 article = article,
@@ -232,12 +246,94 @@ fun ArticleExplorerScreen(
                             )
                         }
                     }
+
+                    // Điều khiển phân trang
+                    item {
+                        PaginationControls(
+                            currentPage = currentPage,
+                            totalPages = totalPages,
+                            onPageChange = { currentPage = it }
+                        )
+                    }
                 }
             }
             
             item {
                 Spacer(modifier = Modifier.height(32.dp))
             }
+        }
+    }
+}
+
+@Composable
+fun PaginationControls(
+    currentPage: Int,
+    totalPages: Int,
+    onPageChange: (Int) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 24.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Nút Trước
+        FilledIconButton(
+            onClick = { if (currentPage > 1) onPageChange(currentPage - 1) },
+            enabled = currentPage > 1,
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = Color.White,
+                contentColor = Color(0xFF2563EB),
+                disabledContainerColor = Color.White.copy(alpha = 0.5f)
+            ),
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(20.dp))
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Hiển thị số trang
+        repeat(totalPages) { index ->
+            val page = index + 1
+            // Hiển thị tối đa 5 nút trang xung quanh trang hiện tại
+            if (page == 1 || page == totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(if (currentPage == page) Color(0xFF2563EB) else Color.White)
+                        .clickable { onPageChange(page) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = page.toString(),
+                        color = if (currentPage == page) Color.White else Color(0xFF1E293B),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
+            } else if (page == currentPage - 2 || page == currentPage + 2) {
+                Text("...", color = Color.Gray, modifier = Modifier.padding(horizontal = 4.dp))
+            }
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Nút Sau
+        FilledIconButton(
+            onClick = { if (currentPage < totalPages) onPageChange(currentPage + 1) },
+            enabled = currentPage < totalPages,
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = Color.White,
+                contentColor = Color(0xFF2563EB),
+                disabledContainerColor = Color.White.copy(alpha = 0.5f)
+            ),
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(20.dp))
         }
     }
 }

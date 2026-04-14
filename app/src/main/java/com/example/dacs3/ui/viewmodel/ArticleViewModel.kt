@@ -26,6 +26,9 @@ class ArticleViewModel(
     private val _explorerArticles = MutableStateFlow<List<ArticleEntity>>(emptyList())
     val explorerArticles: StateFlow<List<ArticleEntity>> = _explorerArticles
 
+    private val _userArticles = MutableStateFlow<List<ArticleEntity>>(emptyList())
+    val userArticles: StateFlow<List<ArticleEntity>> = _userArticles
+
     private val _comments = MutableStateFlow<List<Comment>>(emptyList())
     val comments: StateFlow<List<Comment>> = _comments
 
@@ -66,12 +69,39 @@ class ArticleViewModel(
         }
     }
 
+    fun fetchUserArticles(userId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.getArticlesByUser(userId)
+            _userArticles.value = result
+            _isLoading.value = false
+        }
+    }
+
     fun createArticle(article: ArticleEntity, onComplete: (Boolean) -> Unit) {
         viewModelScope.launch {
             val success = repository.createArticle(article)
             if (success) {
                 fetchAllArticles()
+                if (article.tac_gia_id.isNotEmpty()) {
+                    fetchUserArticles(article.tac_gia_id)
+                }
             }
+            onComplete(success)
+        }
+    }
+
+    fun updateArticle(article: ArticleEntity, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val success = repository.updateArticle(article)
+            if (success) {
+                fetchAllArticles()
+                if (article.tac_gia_id.isNotEmpty()) {
+                    fetchUserArticles(article.tac_gia_id)
+                }
+            }
+            _isLoading.value = false
             onComplete(success)
         }
     }

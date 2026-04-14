@@ -1,30 +1,46 @@
 package com.example.dacs3.ui.screens.user
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dacs3.R
+import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.ui.components.AppBottomBar
 import com.example.dacs3.ui.components.profile.*
+import com.example.dacs3.ui.viewmodel.ArticleViewModel
 import com.example.dacs3.ui.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(userViewModel: UserViewModel, onNavigate: (String) -> Unit) {
+fun ProfileScreen(
+    userViewModel: UserViewModel, 
+    articleViewModel: ArticleViewModel,
+    onNavigate: (String) -> Unit
+) {
     val scrollState = rememberScrollState()
     val user by userViewModel.currentUser
+    
+    // Khi vào màn hình profile, đảm bảo tải bài viết của user
+    LaunchedEffect(user?.id) {
+        user?.id?.let { articleViewModel.fetchUserArticles(it) }
+    }
 
     Scaffold(
         topBar = {
@@ -84,6 +100,12 @@ fun ProfileScreen(userViewModel: UserViewModel, onNavigate: (String) -> Unit) {
                         title = "Đặt chỗ của tôi", 
                         icon = Icons.Default.BookOnline, 
                         onClick = { onNavigate("my_bookings") }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = Color(0xFFF1F5F9))
+                    ProfileOptionItem(
+                        title = "Bài viết của tôi", 
+                        icon = Icons.Default.Article, 
+                        onClick = { onNavigate("my_articles") }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = Color(0xFFF1F5F9))
                     ProfileOptionItem(

@@ -38,7 +38,7 @@ fun CategorySection(onCategoryClick: (String) -> Unit = {}) {
     
     Column {
         Text(
-            text = "Danh mục", 
+            text = "Danh mục",
             fontWeight = FontWeight.ExtraBold, 
             fontSize = 17.sp, 
             color = Color(0xFF1E293B)
@@ -74,7 +74,7 @@ fun CategorySection(onCategoryClick: (String) -> Unit = {}) {
                                 modifier = Modifier.size(16.dp)
                             )
                         }
-                        
+
                         Text(
                             text = category.name,
                             modifier = Modifier.padding(horizontal = 12.dp),

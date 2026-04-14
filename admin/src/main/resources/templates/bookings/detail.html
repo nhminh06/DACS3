@@ -48,7 +48,7 @@
         <header class="header">
             <h1 class="h4 mb-0">Chi tiết Booking Chuyến Đi</h1>
             <div class="user-info">
-                Xin chào <strong>minhadmin</strong>
+                Xin chào <strong th:text="${session.adminUser != null ? session.adminUser.name : 'Admin'}">Admin</strong>
                 <a href="/admin/bookings/schedule" class="btn-back">Trở lại</a>
             </div>
         </header>
@@ -67,33 +67,33 @@
         <div class="stats-grid-v3">
             <div class="stat-card-v3">
                 <div class="stat-icon-box"><i class="bi bi-journal-text"></i></div>
-                <span class="val" th:text="${bookings.size()}">0</span>
-                <span class="lab">Booking</span>
+                <span class="val" th:text="${bookings != null ? bookings.size() : 0}">0</span>
+                <span class="lab">Tổng Booking</span>
             </div>
             <div class="stat-card-v3">
                 <div class="stat-icon-box"><i class="bi bi-people"></i></div>
-                <span class="val" th:text="${totalPassengers}">0</span>
-                <span class="lab">Tổng Khách</span>
+                <span class="val" th:text="${confirmedPassengers ?: 0}">0</span>
+                <span class="lab">Khách Đã Duyệt</span>
             </div>
             <div class="stat-card-v3">
                 <div class="stat-icon-box"><i class="bi bi-check-circle"></i></div>
-                <span class="val" th:text="${bookings.size()}">0</span>
-                <span class="lab">Đã Xác Nhận</span>
+                <span class="val" th:text="${confirmedCount ?: 0}">0</span>
+                <span class="lab">Đơn Đã Duyệt</span>
             </div>
             <div class="stat-card-v3">
                 <div class="stat-icon-box"><i class="bi bi-person-down"></i></div>
-                <span class="val" th:text="${minGuests}">1</span>
+                <span class="val" th:text="${minGuests ?: 1}">1</span>
                 <span class="lab">Tối thiểu</span>
             </div>
             <div class="stat-card-v3">
                 <div class="stat-icon-box"><i class="bi bi-person-up"></i></div>
-                <span class="val" th:text="${maxGuests}">50</span>
+                <span class="val" th:text="${maxGuests ?: 50}">50</span>
                 <span class="lab">Tối đa</span>
             </div>
         </div>
 
         <!-- Departure Assessment Part -->
-        <div class="eligibility-box" th:with="isEligible=${totalPassengers >= minGuests and totalPassengers <= maxGuests + 3}">
+        <div class="eligibility-box" th:if="${confirmedPassengers != null and minGuests != null and maxGuests != null}" th:with="isEligible=${confirmedPassengers >= minGuests and confirmedPassengers <= maxGuests + 3}">
             <div class="eligibility-status">
                 <div class="eligibility-icon">
                     <i th:if="${isEligible}" class="bi bi-check-circle-fill text-success"></i>
@@ -102,23 +102,23 @@
                 <div>
                     <div class="sec-title-v3 mb-1">Đánh giá tiêu chuẩn khởi hành</div>
                     <span th:if="${isEligible}" class="status-badge-lg eligible-yes">Đủ điều kiện khởi hành</span>
-                    <span th:unless="${isEligible}" class="status-badge-lg eligible-no">Không đủ tiêu chuẩn khởi hành</span>
+                    <span th:unless="${isEligible}" class="status-badge-lg eligible-no">Chưa đủ điều kiện khởi hành</span>
                 </div>
             </div>
             <div class="eligibility-detail text-end">
-                <div th:if="${totalPassengers < minGuests}">
-                    <i class="bi bi-info-circle me-1"></i> Thiếu <strong th:text="${minGuests - totalPassengers}"></strong> khách để đạt tối thiểu (<span th:text="${minGuests}"></span>)
+                <div th:if="${confirmedPassengers < minGuests}">
+                    <i class="bi bi-info-circle me-1"></i> Thiếu <strong th:text="${minGuests - confirmedPassengers}"></strong> khách đã thanh toán để đạt tối thiểu (<span th:text="${minGuests}"></span>)
                 </div>
-                <div th:if="${totalPassengers > maxGuests + 3}">
+                <div th:if="${confirmedPassengers > maxGuests + 3}">
                     <i class="bi bi-info-circle me-1"></i> Vượt quá giới hạn cho phép (Tối đa <span th:text="${maxGuests}"></span> + 3)
                 </div>
                 <div th:if="${isEligible}">
-                    <i class="bi bi-info-circle me-1"></i> Số lượng khách nằm trong phạm vi cho phép.
+                    <i class="bi bi-info-circle me-1"></i> Số lượng khách đã xác nhận nằm trong phạm vi cho phép.
                 </div>
             </div>
         </div>
 
-        <h5 class="mb-4 border-start border-info ps-3">Danh sách đoàn chi tiết</h5>
+        <h5 class="mb-4 border-start border-info ps-3">Danh sách đơn đặt trong chuyến</h5>
 
         <div th:each="bk : ${bookings}" class="booking-card-item">
             <div class="bk-item-top">
@@ -126,7 +126,9 @@
                     <div class="bk-main-id" th:text="${bk.id}"></div>
                     <div class="small text-white" style="font-size: 10px;">Đặt tour ngày: <span th:text="${bk.createdAt != null ? #dates.format(bk.createdAt, 'dd/MM/yyyy') : 'N/A'}"></span></div>
                 </div>
-                <span class="badge bg-success px-3 py-2" style="font-size: 10px;">XÁC NHẬN</span>
+                <span th:if="${bk.status == 'CONFIRMED'}" class="badge bg-success px-3 py-2" style="font-size: 10px;">ĐÃ XÁC NHẬN</span>
+                <span th:if="${bk.status == 'PENDING'}" class="badge bg-warning text-dark px-3 py-2" style="font-size: 10px;">CHỜ DUYỆT</span>
+                <span th:if="${bk.status == 'CANCELLED'}" class="badge bg-danger px-3 py-2" style="font-size: 10px;">ĐÃ HỦY</span>
             </div>
             <div class="bk-item-content">
                 <div class="info-sec-v3">
@@ -148,6 +150,9 @@
                     <div class="mt-2 small text-white italic">
                         <i class="bi bi-info-circle me-1"></i>
                         <span th:text="${bk.paymentMethod == 'QR' ? 'Chuyển khoản QR' : 'Tiền mặt'}"></span>
+                        <span class="ms-1" th:classappend="${bk.paymentStatus == 'da_thanh_toan' ? 'text-success' : 'text-warning'}">
+                            (<span th:text="${bk.paymentStatus == 'da_thanh_toan' ? 'Đã thanh toán' : 'Chưa thanh toán'}"></span>)
+                        </span>
                     </div>
                 </div>
             </div>

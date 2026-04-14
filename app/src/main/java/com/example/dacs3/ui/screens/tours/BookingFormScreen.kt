@@ -1,6 +1,5 @@
 package com.example.dacs3.ui.screens.tours
 
-import android.app.DatePickerDialog
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -59,6 +58,20 @@ fun BookingFormScreen(
     val bookingSuccess by bookingViewModel.bookingSuccess.collectAsState()
     val isLoading by bookingViewModel.isLoading.collectAsState()
     
+    // Parse available dates from tour.startDate (comma-separated yyyy-MM-dd)
+    val availableDates = remember(tour.startDate) {
+        tour.startDate.split(",")
+            .filter { it.isNotBlank() }
+            .map { dateStr ->
+                try {
+                    LocalDate.parse(dateStr.trim(), DateTimeFormatter.ISO_LOCAL_DATE)
+                        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                } catch (e: Exception) {
+                    dateStr.trim()
+                }
+            }
+    }
+
     // Form State
     var name by remember { mutableStateOf(user?.name ?: "") }
     var email by remember { mutableStateOf(user?.email ?: "") }
@@ -66,8 +79,9 @@ fun BookingFormScreen(
     var address by remember { mutableStateOf(user?.dia_chi ?: "") }
     var note by remember { mutableStateOf("") }
     
+    // Default to the first available date
     var selectedDate by remember { 
-        mutableStateOf(LocalDate.now().plusDays(7).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))) 
+        mutableStateOf(availableDates.firstOrNull() ?: LocalDate.now().plusDays(7).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))) 
     }
     
     var adults by remember { mutableIntStateOf(initialAdults) }
@@ -148,8 +162,7 @@ fun BookingFormScreen(
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                        verticalAlignment = Alignment.CenterVertically) {
                         Text("Tổng thanh toán:", color = Color(0xFF475569), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         Text(currencyFormatter.format(totalPrice), fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = Color(0xFF2563EB))
                     }
@@ -226,7 +239,11 @@ fun BookingFormScreen(
             
             item {
                 SectionTitle("NGÀY KHỞI HÀNH")
-                DatePickerSection(selectedDate) { selectedDate = it }
+                AvailableDatesSection(
+                    selectedDate = selectedDate,
+                    availableDates = availableDates,
+                    onDateSelected = { selectedDate = it }
+                )
             }
             
             item {
@@ -399,24 +416,18 @@ fun CustomerFormSection(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DatePickerSection(selectedDate: String, onDateSelected: (String) -> Unit) {
-    val context = LocalContext.current
-    val calendar = Calendar.getInstance()
+fun AvailableDatesSection(
+    selectedDate: String,
+    availableDates: List<String>,
+    onDateSelected: (String) -> Unit
+) {
+    var showSheet by remember { mutableStateOf(false) }
     
     Card(
         modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth().clickable {
-            DatePickerDialog(
-                context,
-                { _, year, month, dayOfMonth ->
-                    onDateSelected(String.format("%02d/%02d/%d", dayOfMonth, month + 1, year))
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-            ).apply {
-                datePicker.minDate = System.currentTimeMillis() + (24 * 60 * 60 * 1000 * 3)
-            }.show()
+            if (availableDates.size > 1) showSheet = true
         },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(20.dp)
@@ -425,11 +436,61 @@ fun DatePickerSection(selectedDate: String, onDateSelected: (String) -> Unit) {
             Icon(Icons.Default.Event, null, tint = Color(0xFF2563EB))
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text("Ngày bạn chọn", fontSize = 12.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
+                Text("Chọn ngày khởi hành", fontSize = 12.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
                 Text(selectedDate, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = Color(0xFF0F172A))
             }
             Spacer(modifier = Modifier.weight(1f))
-            Icon(Icons.Default.ChevronRight, null, tint = Color(0xFF64748B))
+            if (availableDates.size > 1) {
+                Icon(Icons.Default.ExpandMore, null, tint = Color(0xFF64748B))
+            }
+        }
+    }
+
+    if (showSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSheet = false },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp, start = 16.dp, end = 16.dp)) {
+                Text(
+                    "Danh sách ngày khởi hành", 
+                    fontWeight = FontWeight.ExtraBold, 
+                    fontSize = 18.sp, 
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+                
+                availableDates.forEach { date ->
+                    val isSelected = date == selectedDate
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .clickable {
+                                onDateSelected(date)
+                                showSheet = false
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) Color(0xFFF0F7FF) else Color.Transparent,
+                        border = if (isSelected) BorderStroke(1.dp, Color(0xFF2563EB)) else null
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                date, 
+                                modifier = Modifier.weight(1f),
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color(0xFF2563EB) else Color(0xFF0F172A)
+                            )
+                            if (isSelected) {
+                                Icon(Icons.Default.Check, null, tint = Color(0xFF2563EB))
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

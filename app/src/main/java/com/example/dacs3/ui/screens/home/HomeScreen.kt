@@ -89,11 +89,14 @@ fun AppHomeScreen(
                 
                 item { 
                     HomePaddingWrapper { 
-                        QuickNavSection(onItemClick = { index ->
-                            coroutineScope.launch {
-                                listState.animateScrollToItem(index)
-                            }
-                        }) 
+                        QuickNavSection(
+                            onScrollTo = { index ->
+                                coroutineScope.launch {
+                                    listState.animateScrollToItem(index)
+                                }
+                            },
+                            onNavigate = onNavigate
+                        )
                     } 
                 }
                 item { 

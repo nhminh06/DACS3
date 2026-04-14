@@ -56,7 +56,7 @@
                 <div class="section-title"><i class="bi bi-info-circle-fill"></i> Thông tin cơ bản</div>
 
                 <div class="row mb-4">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Tour liên quan</label>
                         <select name="tour_id" class="form-select">
                             <option value="0">-- Không liên kết tour --</option>
@@ -64,7 +64,7 @@
                                     th:selected="${article != null && article['tour_id'] == tour['id']}"></option>
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label required">Loại bài viết</label>
                         <select name="loai_id" class="form-select" required>
                             <option value="">-- Chọn loại --</option>
@@ -73,9 +73,13 @@
                             <option value="3" th:selected="${article != null && #strings.toString(article['loai_id']) == '3'}">Văn hóa</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Tác giả / Nguồn</label>
+                    <div class="col-md-3">
+                        <label class="form-label">Tên tác giả</label>
                         <input type="text" name="tac_gia" class="form-control" th:value="${article != null ? article['tac_gia'] : 'Admin'}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">ID tác giả (nếu là user)</label>
+                        <input type="text" name="tac_gia_id" class="form-control" th:value="${article != null ? article['tac_gia_id'] : ''}" placeholder="Để trống nếu là Admin">
                     </div>
                 </div>
 

@@ -61,6 +61,7 @@ fun MainContainer() {
 
     // Mặc định vào App
     var currentScreen by remember { mutableStateOf("home") }
+    var previousScreenForDetail by remember { mutableStateOf("explore") }
     
     // Nếu là guide, chuyển thẳng sang màn hình staff personal profile
     LaunchedEffect(user?.role) {
@@ -118,6 +119,7 @@ fun MainContainer() {
                 },
                 onArticleClick = { article ->
                     selectedArticle = article
+                    previousScreenForDetail = "home"
                     currentScreen = "article_detail"
                 },
                 onCategoryClick = { category ->
@@ -184,6 +186,7 @@ fun MainContainer() {
                 onNavigate = { screen -> currentScreen = screen },
                 onArticleClick = { article ->
                     selectedArticle = article
+                    previousScreenForDetail = "explore"
                     currentScreen = "article_detail"
                 },
                 articleViewModel = articleViewModel,
@@ -194,7 +197,7 @@ fun MainContainer() {
             selectedArticle?.let { article ->
                 ArticleDetailScreen(
                     article = article,
-                    onBack = { currentScreen = "explore" },
+                    onBack = { currentScreen = previousScreenForDetail },
                     onNavigateToTour = { currentScreen = "tours" },
                     userViewModel = userViewModel,
                     articleViewModel = articleViewModel
@@ -208,6 +211,16 @@ fun MainContainer() {
                 onBack = { currentScreen = "profile" }
             )
         }
+        "edit_article" -> {
+            selectedArticle?.let { article ->
+                EditArticleScreen(
+                    article = article,
+                    userViewModel = userViewModel,
+                    articleViewModel = articleViewModel,
+                    onBack = { currentScreen = "my_articles" }
+                )
+            }
+        }
         "contact" -> {
             ContactScreen(
                 userViewModel = userViewModel,
@@ -219,6 +232,7 @@ fun MainContainer() {
             if (userViewModel.isLoggedIn()) {
                 ProfileScreen(
                     userViewModel = userViewModel,
+                    articleViewModel = articleViewModel,
                     onNavigate = { screen ->
                         if (screen == "login") {
                             userViewModel.logout {
@@ -234,6 +248,22 @@ fun MainContainer() {
                     currentScreen = "login"
                 }
             }
+        }
+        "my_articles" -> {
+            MyArticlesScreen(
+                onBack = { currentScreen = "profile" },
+                onNavigateToDetail = { article ->
+                    selectedArticle = article
+                    previousScreenForDetail = "my_articles"
+                    currentScreen = "article_detail"
+                },
+                onNavigateToEdit = { article ->
+                    selectedArticle = article
+                    currentScreen = "edit_article"
+                },
+                userViewModel = userViewModel,
+                articleViewModel = articleViewModel
+            )
         }
         "edit_profile" -> {
             EditProfileScreen(

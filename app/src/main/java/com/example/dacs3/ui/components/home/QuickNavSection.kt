@@ -3,13 +3,9 @@ package com.example.dacs3.ui.components.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -19,75 +15,91 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-data class NavItem(val title: String, val index: Int, val icon: ImageVector)
+data class NavItem(
+    val title: String,
+    val icon: ImageVector,
+    val color: Color,
+    val onClick: () -> Unit
+)
 
 @Composable
-fun QuickNavSection(onItemClick: (Int) -> Unit) {
-    val navItems = listOf(
-        NavItem("Địa điểm", 4, Icons.Default.Map),
-        NavItem("Văn hóa", 5, Icons.AutoMirrored.Filled.MenuBook),
-        NavItem("Hướng dẫn", 6, Icons.Default.Groups),
-        NavItem("Đánh giá", 7, Icons.Default.Star),
+fun QuickNavSection(
+    onScrollTo: (Int) -> Unit,
+    onNavigate: (String) -> Unit
+) {
+    val row1 = listOf(
+        NavItem("Địa điểm", Icons.Default.LocationOn, Color(0xFFEF4444)) { onScrollTo(4) },
+        NavItem("Văn hóa", Icons.Default.AutoStories, Color(0xFF3B82F6)) { onScrollTo(5) },
+        NavItem("Hướng dẫn", Icons.Default.Explore, Color(0xFF10B981)) { onScrollTo(6) },
+        NavItem("Đánh giá", Icons.Default.Stars, Color(0xFFF59E0B)) { onScrollTo(7) },
     )
 
-    // Tính toán độ rộng để hiển thị khoảng 3.2 mục trên màn hình
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-    val itemWidth = (screenWidth - 40.dp) / 3.2f // 40dp là tổng padding 2 bên của HomeScreen
+    val row2 = listOf(
+        NavItem("Liên hệ", Icons.Default.SupportAgent, Color(0xFF0EA5E9)) { onNavigate("contact") },
+        NavItem("Viết bài", Icons.Default.EditNote, Color(0xFF8B5CF6)) { onNavigate("create_article") },
+        NavItem("Thông báo", Icons.Default.NotificationsActive, Color(0xFFF1D517)) { onNavigate("notifications") },
+        NavItem("Cá nhân", Icons.Default.AccountCircle, Color(0xFF64748B)) { onNavigate("profile") },
+    )
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
         Text(
             text = "Khám phá nhanh",
             fontWeight = FontWeight.ExtraBold,
             fontSize = 17.sp,
-            color = Color(0xFF1E293B),
-            modifier = Modifier.padding(bottom = 14.dp)
+            color = Color(0xFF1E293B)
         )
         
-        LazyRow(
+        // Hàng 1
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            contentPadding = PaddingValues(end = 20.dp) // Thêm khoảng trống ở cuối để vuốt thoải mái
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(navItems) { item ->
-                QuickNavCard(
-                    item = item, 
-                    modifier = Modifier.width(itemWidth),
-                    onItemClick = onItemClick
-                )
+            row1.forEach { item ->
+                QuickNavCard(item = item, modifier = Modifier.weight(1f))
+            }
+        }
+
+        // Hàng 2
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            row2.forEach { item ->
+                QuickNavCard(item = item, modifier = Modifier.weight(1f))
             }
         }
     }
 }
 
 @Composable
-fun QuickNavCard(item: NavItem, modifier: Modifier = Modifier, onItemClick: (Int) -> Unit) {
+fun QuickNavCard(item: NavItem, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color.White)
-            .clickable { onItemClick(item.index) }
-            .padding(vertical = 12.dp, horizontal = 4.dp),
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { item.onClick() }
+            .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Blue button with white icon
         Box(
             modifier = Modifier
-                .size(40.dp)
-                .background(Color(0xFF3B82F6).copy(alpha = 0.1f), CircleShape),
+                .size(48.dp)
+                .background(item.color.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = item.icon,
                 contentDescription = item.title,
-                tint = Color(0xFF2563EB),
-                modifier = Modifier.size(20.dp)
+                tint = item.color,
+                modifier = Modifier.size(26.dp)
             )
         }
         Spacer(modifier = Modifier.height(8.dp))

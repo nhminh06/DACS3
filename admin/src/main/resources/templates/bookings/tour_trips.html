@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Danh sách Chuyến đi - WIND Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/admin-style.css}">
+    <style>
+        body { background-color: #0f172a; color: #f1f5f9; }
+        .tour-header-mini {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .tour-img-mini { width: 80px; height: 60px; object-fit: cover; border-radius: 8px; }
+
+        .trip-list { display: flex; flex-direction: column; gap: 12px; }
+        .trip-row-card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 15px 24px;
+            border: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0;
+            transition: 0.3s;
+            position: relative;
+        }
+        .trip-row-card:hover {
+            border-color: #3b82f6;
+            background: #243049;
+        }
+        .trip-empty { border-style: dashed; opacity: 0.7; }
+
+        /* Highlight trips with pending bookings */
+        .trip-has-pending {
+            border-left: 4px solid #f59e0b !important;
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        /* Fixed widths for alignment */
+        .col-date { width: 140px; }
+        .col-status { width: 130px; }
+        .col-guests { width: 160px; }
+        .col-minmax { width: 110px; }
+        .col-orders { width: 100px; }
+        .col-guides { width: 90px; }
+        .col-revenue { width: 130px; }
+        .col-actions { width: 280px; display: flex; justify-content: flex-end; gap: 8px; }
+
+        .stat-label-inline {
+            font-size: 9px;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            font-weight: 600;
+            display: block;
+        }
+        .stat-value-inline { font-size: 13px; font-weight: 700; color: #f1f5f9; }
+        .date-val { font-size: 15px; font-weight: 700; color: #3b82f6; }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+        .status-preparing { background: #78350f; color: #fef9c3; }
+        .status-started { background: #1e40af; color: #dbeafe; }
+        .status-completed { background: #064e3b; color: #d1fae5; }
+        .status-cancelled { background: #7c2d12; color: #fee2e2; }
+        .status-empty { background: #334155; color: #94a3b8; }
+
+        .eligibility-badge {
+            font-size: 9px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            display: inline-block;
+            margin-top: 3px;
+        }
+        .eligible-yes { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .eligible-no { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+        .pending-badge {
+            font-size: 9px;
+            background: #78350f;
+            color: #fef9c3;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-weight: 700;
+            margin-left: 5px;
+        }
+
+        .btn-trip {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .btn-list { background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border-color: rgba(14, 165, 233, 0.2); }
+        .btn-list:hover { background: #0ea5e9; color: white; }
+
+        .btn-sched { background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: rgba(16, 185, 129, 0.2); }
+        .btn-sched:hover { background: #10b981; color: white; }
+
+        .btn-cancel-trip { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
+        .btn-cancel-trip:hover { background: #ef4444; color: white; }
+
+        .btn-delete-trip { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
+        .btn-delete-trip:hover { background: #ef4444; color: white; }
+
+        .btn-disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar :: sidebar('bookings')}"></div>
+
+    <div class="main">
+        <header class="header">
+            <h1 class="h4 mb-0">Các Chuyến đi của Tour</h1>
+            <div class="user-info">
+                <a href="/admin/bookings/schedule" class="btn-back">Quay lại danh sách Tour</a>
+            </div>
+        </header>
+
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mx-4 mt-3" role="alert">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="tour-header-mini" th:if="${tour != null}">
+            <img th:src="${tour.imageUrl}" class="tour-img-mini">
+            <div>
+                <div class="badge bg-primary mb-1" th:text="${tour.maTour}">VN001</div>
+                <h2 class="h5 mb-0 fw-bold" th:text="${tour.title}">Tên Tour</h2>
+                <div class="small text-muted">
+                    <i class="bi bi-geo-alt me-1"></i> <span th:text="${tour.location}">Địa điểm</span>
+                    <span class="mx-2">|</span>
+                    <i class="bi bi-people me-1"></i> Sức chứa: <span class="fw-bold" th:text="${tour.minGuests + ' - ' + tour.maxGuests}">Min-Max</span> khách
+                </div>
+            </div>
+        </div>
+
+        <div class="trip-list" th:if="${not #lists.isEmpty(trips)}">
+            <!-- Header for alignment -->
+            <div class="trip-row-card" style="background: transparent; border: none; padding-bottom: 5px; pointer-events: none;">
+                <div class="col-date"><span class="stat-label-inline">Ngày khởi hành</span></div>
+                <div class="col-status"><span class="stat-label-inline">Trạng thái</span></div>
+                <div class="col-guests"><span class="stat-label-inline">Khách Đã Duyệt</span></div>
+                <div class="col-minmax"><span class="stat-label-inline">Min - Max</span></div>
+                <div class="col-orders"><span class="stat-label-inline">Đơn hàng</span></div>
+                <div class="col-guides"><span class="stat-label-inline">HDV</span></div>
+                <div class="col-revenue"><span class="stat-label-inline">Doanh thu</span></div>
+                <div class="col-actions"></div>
+            </div>
+
+            <div th:each="trip : ${trips}" class="trip-row-card"
+                 th:classappend="${(!trip.hasBookings ? 'trip-empty' : '') + (trip.bookingCount > trip.confirmedCount ? ' trip-has-pending' : '')}">
+                <!-- Cột Ngày -->
+                <div class="col-date">
+                    <div class="date-val" th:text="${trip.startDate}">20/10/2024</div>
+                </div>
+
+                <!-- Cột Trạng thái -->
+                <div class="col-status">
+                    <span th:if="${trip.hasBookings}" class="status-badge"
+                          th:classappend="${'status-' + trip.tripStatus}"
+                          th:text="${trip.tripStatus == 'preparing' ? 'Đang chuẩn bị' : (trip.tripStatus == 'started' ? 'Đang diễn ra' : (trip.tripStatus == 'completed' ? 'Hoàn thành' : (trip.tripStatus == 'cancelled' ? 'Đã hủy' : trip.tripStatus)))}">
+                    </span>
+                    <span th:if="${!trip.hasBookings}" class="status-badge status-empty">Trống đơn</span>
+                </div>
+
+                <!-- Cột Khách -->
+                <div class="col-guests">
+                    <span class="stat-value-inline">
+                        <i class="bi bi-people-fill me-1"></i>
+                        <span th:text="${trip.confirmedPassengers}">0</span>
+                        <small class="text-muted" th:if="${trip.totalPassengers > trip.confirmedPassengers}"> / <span th:text="${trip.totalPassengers}">0</span></small>
+                    </span>
+                    <div th:if="${trip.hasBookings && trip.tripStatus != 'cancelled'}">
+                        <span th:if="${trip.confirmedPassengers >= trip.minGuests}" class="eligibility-badge eligible-yes">Đủ điều kiện</span>
+                        <span th:if="${trip.confirmedPassengers < trip.minGuests}" class="eligibility-badge eligible-no">Chưa đủ điều kiện</span>
+                    </div>
+                </div>
+
+                <!-- Cột Min-Max -->
+                <div class="col-minmax">
+                    <span class="stat-value-inline" th:text="${trip.minGuests + ' - ' + trip.maxGuests}">0 - 50</span>
+                </div>
+
+                <!-- Cột Đơn hàng -->
+                <div class="col-orders">
+                    <span class="stat-value-inline">
+                        <i class="bi bi-receipt me-1"></i>
+                        <span th:text="${trip.confirmedCount}">0</span>
+                        <span th:if="${trip.bookingCount > trip.confirmedCount}" class="pending-badge" th:text="${'+' + (trip.bookingCount - trip.confirmedCount)}"></span>
+                    </span>
+                    <div th:if="${trip.bookingCount > trip.confirmedCount}" style="font-size: 9px; color: #f59e0b; font-weight: 600;">Cần xác nhận</div>
+                </div>
+
+                <!-- Cột HDV -->
+                <div class="col-guides">
+                    <span class="stat-value-inline">
+                        <i class="bi bi-person-badge me-1"></i>
+                        <span th:text="${trip.hasBookings ? #lists.size(trip.bookings[0].guideIds ?: {}) : 0}">0</span>
+                    </span>
+                </div>
+
+                <!-- Cột Doanh thu -->
+                <div class="col-revenue">
+                    <span class="stat-value-inline text-success" th:text="${#numbers.formatDecimal(trip.totalRevenue, 0, 'COMMA', 0, 'POINT') + 'đ'}">0đ</span>
+                </div>
+
+                <!-- Cột Thao tác -->
+                <div class="col-actions">
+                    <a th:href="@{/admin/bookings/grouped-trip-detail/{id}(id=${trip.id})}"
+                       class="btn-trip btn-list" th:classappend="${!trip.hasBookings ? 'btn-disabled' : ''}">
+                        <i class="bi bi-list-ul"></i> Booking
+                    </a>
+                    <a th:href="@{/admin/bookings/trip-schedule/{id}(id=${trip.id})}"
+                       class="btn-trip btn-sched" th:classappend="${!trip.hasBookings ? 'btn-disabled' : ''}">
+                        <i class="bi bi-gear-fill"></i> Quản lý
+                    </a>
+
+                    <form th:if="${trip.canCancelBatch}" th:action="@{/admin/bookings/trip-batch-cancel}" method="POST" class="d-inline"
+                          onsubmit="return confirm('Xác nhận hủy toàn bộ chuyến đi này?')">
+                        <input type="hidden" name="tourId" th:value="${trip.tourId}">
+                        <input type="hidden" name="startDate" th:value="${trip.startDate}">
+                        <button type="submit" class="btn-trip btn-cancel-trip">
+                            <i class="bi bi-x-circle"></i> Hủy chuyến
+                        </button>
+                    </form>
+
+                    <a th:if="${trip.tripStatus == 'cancelled' or trip.tripStatus == 'completed'}"
+                       th:href="@{/admin/bookings/trip-delete/{tourId}/{startDate}(tourId=${trip.tourId}, startDate=${trip.startDate})}"
+                       class="btn-trip btn-delete-trip"
+                       onclick="return confirm('Xác nhận xóa vĩnh viễn?')">
+                        <i class="bi bi-trash"></i> Xóa chuyến
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

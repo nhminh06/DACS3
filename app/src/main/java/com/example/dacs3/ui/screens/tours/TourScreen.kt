@@ -2,16 +2,20 @@ package com.example.dacs3.ui.screens.tours
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -230,29 +234,14 @@ fun TourScreen(
 
                 if (totalPages > 1) {
                     item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp, horizontal = 24.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            FilledTonalButton(
-                                onClick = { if (currentPage > 1) { currentPage--; coroutineScope.launch { listState.animateScrollToItem(1) } } },
-                                enabled = currentPage > 1,
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFFE2E8F0), contentColor = Color(0xFF1E293B))
-                            ) { Text("Trước", fontWeight = FontWeight.Bold) }
-
-                            Box(modifier = Modifier.padding(horizontal = 20.dp).background(Color(0xFF2563EB).copy(alpha = 0.1f), RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 6.dp)) {
-                                Text(text = "$currentPage / $totalPages", color = Color(0xFF2563EB), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        TourPaginationControls(
+                            currentPage = currentPage,
+                            totalPages = totalPages,
+                            onPageChange = { 
+                                currentPage = it
+                                coroutineScope.launch { listState.animateScrollToItem(1) }
                             }
-
-                            FilledTonalButton(
-                                onClick = { if (currentPage < totalPages) { currentPage++; coroutineScope.launch { listState.animateScrollToItem(1) } } },
-                                enabled = currentPage < totalPages,
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFFE2E8F0), contentColor = Color(0xFF1E293B))
-                            ) { Text("Sau", fontWeight = FontWeight.Bold) }
-                        }
+                        )
                     }
                 }
                 item { Spacer(modifier = Modifier.height(32.dp)) }
@@ -272,6 +261,78 @@ fun TourScreen(
             ) {
                 FilterContent(viewModel = viewModel, onApply = { showFilterSheet = false })
             }
+        }
+    }
+}
+
+@Composable
+fun TourPaginationControls(
+    currentPage: Int,
+    totalPages: Int,
+    onPageChange: (Int) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 24.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Nút Trước
+        FilledIconButton(
+            onClick = { if (currentPage > 1) onPageChange(currentPage - 1) },
+            enabled = currentPage > 1,
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = Color.White,
+                contentColor = Color(0xFF2563EB),
+                disabledContainerColor = Color.White.copy(alpha = 0.5f)
+            ),
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(20.dp))
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Hiển thị số trang
+        repeat(totalPages) { index ->
+            val page = index + 1
+            if (page == 1 || page == totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(if (currentPage == page) Color(0xFF2563EB) else Color.White)
+                        .clickable { onPageChange(page) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = page.toString(),
+                        color = if (currentPage == page) Color.White else Color(0xFF1E293B),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
+            } else if (page == currentPage - 2 || page == currentPage + 2) {
+                Text("...", color = Color.Gray, modifier = Modifier.padding(horizontal = 4.dp))
+            }
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Nút Sau
+        FilledIconButton(
+            onClick = { if (currentPage < totalPages) onPageChange(currentPage + 1) },
+            enabled = currentPage < totalPages,
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = Color.White,
+                contentColor = Color(0xFF2563EB),
+                disabledContainerColor = Color.White.copy(alpha = 0.5f)
+            ),
+            modifier = Modifier.size(40.dp)
+        ) {
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(20.dp))
         }
     }
 }

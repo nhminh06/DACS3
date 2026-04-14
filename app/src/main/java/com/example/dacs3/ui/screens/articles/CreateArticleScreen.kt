@@ -146,6 +146,7 @@ fun CreateArticleScreen(
                     }
                     
                     isSubmitting = true
+                    val currentUserId = userViewModel.currentUser.value?.id ?: ""
                     val newArticle = ArticleEntity(
                         tieu_de = title,
                         loai_id = when(selectedCategory) {
@@ -157,7 +158,8 @@ fun CreateArticleScreen(
                         ngay_tao = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
                         trang_thai = 0, // Chờ duyệt
                         nguon_goc = "user",
-                        tac_gia = userViewModel.currentUser.value?.name ?: "Người dùng"
+                        tac_gia = userViewModel.currentUser.value?.name ?: "Người dùng",
+                        tac_gia_id = currentUserId
                     )
                     
                     articleViewModel.createArticle(newArticle) { success ->

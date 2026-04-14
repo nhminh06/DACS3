@@ -337,6 +337,7 @@ public class HuggingFaceService {
 
         String prompt = """
                 Bạn là chuyên gia kiểm tra thông tin du lịch, lịch sử và y tế Việt Nam.
+                Bắt buộc phải đọc và tìm hiểu về nội dung sác nhập tỉnh thành việt nam ngày 1 tháng 7 năm 2025.
                 Hãy đánh giá bài viết sau và trả lời ĐÚNG định dạng JSON bên dưới.
                 KHÔNG thêm bất kỳ text nào khác ngoài JSON.
                 %s
@@ -346,7 +347,7 @@ public class HuggingFaceService {
                 - Tuyên bố lịch sử phóng đại, không có nguồn gốc → hasFakeClaims = true, factScore giảm mạnh (< 40)
                 - Thông tin địa lý, du lịch thực tế đúng → factScore cao
                 - Bài viết kêu gọi mua hàng/dịch vụ trá hình → isAdvertising = true
-
+                - Bài viết sai về địa điểm trực thộc của địa danh, địa điểm lịch sử → hasFakeClaims = true, factScore giảm mạnh (< 40) 
                 Tiêu đề: %s
                 Nội dung: %s
 
