@@ -8,34 +8,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/admin-style.css}">
     <style>
-        .pagination-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-            padding: 15px;
-            background: #26263b;
-            border-radius: 8px;
-        }
-        .pagination-info {
-            color: #ccc;
-            font-size: 14px;
-        }
-        .pagination .page-link {
-            background: #1e1e2f;
-            border-color: #3f3f5f;
-            color: #fff;
-            padding: 8px 16px;
-        }
-        .pagination .page-item.active .page-link {
-            background: #667eea;
-            border-color: #667eea;
-        }
-        .pagination .page-item.disabled .page-link {
-            background: #161625;
-            border-color: #2f2f45;
-            color: #666;
-        }
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 15px; background: #26263b; border-radius: 8px; }
+        .pagination-info { color: #ccc; font-size: 14px; }
+        .pagination .page-link { background: #1e1e2f; border-color: #3f3f5f; color: #fff; padding: 8px 16px; }
+        .pagination .page-item.active .page-link { background: #667eea; border-color: #667eea; }
     </style>
 </head>
 <body>
@@ -45,29 +21,20 @@
         <header class="header mb-4">
             <h1 class="h4 mb-0">Quản lý Người dùng</h1>
             <div class="user-info">
-                <span class="text-white me-3">Hôm nay: <strong th:text="${#calendars.format(#calendars.createNow(), 'dd/MM/yyyy')}"></strong></span>
-                Xin chào <strong th:text="${session.adminUser != null ? session.adminUser.name : 'Admin'}">Admin</strong>
+                Xin chào <strong th:text="${session.adminUser.name}">Admin</strong>
             </div>
         </header>
 
+        <!-- Thông báo -->
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
         <!-- Statistics -->
         <div class="stats-cards">
-            <div class="stat-card">
-                <h3 th:text="${total}">0</h3>
-                <p>Tổng người dùng</p>
-            </div>
-            <div class="stat-card">
-                <h3 th:text="${adminCount}">0</h3>
-                <p>Quản trị viên</p>
-            </div>
-            <div class="stat-card">
-                <h3 th:text="${guideCount}">0</h3>
-                <p>Hướng dẫn viên</p>
-            </div>
-            <div class="stat-card">
-                <h3 th:text="${activeCount}">0</h3>
-                <p>Đang hoạt động</p>
-            </div>
+            <div class="stat-card"><h3 th:text="${total}">0</h3><p>Tổng người dùng</p></div>
+            <div class="stat-card"><h3 th:text="${adminCount}">0</h3><p>Quản trị viên</p></div>
+            <div class="stat-card"><h3 th:text="${guideCount}">0</h3><p>Hướng dẫn viên</p></div>
+            <div class="stat-card"><h3 th:text="${activeCount}">0</h3><p>Đang hoạt động</p></div>
         </div>
 
         <!-- Search & Filter -->
@@ -80,99 +47,58 @@
                     <option value="guide" th:selected="${roleFilter == 'guide'}">Guide</option>
                     <option value="user" th:selected="${roleFilter == 'user'}">User</option>
                 </select>
-                <select name="status" onchange="this.form.submit()" class="filter-select">
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="active" th:selected="${statusFilter == 'active'}">Hoạt động</option>
-                    <option value="blocked" th:selected="${statusFilter == 'blocked'}">Đã khóa</option>
-                </select>
-                <input type="hidden" name="page" value="1">
             </form>
-            <a th:href="@{/admin/users/add}" class="btn btn-primary ms-3 d-flex align-items-center">
+            <a th:href="@{/admin/users/add}" class="btn btn-primary ms-3">
                 <i class="bi bi-person-plus-fill me-2"></i> Thêm người dùng
             </a>
         </div>
 
-        <!-- User Table -->
+        <!-- Table -->
         <div class="table-container shadow-sm">
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 80px;">ID</th>
-                        <th>HỌ TÊN</th>
-                        <th>EMAIL</th>
-                        <th>SỐ ĐIỆN THOẠI</th>
-                        <th>ĐỊA CHỈ</th>
-                        <th>VAI TRÒ</th>
-                        <th>TRẠNG THÁI</th>
-                        <th class="text-end">THAO TÁC</th>
+                        <th>ID</th><th>HỌ TÊN</th><th>EMAIL</th><th>SỐ ĐIỆN THOẠI</th><th>VAI TRÒ</th><th>TRẠNG THÁI</th><th class="text-end">THAO TÁC</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:each="user, iterStat : ${users}">
-                        <td class="id-cell" th:text="'#' + ${user.id.substring(0,4).toUpperCase()}">#0001</td>
-                        <td class="fw-bold" th:text="${user.get('name')}">Nguyễn Văn A</td>
-                        <td th:text="${user.get('email')}">email@example.com</td>
-                        <td th:text="${user.get('sdt') ?: 'N/A'}">0123456789</td>
-                        <td th:text="${user.get('dia_chi') ?: 'Chưa cập nhật'}">Hà Nội</td>
+                    <tr th:each="user : ${users}">
+                        <td th:text="'#' + ${user.id.substring(0,4).toUpperCase()}"></td>
+                        <td class="fw-bold" th:text="${user.get('name')}"></td>
+                        <td th:text="${user.get('email')}"></td>
+                        <td th:text="${user.get('sdt') ?: 'N/A'}"></td>
                         <td>
-                            <span th:if="${user.get('role') == 'admin'}" class="badge-custom badge-admin">Admin</span>
-                            <span th:if="${user.get('role') == 'guide'}" class="badge-custom badge-staff">Guide</span>
-                            <span th:if="${user.get('role') == 'user' || user.get('role') == null}" class="badge-custom badge-user">User</span>
+                            <span th:if="${user.get('role') == 'admin'}" class="badge bg-danger">Admin</span>
+                            <span th:if="${user.get('role') == 'guide'}" class="badge bg-info">Guide</span>
+                            <span th:unless="${user.get('role') == 'admin' || user.get('role') == 'guide'}" class="badge bg-secondary">User</span>
                         </td>
                         <td>
-                            <span th:if="${user.get('trang_thai') == 'active'}" class="status-active"><i class="bi bi-circle-fill me-1 small"></i> Hoạt động</span>
-                            <span th:unless="${user.get('trang_thai') == 'active'}" class="status-blocked"><i class="bi bi-circle-fill me-1 small"></i> Đã khóa</span>
+                            <span th:if="${user.get('trang_thai') == 'active'}" class="text-success">Hoạt động</span>
+                            <span th:unless="${user.get('trang_thai') == 'active'}" class="text-danger">Đã khóa</span>
                         </td>
                         <td class="text-end">
-                            <button class="btn-action" title="Phân quyền" th:data-id="${user.id}" onclick="openRoleModal(this.getAttribute('data-id'))">
+                            <button class="btn btn-sm btn-outline-warning" title="Phân quyền" th:data-id="${user.id}" onclick="openRoleModal(this.getAttribute('data-id'))">
                                 <i class="bi bi-shield-lock"></i>
                             </button>
-                            <a th:href="@{/admin/users/toggle-status/{id}(id=${user.id})}" class="btn-action" th:title="${user.get('trang_thai') == 'active' ? 'Khóa' : 'Mở khóa'}">
+                            <a th:href="@{/admin/users/toggle-status/{id}(id=${user.id})}" class="btn btn-sm btn-outline-info">
                                 <i th:class="${user.get('trang_thai') == 'active' ? 'bi bi-lock' : 'bi bi-unlock'}"></i>
                             </a>
-                            <a th:href="@{/admin/users/delete/{id}(id=${user.id})}" class="btn-action" onclick="return confirm('Xóa vĩnh viễn người dùng này?')" title="Xóa">
+                            <a th:href="@{/admin/users/delete/{id}(id=${user.id})}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa người dùng này?')">
                                 <i class="bi bi-trash"></i>
                             </a>
                         </td>
                     </tr>
-                    <tr th:if="${#lists.isEmpty(users)}">
-                        <td colspan="8" class="text-center py-4 text-muted">Không tìm thấy người dùng nào.</td>
-                    </tr>
                 </tbody>
             </table>
         </div>
-
-        <!-- Pagination -->
-        <div class="pagination-container" th:if="${totalPages > 0}">
-            <div class="pagination-info">
-                Hiển thị <span th:text="${users.size()}">0</span> / <span th:text="${totalFiltered}">0</span> người dùng
-            </div>
-            <nav aria-label="Page navigation">
-                <ul class="pagination mb-0">
-                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
-                        <a class="page-link" th:href="@{/admin/users(page=${currentPage - 1}, search=${search}, role=${roleFilter}, status=${statusFilter})}" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'">
-                        <a class="page-link" th:text="${i}" th:href="@{/admin/users(page=${i}, search=${search}, role=${roleFilter}, status=${statusFilter})}">1</a>
-                    </li>
-                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
-                        <a class="page-link" th:href="@{/admin/users(page=${currentPage + 1}, search=${search}, role=${roleFilter}, status=${statusFilter})}" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
     </div>
 
-    <!-- Role Modal -->
+    <!-- Modal Phân quyền -->
     <div class="modal fade" id="roleModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
+            <div class="modal-content bg-dark text-white border-secondary">
                 <form action="/admin/users/change-role" method="POST">
-                    <div class="modal-header">
+                    <div class="modal-header border-secondary">
                         <h5 class="modal-title">Thay đổi quyền hạn</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
@@ -180,14 +106,18 @@
                         <input type="hidden" name="id" id="modalUserId">
                         <div class="mb-3">
                             <label class="form-label">Chọn vai trò mới:</label>
-                            <select name="role" class="form-select bg-dark text-white border-secondary">
+                            <select name="role" class="form-select bg-secondary text-white border-0">
                                 <option value="user">User</option>
                                 <option value="guide">Guide</option>
-                                <option value="admin">Admin</option>
+                                <!-- Chỉ hiện option Admin nếu người đang dùng là Admin Cấp Cao -->
+                                <option th:if="${currentAdminLevel == 1}" value="admin">Admin</option>
                             </select>
                         </div>
+                        <p th:if="${currentAdminLevel != 1}" class="text-warning small">
+                            * Bạn chỉ có quyền phân vai trò User hoặc Guide.
+                        </p>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer border-secondary">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                         <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
                     </div>
@@ -197,12 +127,10 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script th:src="@{/js/admin-common.js}"></script>
     <script>
         function openRoleModal(userId) {
             document.getElementById('modalUserId').value = userId;
-            var myModal = new bootstrap.Modal(document.getElementById('roleModal'));
-            myModal.show();
+            new bootstrap.Modal(document.getElementById('roleModal')).show();
         }
     </script>
 </body>

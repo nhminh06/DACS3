@@ -30,13 +30,26 @@ public class AdminProfileController {
     private Cloudinary cloudinary;
 
     @GetMapping
+    @SuppressWarnings("unchecked")
     public String profilePage(HttpSession session, Model model) {
-        Object adminUser = session.getAttribute("adminUser");
+        Map<String, Object> adminUser = (Map<String, Object>) session.getAttribute("adminUser");
         if (adminUser == null) {
             return "redirect:/admin/login";
         }
+
+        // Xác định cấp bậc admin
+        Object levelObj = adminUser.get("admin_level");
+        int level = 2; // Mặc định là cấp thấp
+        if (levelObj instanceof Long) {
+            level = ((Long) levelObj).intValue();
+        } else if (levelObj instanceof Integer) {
+            level = (Integer) levelObj;
+        }
+        
+        String levelName = (level == 1) ? "Admin Cấp Cao (Super Admin)" : "Admin Cấp Thấp";
         
         model.addAttribute("admin", adminUser);
+        model.addAttribute("adminLevelName", levelName);
         return "profile";
     }
 
@@ -54,8 +67,7 @@ public class AdminProfileController {
             Map<String, Object> adminUser = (Map<String, Object>) session.getAttribute("adminUser");
             if (adminUser == null) return "redirect:/admin/login";
 
-            String email = (String) adminUser.get("email");
-            String docId = (String) adminUser.getOrDefault("docId", email);
+            String docId = (String) adminUser.get("docId");
             
             Map<String, Object> updates = new HashMap<>();
             updates.put("name", name);
@@ -94,7 +106,7 @@ public class AdminProfileController {
             if (adminUser == null) return "redirect:/admin/login";
             
             String email = (String) adminUser.get("email");
-            String docId = (String) adminUser.getOrDefault("docId", email);
+            String docId = (String) adminUser.get("docId");
 
             // Upload to Cloudinary
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
@@ -136,9 +148,8 @@ public class AdminProfileController {
                 return "redirect:/admin/profile";
             }
 
-            String email = (String) adminUser.get("email");
-            String docId = (String) adminUser.getOrDefault("docId", email);
-            String dbPassword = (String) adminUser.get("password");
+            String docId = (String) adminUser.get("docId");
+            String dbPassword = (String) adminUser.get("password").toString();
 
             if (!currentPassword.equals(dbPassword)) {
                 redirectAttributes.addFlashAttribute("error", "Mật khẩu hiện tại không chính xác!");

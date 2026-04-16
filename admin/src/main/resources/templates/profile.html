@@ -130,6 +130,15 @@
             font-weight: 600;
             margin-right: 10px;
         }
+        .level-badge {
+            background: #f59e0b;
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
@@ -181,7 +190,7 @@
                             <h4 class="mb-1" th:text="${admin['name']}">admin_user</h4>
                             <div class="d-flex align-items-center gap-2">
                                 <span class="badge bg-primary" th:text="${admin['rank']}">Bronze</span>
-                                <span class="text-muted small" th:text="${admin['role'] == 'admin' ? 'Quản trị viên' : 'Người dùng'}">Quản trị viên</span>
+                                <span class="level-badge" th:text="${adminLevelName}">CẤP BẬC</span>
                             </div>
                         </div>
                     </div>
@@ -236,7 +245,7 @@
                 <!-- Tab Mật khẩu & Bảo mật -->
                 <div class="tab-pane fade" id="security-pane" role="tabpanel">
                     <div class="form-section-title">Đổi mật khẩu</div>
-                    <form th:action="@{/admin/profile/change-password}" method="post">
+                    <form th:action="@{/admin/profile}" method="post">
                         <div class="custom-form-group">
                             <label class="custom-form-label">Mật khẩu hiện tại</label>
                             <input type="password" name="currentPassword" class="custom-form-input" required>

@@ -51,7 +51,13 @@ public class AdminAuthController {
             
             if (password.equals(dbPassword)) {
                 Map<String, Object> userData = userDoc.getData();
-                userData.put("docId", userDoc.getId()); // Lưu document ID để update sau này
+                userData.put("docId", userDoc.getId());
+                
+                // Đảm bảo admin_level luôn có giá trị trong session
+                if (!userData.containsKey("admin_level") || userData.get("admin_level") == null) {
+                    userData.put("admin_level", 2); // Mặc định là cấp thấp nếu chưa có
+                }
+
                 session.setAttribute("adminUser", userData);
                 session.setAttribute("adminEmail", email);
                 return "redirect:/admin/dashboard";
