@@ -409,7 +409,7 @@ fun BookingBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
             CounterItem("Trẻ em", "Giá: ${formatter.format(priceTreEm)}", childCount) { childCount = it }
             Spacer(modifier = Modifier.height(16.dp))
-            CounterItem("Trẻ sơ sinh", "Giá: ${formatter.format(priceTreSoSinh)}", infantCount) { infantCount = it }
+            CounterItem("Trẻ nhỏ", "Giá: ${formatter.format(priceTreSoSinh)}", infantCount) { infantCount = it }
 
             Spacer(modifier = Modifier.height(32.dp))
 

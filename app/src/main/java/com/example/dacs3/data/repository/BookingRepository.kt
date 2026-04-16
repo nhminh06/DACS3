@@ -140,4 +140,30 @@ class BookingRepository {
             false
         }
     }
+
+    /**
+     * Đếm tổng số khách đã đặt cho một tour vào một ngày cụ thể
+     */
+    suspend fun getGuestCountByDate(tourId: String, date: String): Int {
+        return try {
+            val snapshot = bookingsCollection
+                .whereEqualTo("tourId", tourId)
+                .whereEqualTo("startDate", date)
+                .whereIn("status", listOf("CONFIRMED", "PENDING"))
+                .get()
+                .await()
+            
+            var total = 0
+            for (doc in snapshot.documents) {
+                val adults = doc.getLong("adults")?.toInt() ?: 0
+                val children = doc.getLong("children")?.toInt() ?: 0
+                val infants = doc.getLong("infants")?.toInt() ?: 0
+                total += (adults + children + infants)
+            }
+            total
+        } catch (e: Exception) {
+            Log.e("BookingRepository", "Lỗi đếm khách: ${e.message}")
+            0
+        }
+    }
 }

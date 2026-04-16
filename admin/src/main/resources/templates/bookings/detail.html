@@ -141,17 +141,17 @@
                     <div class="sec-title-v3">Chi tiết số lượng</div>
                     <div class="pax-row"><span>Người lớn:</span> <strong th:text="${bk.adults ?: 0}"></strong></div>
                     <div class="pax-row"><span>Trẻ em:</span> <strong th:text="${bk.children ?: 0}"></strong></div>
-                    <div class="pax-row"><span>Trẻ sơ sinh:</span> <strong th:text="${bk.infants ?: 0}"></strong></div>
+                    <div class="pax-row"><span>Trẻ nhỏ:</span> <strong th:text="${bk.infants ?: 0}"></strong></div>
                     <div class="pax-row pax-total"><span>Tổng:</span> <strong th:text="${(bk.adults ?: 0) + (bk.children ?: 0) + (bk.infants ?: 0)}"></strong></div>
                 </div>
                 <div class="info-sec-v3">
                     <div class="sec-title-v3">Thanh toán</div>
                     <div class="payment-val" th:text="${#numbers.formatDecimal(bk.totalPrice, 0, 'COMMA', 0, 'POINT') + ' đ'}"></div>
-                    <div class="mt-2 small text-white italic">
+                    <div class="mt-2 small text-white italic" th:with="isPaid=${bk.paymentStatus == 'da_thanh_toan' or (bk.paymentMethod != 'QR' and (bk.tripStatus == 'completed' or bk.tripStatus == 'cancelled'))}">
                         <i class="bi bi-info-circle me-1"></i>
                         <span th:text="${bk.paymentMethod == 'QR' ? 'Chuyển khoản QR' : 'Tiền mặt'}"></span>
-                        <span class="ms-1" th:classappend="${bk.paymentStatus == 'da_thanh_toan' ? 'text-success' : 'text-warning'}">
-                            (<span th:text="${bk.paymentStatus == 'da_thanh_toan' ? 'Đã thanh toán' : 'Chưa thanh toán'}"></span>)
+                        <span class="ms-1" th:classappend="${isPaid ? 'text-success' : 'text-warning'}">
+                            (<span th:text="${isPaid ? 'Đã thanh toán' : 'Chưa thanh toán'}"></span>)
                         </span>
                     </div>
                 </div>

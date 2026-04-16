@@ -48,6 +48,7 @@ public class AdminBookingController {
         private int confirmedCount = 0;
         private int minGuests = 1;
         private int maxGuests = 50;
+        private int guideCount = 0;
         private boolean canCancelBatch = false;
         private boolean hasBookings = false;
 
@@ -77,6 +78,8 @@ public class AdminBookingController {
         public void setMinGuests(int minGuests) { this.minGuests = minGuests; }
         public int getMaxGuests() { return maxGuests; }
         public void setMaxGuests(int maxGuests) { this.maxGuests = maxGuests; }
+        public int getGuideCount() { return guideCount; }
+        public void setGuideCount(int guideCount) { this.guideCount = guideCount; }
         public boolean isCanCancelBatch() { return canCancelBatch; }
         public void setCanCancelBatch(boolean canCancelBatch) { this.canCancelBatch = canCancelBatch; }
         public boolean isHasBookings() { return hasBookings; }
@@ -620,6 +623,12 @@ public class AdminBookingController {
                     trip.setConfirmedPassengers(trip.getConfirmedPassengers() + passengers);
                     trip.setTotalRevenue(trip.getTotalRevenue() + b.getTotalPrice());
                 }
+                
+                // --- Cập nhật guideCount cho trip ---
+                List<String> gIds = (List<String>) doc.get("guideIds");
+                if (gIds != null) {
+                    trip.setGuideCount(Math.max(trip.getGuideCount(), gIds.size()));
+                }
             }
 
             // --- Logic mới: Ẩn tour trống nếu đã có chuyến đi thực tế cho cùng ngày ---
@@ -761,6 +770,7 @@ public class AdminBookingController {
             trip.setTotalRevenue(totalRevenue);
             trip.setTotalPassengers(totalPassengers);
             trip.setBookingCount(bookings.size());
+            trip.setGuideCount(gIds != null ? gIds.size() : 0);
             
             if (booking.getTour() != null) {
                 Object minG = booking.getTour().get("minGuests");
@@ -845,16 +855,32 @@ public class AdminBookingController {
             String startDate = doc.getString("startDate");
             String currentTripStatus = doc.getString("tripStatus");
             if (currentTripStatus == null) currentTripStatus = "preparing";
+            
             List<String> guideIds = (List<String>) doc.get("guideIds");
             if (guideIds == null) guideIds = new ArrayList<>(); else guideIds = new ArrayList<>(guideIds);
-            if ("remove".equals(action)) guideIds.remove(guideId); else if (guideId != null && !guideId.isEmpty() && !guideIds.contains(guideId)) guideIds.add(guideId);
-            QuerySnapshot tripBookings = firestore.collection("bookings").whereEqualTo("tourId", tourId).whereEqualTo("startDate", startDate).get().get();
-            for (QueryDocumentSnapshot d : tripBookings.getDocuments()) {
-                String s = d.getString("tripStatus"); if (s == null) s = "preparing";
-                if (s.equals(currentTripStatus)) firestore.collection("bookings").document(d.getId()).update("guideIds", guideIds).get();
+            
+            if ("remove".equals(action)) {
+                guideIds.remove(guideId);
+            } else if (guideId != null && !guideId.isEmpty() && !guideIds.contains(guideId)) {
+                guideIds.add(guideId);
             }
+            
+            QuerySnapshot tripBookings = firestore.collection("bookings")
+                    .whereEqualTo("tourId", tourId)
+                    .whereEqualTo("startDate", startDate)
+                    .get().get();
+                    
+            for (QueryDocumentSnapshot d : tripBookings.getDocuments()) {
+                String s = d.getString("tripStatus"); 
+                if (s == null) s = "preparing";
+                if (s.equals(currentTripStatus)) {
+                    firestore.collection("bookings").document(d.getId()).update("guideIds", guideIds).get();
+                }
+            }
+            
             response.put("success", true);
-        } catch (Exception e) { response.put("success", false); }
+            response.put("guideCount", guideIds.size());
+        } catch (Exception e) { e.printStackTrace(); response.put("success", false); }
         return response;
     }
 

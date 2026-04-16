@@ -43,7 +43,7 @@ fun QuickNavSection(
         NavItem("Liên hệ", Icons.Default.SupportAgent, Color(0xFF0EA5E9)) { onNavigate("contact") },
         NavItem("Viết bài", Icons.Default.EditNote, Color(0xFF8B5CF6)) { onNavigate("create_article") },
         NavItem("Thông báo", Icons.Default.NotificationsActive, Color(0xFFF1D517)) { onNavigate("notifications") },
-        NavItem("Cá nhân", Icons.Default.AccountCircle, Color(0xFF64748B)) { onNavigate("profile") },
+        NavItem("Chat Bot", Icons.Default.SmartToy, Color(0xFF2563EB)) { onNavigate("chatbot") },
     )
 
     Column(

@@ -349,7 +349,7 @@ fun BookingCustomerInfo(booking: Booking) {
             val details = mutableListOf<String>()
             if (booking.adults > 0) details.add("${booking.adults} người lớn")
             if (booking.children > 0) details.add("${booking.children} trẻ em")
-            if (booking.infants > 0) details.add("${booking.infants} trẻ sơ sinh")
+            if (booking.infants > 0) details.add("${booking.infants} trẻ nhỏ")
             
             Text(
                 "(${details.joinToString(", ")})", 
@@ -392,7 +392,7 @@ fun PaymentSummary(booking: Booking) {
                 PaymentRow("Trẻ em x${booking.children}", currencyFormatter.format(booking.tour.giaTreEm * booking.children))
             }
             if (booking.infants > 0) {
-                PaymentRow("Trẻ sơ sinh x${booking.infants}", currencyFormatter.format(booking.tour.giaTreNho * booking.infants))
+                PaymentRow("Trẻ nhỏ x${booking.infants}", currencyFormatter.format(booking.tour.giaTreNho * booking.infants))
             }
             
             HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), thickness = 1.dp, color = Color(0xFFF1F5F9))

@@ -301,6 +301,7 @@ fun MyBookingsScreen(
                         userName = u.name,
                         userAvatar = u.avatar,
                         tourId = bookingToReview!!.tour.id,
+                        guideId = bookingToReview!!.guideId, // Cập nhật guideId từ booking
                         bookingId = bookingToReview!!.id,
                         rating = rating,
                         comment = comment

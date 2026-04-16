@@ -31,6 +31,10 @@ class BookingViewModel : ViewModel() {
     private val _bookingSuccess = MutableStateFlow<Boolean?>(null)
     val bookingSuccess: StateFlow<Boolean?> = _bookingSuccess.asStateFlow()
 
+    // Map to store guest counts for dates: "tourId_date" -> count
+    private val _dateGuestCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val dateGuestCounts: StateFlow<Map<String, Int>> = _dateGuestCounts.asStateFlow()
+
     fun createBooking(booking: Booking, receiptUri: Uri? = null) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -62,6 +66,24 @@ class BookingViewModel : ViewModel() {
             val result = bookingRepository.getBookingById(bookingId)
             _currentBooking.value = result
             _isLoading.value = false
+        }
+    }
+
+    fun loadGuestCountsForDates(tourId: String, dates: List<String>) {
+        viewModelScope.launch {
+            val counts = mutableMapOf<String, Int>()
+            dates.forEach { dateStr ->
+                // Format date to ISO for DB query if needed, but repository expects what's in Firestore
+                // startDate in Firestore is yyyy-MM-dd
+                val dbDate = try {
+                    val parts = dateStr.split("/")
+                    if (parts.size == 3) "${parts[2]}-${parts[1]}-${parts[0]}" else dateStr
+                } catch (e: Exception) { dateStr }
+                
+                val count = bookingRepository.getGuestCountByDate(tourId, dbDate)
+                counts["${tourId}_${dateStr}"] = count
+            }
+            _dateGuestCounts.value = _dateGuestCounts.value + counts
         }
     }
 

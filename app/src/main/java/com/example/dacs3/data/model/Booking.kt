@@ -6,6 +6,7 @@ data class Booking(
     val id: String = "",
     val userId: String = "",
     val tour: Tour = Tour(),
+    val guideId: String = "", // Thêm trường này để biết HDV nào phụ trách tour
     val status: BookingStatus = BookingStatus.PENDING,
     val startDate: LocalDate = LocalDate.now(),
     val adults: Int = 1,

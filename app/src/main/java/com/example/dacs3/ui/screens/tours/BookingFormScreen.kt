@@ -57,8 +57,9 @@ fun BookingFormScreen(
     val user = userViewModel.currentUser.value
     val bookingSuccess by bookingViewModel.bookingSuccess.collectAsState()
     val isLoading by bookingViewModel.isLoading.collectAsState()
+    val dateGuestCounts by bookingViewModel.dateGuestCounts.collectAsState()
     
-    // Parse available dates from tour.startDate (comma-separated yyyy-MM-dd)
+    // Parse available dates
     val availableDates = remember(tour.startDate) {
         tour.startDate.split(",")
             .filter { it.isNotBlank() }
@@ -72,6 +73,13 @@ fun BookingFormScreen(
             }
     }
 
+    // Load guest counts
+    LaunchedEffect(tour.id, availableDates) {
+        if (availableDates.isNotEmpty()) {
+            bookingViewModel.loadGuestCountsForDates(tour.id, availableDates)
+        }
+    }
+
     // Form State
     var name by remember { mutableStateOf(user?.name ?: "") }
     var email by remember { mutableStateOf(user?.email ?: "") }
@@ -79,7 +87,6 @@ fun BookingFormScreen(
     var address by remember { mutableStateOf(user?.dia_chi ?: "") }
     var note by remember { mutableStateOf("") }
     
-    // Default to the first available date
     var selectedDate by remember { 
         mutableStateOf(availableDates.firstOrNull() ?: LocalDate.now().plusDays(7).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))) 
     }
@@ -92,12 +99,20 @@ fun BookingFormScreen(
     var receiptUri by remember { mutableStateOf<Uri?>(null) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
+    // Logic tính toán vượt mức
+    val currentOccupied = dateGuestCounts["${tour.id}_$selectedDate"] ?: 0
+    val totalRequested = adults + children + infants
+    val overLimitCount = (currentOccupied + totalRequested) - tour.maxGuests
+    
+    val isOverLimit = overLimitCount > 0
+    val shouldHidePaymentSection = overLimitCount >= 3 // Ẩn toàn bộ khi quá từ 3 người
+    val canBook = overLimitCount <= 2 // Chỉ cho phép đặt khi quá tối đa 2 người
+
     val priceTreEm = if (tour.giaTreEm > 0) tour.giaTreEm else (tour.price * 0.7).toLong()
     val priceTreSoSinh = if (tour.giaTreNho > 0) tour.giaTreNho else (tour.price * 0.5).toLong()
     val totalPrice = (adults * tour.price) + (children * priceTreEm) + (infants * priceTreSoSinh)
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
 
-    // Tối ưu hóa VietQR
     var debouncedAmount by remember { mutableLongStateOf(totalPrice) }
     var debouncedName by remember { mutableStateOf(name) }
     
@@ -130,7 +145,7 @@ fun BookingFormScreen(
             },
             icon = { Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(48.dp)) },
             title = { Text("Đặt Tour Thành Công!", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A)) },
-            text = { Text("Yêu cầu đặt tour của bạn đã được gửi đi. Vui lòng chờ nhân viên xác nhận và thanh toán để hoàn tất.", color = Color(0xFF334155)) },
+            text = { Text("Yêu cầu đặt tour của bạn đã được gửi đi. Vui lòng chờ nhân viên xác nhận để hoàn tất.", color = Color(0xFF334155)) },
             shape = RoundedCornerShape(24.dp),
             containerColor = Color.White
         )
@@ -145,11 +160,7 @@ fun BookingFormScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color(0xFF0F172A))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color(0xFF0F172A),
-                    navigationIconContentColor = Color(0xFF0F172A)
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
         bottomBar = {
@@ -168,6 +179,10 @@ fun BookingFormScreen(
                     }
                     Button(
                         onClick = {
+                            if (!canBook) {
+                                Toast.makeText(context, "Chuyến đi đã quá tải, không thể đặt thêm.", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
                             if (paymentMethod == "QR" && receiptUri == null) {
                                 Toast.makeText(context, "Vui lòng tải ảnh biên lai chuyển khoản", Toast.LENGTH_SHORT).show()
                                 return@Button
@@ -176,7 +191,6 @@ fun BookingFormScreen(
                             try {
                                 val date = LocalDate.parse(selectedDate, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                                 val bookingId = "BK${System.currentTimeMillis()}"
-                                
                                 val newBooking = Booking(
                                     id = bookingId,
                                     userId = user?.id ?: "",
@@ -194,24 +208,20 @@ fun BookingFormScreen(
                                     note = note.ifBlank { null },
                                     paymentMethod = paymentMethod
                                 )
-                                
-                                bookingViewModel.createBooking(
-                                    newBooking, 
-                                    if (paymentMethod == "QR") receiptUri else null
-                                )
+                                bookingViewModel.createBooking(newBooking, if (paymentMethod == "QR") receiptUri else null)
                             } catch (e: Exception) {
                                 Toast.makeText(context, "Lỗi định dạng ngày", Toast.LENGTH_SHORT).show()
                             }
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB), contentColor = Color.White),
-                        enabled = !isLoading && name.isNotBlank() && email.isNotBlank() && phone.isNotBlank()
+                        colors = ButtonDefaults.buttonColors(containerColor = if (canBook) Color(0xFF2563EB) else Color.Gray),
+                        enabled = !isLoading && name.isNotBlank() && email.isNotBlank() && phone.isNotBlank() && canBook
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                         } else {
-                            Text("XÁC NHẬN ĐẶT TOUR", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color.White)
+                            Text(if (canBook) "XÁC NHẬN ĐẶT TOUR" else "HẾT CHỖ TRỐNG", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color.White)
                         }
                     }
                 }
@@ -228,31 +238,17 @@ fun BookingFormScreen(
             
             item { 
                 SectionTitle("THÔNG TIN KHÁCH HÀNG")
-                CustomerFormSection(
-                    name = name, onNameChange = { name = it },
-                    email = email, onEmailChange = { email = it },
-                    phone = phone, onPhoneChange = { phone = it },
-                    address = address, onAddressChange = { address = it },
-                    note = note, onNoteChange = { note = it }
-                )
+                CustomerFormSection(name, { name = it }, email, { email = it }, phone, { phone = it }, address, { address = it }, note, { note = it })
             }
             
             item {
                 SectionTitle("NGÀY KHỞI HÀNH")
-                AvailableDatesSection(
-                    selectedDate = selectedDate,
-                    availableDates = availableDates,
-                    onDateSelected = { selectedDate = it }
-                )
+                AvailableDatesSection(tour.id, tour.maxGuests, selectedDate, availableDates, dateGuestCounts, { selectedDate = it })
             }
             
             item {
                 SectionTitle("SỐ LƯỢNG KHÁCH")
-                PassengerSection(
-                    adults, { if (it >= 1) adults = it },
-                    children, { if (it >= 0) children = it },
-                    infants, { if (it >= 0) infants = it }
-                )
+                PassengerSection(adults, { if (it >= 1) adults = it }, children, { if (it >= 0) children = it }, infants, { if (it >= 0) infants = it })
             }
             
             item {
@@ -262,14 +258,48 @@ fun BookingFormScreen(
             
             item {
                 SectionTitle("PHƯƠNG THỨC THANH TOÁN")
-                PaymentMethodSection(
-                    selected = paymentMethod, 
-                    onSelect = { paymentMethod = it }, 
-                    amount = debouncedAmount, 
-                    name = debouncedName, 
-                    receiptUri = receiptUri,
-                    onReceiptSelected = { receiptUri = it }
-                )
+                
+                if (shouldHidePaymentSection) {
+                    // Cảnh báo đỏ: Quá tải nghiêm trọng, ẩn thanh toán
+                    Card(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)),
+                        border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f))
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Error, null, tint = Color(0xFFDC2626))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                "❌ Chuyến đi đã quá tải nghiêm trọng. Vui lòng giảm số lượng khách hoặc chọn ngày khác.",
+                                color = Color(0xFFDC2626), fontSize = 13.sp, fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                } else {
+                    // Nếu vượt mức 1-2 người: Hiện cảnh báo cam nhưng vẫn cho thanh toán (bao gồm QR)
+                    if (isOverLimit) {
+                        Card(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED)),
+                            border = BorderStroke(1.dp, Color(0xFFD97706).copy(alpha = 0.5f))
+                        ) {
+                            Text(
+                                text = "⚠️ Chuyến đi đã vượt giới hạn quy định ($overLimitCount người). Bạn vẫn có thể đặt và thanh toán QR bình thường.",
+                                modifier = Modifier.padding(12.dp),
+                                color = Color(0xFFD97706), fontSize = 13.sp, fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    PaymentMethodSection(
+                        selected = paymentMethod, 
+                        onSelect = { paymentMethod = it }, 
+                        amount = debouncedAmount, 
+                        name = debouncedName, 
+                        receiptUri = receiptUri,
+                        onReceiptSelected = { receiptUri = it }
+                    )
+                }
             }
             
             item { Spacer(modifier = Modifier.height(32.dp)) }
@@ -342,12 +372,7 @@ fun CustomerFormSection(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 textStyle = TextStyle(color = Color(0xFF0F172A), fontWeight = FontWeight.Bold, fontSize = 15.sp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2563EB),
-                    unfocusedBorderColor = Color(0xFFCBD5E1),
-                    focusedLabelColor = Color(0xFF2563EB),
-                    unfocusedLabelColor = Color(0xFF334155)
-                ),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF2563EB), unfocusedBorderColor = Color(0xFFCBD5E1)),
                 leadingIcon = { Icon(Icons.Default.Person, null, tint = Color(0xFF2563EB)) }
             )
             Spacer(modifier = Modifier.height(12.dp))
@@ -357,12 +382,7 @@ fun CustomerFormSection(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 textStyle = TextStyle(color = Color(0xFF0F172A), fontWeight = FontWeight.Bold, fontSize = 15.sp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2563EB),
-                    unfocusedBorderColor = Color(0xFFCBD5E1),
-                    focusedLabelColor = Color(0xFF2563EB),
-                    unfocusedLabelColor = Color(0xFF334155)
-                ),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF2563EB), unfocusedBorderColor = Color(0xFFCBD5E1)),
                 leadingIcon = { Icon(Icons.Default.Email, null, tint = Color(0xFF2563EB)) }
             )
             Spacer(modifier = Modifier.height(12.dp))
@@ -372,12 +392,7 @@ fun CustomerFormSection(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 textStyle = TextStyle(color = Color(0xFF0F172A), fontWeight = FontWeight.Bold, fontSize = 15.sp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2563EB),
-                    unfocusedBorderColor = Color(0xFFCBD5E1),
-                    focusedLabelColor = Color(0xFF2563EB),
-                    unfocusedLabelColor = Color(0xFF334155)
-                ),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF2563EB), unfocusedBorderColor = Color(0xFFCBD5E1)),
                 leadingIcon = { Icon(Icons.Default.Phone, null, tint = Color(0xFF2563EB)) }
             )
             Spacer(modifier = Modifier.height(12.dp))
@@ -387,12 +402,7 @@ fun CustomerFormSection(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 textStyle = TextStyle(color = Color(0xFF0F172A), fontWeight = FontWeight.Bold, fontSize = 15.sp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2563EB),
-                    unfocusedBorderColor = Color(0xFFCBD5E1),
-                    focusedLabelColor = Color(0xFF2563EB),
-                    unfocusedLabelColor = Color(0xFF334155)
-                ),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF2563EB), unfocusedBorderColor = Color(0xFFCBD5E1)),
                 minLines = 2,
                 leadingIcon = { Icon(Icons.Default.Home, null, tint = Color(0xFF2563EB)) }
             )
@@ -403,12 +413,7 @@ fun CustomerFormSection(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 textStyle = TextStyle(color = Color(0xFF0F172A), fontWeight = FontWeight.Bold, fontSize = 15.sp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2563EB),
-                    unfocusedBorderColor = Color(0xFFCBD5E1),
-                    focusedLabelColor = Color(0xFF2563EB),
-                    unfocusedLabelColor = Color(0xFF334155)
-                ),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF2563EB), unfocusedBorderColor = Color(0xFFCBD5E1)),
                 minLines = 3,
                 leadingIcon = { Icon(Icons.AutoMirrored.Filled.Note, null, tint = Color(0xFF2563EB)) }
             )
@@ -419,16 +424,19 @@ fun CustomerFormSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AvailableDatesSection(
+    tourId: String,
+    maxGuests: Int,
     selectedDate: String,
     availableDates: List<String>,
+    guestCounts: Map<String, Int>,
     onDateSelected: (String) -> Unit
 ) {
     var showSheet by remember { mutableStateOf(false) }
+    val currentGuestCount = guestCounts["${tourId}_$selectedDate"] ?: 0
+    val currentRemaining = maxGuests - currentGuestCount
     
     Card(
-        modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth().clickable {
-            if (availableDates.size > 1) showSheet = true
-        },
+        modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth().clickable { if (availableDates.size > 1) showSheet = true },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(20.dp)
     ) {
@@ -437,56 +445,49 @@ fun AvailableDatesSection(
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text("Chọn ngày khởi hành", fontSize = 12.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
-                Text(selectedDate, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = Color(0xFF0F172A))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(selectedDate, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = Color(0xFF0F172A))
+                    Surface(
+                        modifier = Modifier.padding(start = 8.dp),
+                        color = (if (currentRemaining > 0) Color(0xFF10B981) else Color(0xFFEF4444)).copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = if (currentRemaining > 0) "Còn $currentRemaining chỗ" else "Hết chỗ (${currentGuestCount} khách)",
+                            color = if (currentRemaining > 0) Color(0xFF059669) else Color(0xFFDC2626), 
+                            fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
             }
             Spacer(modifier = Modifier.weight(1f))
-            if (availableDates.size > 1) {
-                Icon(Icons.Default.ExpandMore, null, tint = Color(0xFF64748B))
-            }
+            if (availableDates.size > 1) Icon(Icons.Default.ExpandMore, null, tint = Color(0xFF64748B))
         }
     }
 
     if (showSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showSheet = false },
-            containerColor = Color.White,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-        ) {
+        ModalBottomSheet(onDismissRequest = { showSheet = false }, containerColor = Color.White) {
             Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp, start = 16.dp, end = 16.dp)) {
-                Text(
-                    "Danh sách ngày khởi hành", 
-                    fontWeight = FontWeight.ExtraBold, 
-                    fontSize = 18.sp, 
-                    modifier = Modifier.padding(vertical = 16.dp)
-                )
-                
+                Text("Danh sách ngày khởi hành", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, modifier = Modifier.padding(vertical = 16.dp))
                 availableDates.forEach { date ->
                     val isSelected = date == selectedDate
+                    val count = guestCounts["${tourId}_$date"] ?: 0
+                    val remaining = maxGuests - count
                     Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .clickable {
-                                onDateSelected(date)
-                                showSheet = false
-                            },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onDateSelected(date); showSheet = false },
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) Color(0xFFF0F7FF) else Color.Transparent,
                         border = if (isSelected) BorderStroke(1.dp, Color(0xFF2563EB)) else null
                     ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                date, 
-                                modifier = Modifier.weight(1f),
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) Color(0xFF2563EB) else Color(0xFF0F172A)
-                            )
-                            if (isSelected) {
-                                Icon(Icons.Default.Check, null, tint = Color(0xFF2563EB))
+                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(date, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium, color = if (isSelected) Color(0xFF2563EB) else Color(0xFF0F172A))
+                                Text(
+                                    if (remaining > 0) "Còn $remaining chỗ trống ($count khách đã đặt)" else "Đã hết chỗ ($count khách)", 
+                                    fontSize = 12.sp, color = if (remaining > 0) Color(0xFF059669) else Color(0xFFDC2626)
+                                )
                             }
+                            if (isSelected) Icon(Icons.Default.Check, null, tint = Color(0xFF2563EB))
                         }
                     }
                 }
@@ -511,7 +512,7 @@ fun PassengerSection(
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF1F5F9))
             PassengerStepper("Trẻ em", "Dưới 12 tuổi", children, onChildrenChange)
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF1F5F9))
-            PassengerStepper("Trẻ sơ sinh", "Dưới 2 tuổi", infants, onInfantsChange)
+            PassengerStepper("Trẻ nhỏ", "Dưới 2 tuổi", infants, onInfantsChange)
         }
     }
 }
@@ -524,23 +525,11 @@ fun PassengerStepper(label: String, subLabel: String, count: Int, onValueChange:
             Text(subLabel, fontSize = 12.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = { onValueChange(count - 1) },
-                modifier = Modifier.size(32.dp).border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(10.dp))
-            ) {
+            IconButton(onClick = { onValueChange(count - 1) }, modifier = Modifier.size(32.dp).border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(10.dp))) {
                 Icon(Icons.Default.Remove, null, modifier = Modifier.size(16.dp), tint = Color(0xFF0F172A))
             }
-            Text(
-                count.toString(),
-                modifier = Modifier.padding(horizontal = 16.dp),
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 16.sp,
-                color = Color(0xFF0F172A)
-            )
-            IconButton(
-                onClick = { onValueChange(count + 1) },
-                modifier = Modifier.size(32.dp).background(Color(0xFF2563EB), RoundedCornerShape(10.dp))
-            ) {
+            Text(count.toString(), modifier = Modifier.padding(horizontal = 16.dp), fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF0F172A))
+            IconButton(onClick = { onValueChange(count + 1) }, modifier = Modifier.size(32.dp).background(Color(0xFF2563EB), RoundedCornerShape(10.dp))) {
                 Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(16.dp))
             }
         }
@@ -551,19 +540,12 @@ fun PassengerStepper(label: String, subLabel: String, count: Int, onValueChange:
 fun PriceSummarySection(tour: Tour, adults: Int, children: Int, infants: Int, total: Long, formatter: NumberFormat) {
     val priceTreEm = if (tour.giaTreEm > 0) tour.giaTreEm else (tour.price * 0.7).toLong()
     val priceTreSoSinh = if (tour.giaTreNho > 0) tour.giaTreNho else (tour.price * 0.5).toLong()
-
-    Card(
-        modifier = Modifier.padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(20.dp)
-    ) {
+    Card(modifier = Modifier.padding(horizontal = 16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(20.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             PriceRow("Người lớn (${adults} x ${formatter.format(tour.price)})", formatter.format(adults * tour.price))
             if (children > 0) PriceRow("Trẻ em (${children} x ${formatter.format(priceTreEm)})", formatter.format(children * priceTreEm))
-            if (infants > 0) PriceRow("Trẻ sơ sinh (${infants} x ${formatter.format(priceTreSoSinh)})", formatter.format(infants * priceTreSoSinh))
-            
+            if (infants > 0) PriceRow("Trẻ nhỏ (${infants} x ${formatter.format(priceTreSoSinh)})", formatter.format(infants * priceTreSoSinh))
             HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 1.dp, color = Color(0xFFF1F5F9))
-            
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                 Text("TỔNG TIỀN", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF0F172A))
                 Text(formatter.format(total), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF2563EB))
@@ -589,94 +571,43 @@ fun PaymentMethodSection(
     receiptUri: Uri?,
     onReceiptSelected: (Uri) -> Unit
 ) {
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { onReceiptSelected(it) }
-    }
-
+    val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? -> uri?.let { onReceiptSelected(it) } }
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             PaymentTab("Chuyển khoản QR", selected == "QR", Modifier.weight(1f)) { onSelect("QR") }
             PaymentTab("Tiền mặt", selected == "CASH", Modifier.weight(1f)) { onSelect("CASH") }
         }
-        
         Spacer(modifier = Modifier.height(16.dp))
-        
         AnimatedContent(targetState = selected, label = "") { target ->
             if (target == "QR") {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF)),
-                    shape = RoundedCornerShape(20.dp),
-                    border = BorderStroke(1.dp, Color(0xFFBFDBFE))
-                ) {
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF)), shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, Color(0xFFBFDBFE))) {
                     Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("QUÉT MÃ THANH TOÁN VIETQR", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color(0xFF1E40AF))
                         Spacer(modifier = Modifier.height(16.dp))
-                        
                         Box(modifier = Modifier.background(Color.White, RoundedCornerShape(16.dp)).padding(12.dp)) {
                             val shortName = name.split(" ").lastOrNull()?.uppercase() ?: "KHACH"
                             val qrUrl = "https://img.vietqr.io/image/vcb-7899883653-compact2.jpg?amount=$amount&addInfo=DATTOUR%20$shortName&accountName=WIND%20Travel"
-                            
-                            AsyncImage(
-                                model = qrUrl,
-                                contentDescription = "QR Code",
-                                modifier = Modifier.size(220.dp),
-                                placeholder = null
-                            )
+                            AsyncImage(model = qrUrl, contentDescription = "QR Code", modifier = Modifier.size(220.dp), placeholder = null)
                         }
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Column {
-                                Text("Ngân hàng", fontSize = 11.sp, color = Color(0xFF475569))
-                                Text("Vietcombank", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color(0xFF0F172A))
-                            }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text("Nội dung chuyển", fontSize = 11.sp, color = Color(0xFF475569))
-                                Text("DATTOUR ${name.split(" ").lastOrNull()?.uppercase() ?: "KHACH"}", fontWeight = FontWeight.ExtraBold, color = Color(0xFF2563EB))
-                            }
+                        Spacer(modifier = Modifier.height(16.dp)); Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column { Text("Ngân hàng", fontSize = 11.sp, color = Color(0xFF475569)); Text("Vietcombank", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color(0xFF0F172A)) }
+                            Column(horizontalAlignment = Alignment.End) { Text("Nội dung chuyển", fontSize = 11.sp, color = Color(0xFF475569)); Text("DATTOUR ${name.split(" ").lastOrNull()?.uppercase() ?: "KHACH"}", fontWeight = FontWeight.ExtraBold, color = Color(0xFF2563EB)) }
                         }
-                        
                         Spacer(modifier = Modifier.height(20.dp))
-                        
                         if (receiptUri != null) {
                             Box(modifier = Modifier.size(100.dp).clip(RoundedCornerShape(8.dp))) {
-                                AsyncImage(
-                                    model = receiptUri,
-                                    contentDescription = "Selected Receipt",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                                IconButton(
-                                    onClick = { launcher.launch("image/*") },
-                                    modifier = Modifier.align(Alignment.BottomEnd).background(Color.Black.copy(0.5f), CircleShape).size(30.dp)
-                                ) {
-                                    Icon(Icons.Default.Edit, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                                }
+                                AsyncImage(model = receiptUri, contentDescription = "Receipt", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                                IconButton(onClick = { launcher.launch("image/*") }, modifier = Modifier.align(Alignment.BottomEnd).background(Color.Black.copy(0.5f), CircleShape).size(30.dp)) { Icon(Icons.Default.Edit, null, tint = Color.White, modifier = Modifier.size(16.dp)) }
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                         }
-
-                        Button(
-                            onClick = { launcher.launch("image/*") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF2563EB)),
-                            border = BorderStroke(1.dp, Color(0xFF2563EB))
-                        ) {
-                            Icon(Icons.Default.CloudUpload, null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(if (receiptUri == null) "Tải ảnh biên lai lên" else "Thay đổi ảnh biên lai", fontWeight = FontWeight.Bold)
+                        Button(onClick = { launcher.launch("image/*") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF2563EB)), border = BorderStroke(1.dp, Color(0xFF2563EB))) {
+                            Icon(Icons.Default.CloudUpload, null); Spacer(modifier = Modifier.width(8.dp)); Text(if (receiptUri == null) "Tải ảnh biên lai lên" else "Thay đổi ảnh biên lai", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             } else {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)), shape = RoundedCornerShape(20.dp)) {
                     Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Info, null, tint = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(16.dp))
@@ -690,15 +621,7 @@ fun PaymentMethodSection(
 
 @Composable
 fun PaymentTab(label: String, isSelected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    Surface(
-        modifier = modifier.clickable { onClick() },
-        color = if (isSelected) Color(0xFF2563EB) else Color.White,
-        shape = RoundedCornerShape(12.dp),
-        border = if (isSelected) null else BorderStroke(1.dp, Color(0xFFE2E8F0)),
-        shadowElevation = if (isSelected) 4.dp else 0.dp
-    ) {
-        Box(modifier = Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
-            Text(label, color = if (isSelected) Color.White else Color(0xFF334155), fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
-        }
+    Surface(modifier = modifier.clickable { onClick() }, color = if (isSelected) Color(0xFF2563EB) else Color.White, shape = RoundedCornerShape(12.dp), border = if (isSelected) null else BorderStroke(1.dp, Color(0xFFE2E8F0)), shadowElevation = if (isSelected) 4.dp else 0.dp) {
+        Box(modifier = Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) { Text(label, color = if (isSelected) Color.White else Color(0xFF334155), fontWeight = FontWeight.ExtraBold, fontSize = 13.sp) }
     }
 }

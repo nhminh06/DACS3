@@ -17,6 +17,7 @@ import com.example.dacs3.ui.screens.home.*
 import com.example.dacs3.ui.screens.tours.*
 import com.example.dacs3.ui.screens.contact.*
 import com.example.dacs3.ui.screens.staff.*
+import com.example.dacs3.ui.screens.chatbot.ChatBotScreen
 import com.example.dacs3.ui.viewmodel.*
 import com.example.dacs3.ui.viewmodel.factory.*
 import com.example.dacs3.data.model.ArticleCategory
@@ -138,6 +139,20 @@ fun MainContainer() {
                             currentScreen = "explore"
                         }
                     }
+                }
+            )
+        }
+        "chatbot" -> {
+            ChatBotScreen(
+                onBack = { currentScreen = "home" },
+                onTourClick = { tour ->
+                    selectedTour = tour
+                    currentScreen = "tour_detail"
+                },
+                onArticleClick = { article ->
+                    selectedArticle = article
+                    previousScreenForDetail = "home"
+                    currentScreen = "article_detail"
                 }
             )
         }
