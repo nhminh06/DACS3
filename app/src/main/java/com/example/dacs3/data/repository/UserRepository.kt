@@ -65,6 +65,34 @@ class UserRepository(private val firebaseService: FirebaseService) {
         }
     }
 
+    suspend fun sendRegistrationOtp(email: String): Result<Unit> {
+        return try {
+            val response = RetrofitClient.authService.sendRegistrationOtp(email)
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(Unit)
+            } else {
+                val errorMsg = response.body()?.message ?: "Lỗi gửi mã xác thực"
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun verifyRegistrationOtp(email: String, otp: String): Result<Unit> {
+        return try {
+            val response = RetrofitClient.authService.verifyRegistrationOtp(email, otp)
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(Unit)
+            } else {
+                val errorMsg = response.body()?.message ?: "Mã xác thực không đúng"
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun updateUser(user: User): Result<Unit> {
         return try {
             val userMap = hashMapOf(
@@ -109,6 +137,21 @@ class UserRepository(private val firebaseService: FirebaseService) {
             }
         } catch (e: Exception) {
             Log.e("UserRepository", "Lỗi sendOtp: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun verifyEmailOtp(email: String, otp: String): Result<Unit> {
+        return try {
+            val response = RetrofitClient.authService.verifyEmailOtp(email, otp)
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(Unit)
+            } else {
+                val errorMsg = response.body()?.message ?: "Mã OTP không đúng hoặc đã hết hạn"
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Lỗi verifyEmailOtp: ${e.message}")
             Result.failure(e)
         }
     }

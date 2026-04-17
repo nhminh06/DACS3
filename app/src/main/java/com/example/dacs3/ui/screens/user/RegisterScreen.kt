@@ -9,11 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -34,9 +30,10 @@ import com.example.dacs3.R
 import com.example.dacs3.data.model.User
 import com.example.dacs3.ui.viewmodel.UserViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
-    userViewModel: UserViewModel, // Truyền ViewModel vào
+    userViewModel: UserViewModel,
     onNavigateToLogin: () -> Unit,
     onRegisterSuccess: () -> Unit
 ) {
@@ -49,22 +46,100 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    
     var passwordVisible by remember { mutableStateOf(false) }
-
     val isLoading by userViewModel.isLoading
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor)
-    ) {
+    // OTP verification states for registration
+    var otpCode by remember { mutableStateOf("") }
+    var showOtpDialog by remember { mutableStateOf(false) }
+    var tempUser by remember { mutableStateOf<User?>(null) }
+
+    if (showOtpDialog) {
+        AlertDialog(
+            onDismissRequest = { showOtpDialog = false },
+            title = { Text("Xác thực Email Đăng ký", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Một mã xác thực đã được gửi đến ${tempUser?.email}. Vui lòng nhập mã để hoàn tất đăng ký.")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = otpCode,
+                        onValueChange = { if (it.length <= 6) otpCode = it },
+                        label = { Text("Mã OTP") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (otpCode.isEmpty()) {
+                            Toast.makeText(context, "Vui lòng nhập mã OTP", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        tempUser?.let { user ->
+                            userViewModel.verifyRegistrationOtp(
+                                email = user.email,
+                                otp = otpCode,
+                                onSuccess = {
+                                    // Sau khi xác thực OTP thành công, mới tiến hành lưu user vào Firestore
+                                    userViewModel.register(
+                                        user = user,
+                                        onSuccess = {
+                                            Toast.makeText(context, "Đăng ký thành công!", Toast.LENGTH_SHORT).show()
+                                            showOtpDialog = false
+                                            onRegisterSuccess()
+                                        },
+                                        onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+                                    )
+                                },
+                                onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+                            )
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                    } else {
+                        Text("Xác nhận")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showOtpDialog = false }) {
+                    Text("Hủy")
+                }
+            }
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Đăng ký", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateToLogin) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
+        },
+        containerColor = backgroundColor
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
                 .padding(24.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
             Image(
                 painter = painterResource(id = R.drawable.logo),
@@ -83,53 +158,37 @@ fun RegisterScreen(
                 fontWeight = FontWeight.ExtraBold,
                 color = textColor
             )
+            
             Text(
                 text = "Khám phá miền Trung Việt Nam cùng chúng tôi",
                 fontSize = 14.sp,
                 color = Color.Gray,
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier.padding(top = 4.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Tên đăng nhập
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Tên đăng nhập", fontSize = 14.sp) },
+                label = { Text("Tên đăng nhập") },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = primaryColor) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-                    focusedBorderColor = primaryColor,
-                    unfocusedBorderColor = Color.Gray,
-                    cursorColor = primaryColor
-                ),
                 enabled = !isLoading,
                 singleLine = true
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Email
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email", fontSize = 14.sp) },
+                label = { Text("Email") },
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = primaryColor) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-                    focusedBorderColor = primaryColor,
-                    unfocusedBorderColor = Color.Gray,
-                    cursorColor = primaryColor
-                ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 enabled = !isLoading,
                 singleLine = true
@@ -137,28 +196,18 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Password
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Mật khẩu", fontSize = 14.sp) },
+                label = { Text("Mật khẩu") },
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = primaryColor) },
                 trailingIcon = {
-                    val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(imageVector = image, contentDescription = null, tint = Color.Gray)
+                        Icon(if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-                    focusedBorderColor = primaryColor,
-                    unfocusedBorderColor = Color.Gray,
-                    cursorColor = primaryColor
-                ),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 enabled = !isLoading,
@@ -167,22 +216,13 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Confirm Password
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Nhập lại mật khẩu", fontSize = 14.sp) },
+                label = { Text("Nhập lại mật khẩu") },
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = primaryColor) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-                    focusedBorderColor = primaryColor,
-                    unfocusedBorderColor = Color.Gray,
-                    cursorColor = primaryColor
-                ),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 enabled = !isLoading,
@@ -191,7 +231,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Nút Đăng Ký
             Button(
                 onClick = {
                     if (username.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
@@ -202,22 +241,22 @@ fun RegisterScreen(
                         Toast.makeText(context, "Mật khẩu không khớp", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
-
+                    
                     val newUser = User(
                         name = username.trim(),
                         email = email.trim(),
                         password = password.trim()
                     )
+                    tempUser = newUser
 
-                    userViewModel.register(
-                        user = newUser,
+                    // Gửi OTP đăng ký (Không kiểm tra email tồn tại như send-otp cũ)
+                    userViewModel.sendRegistrationOtp(
+                        email = email.trim(),
                         onSuccess = {
-                            Toast.makeText(context, "Đăng ký thành công!", Toast.LENGTH_SHORT).show()
-                            onRegisterSuccess()
+                            Toast.makeText(context, "Mã xác thực đã được gửi đến email", Toast.LENGTH_SHORT).show()
+                            showOtpDialog = true
                         },
-                        onError = { error ->
-                            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
-                        }
+                        onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
                     )
                 },
                 modifier = Modifier
@@ -227,19 +266,10 @@ fun RegisterScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
                 enabled = !isLoading
             ) {
-                if (isLoading) {
+                if (isLoading && !showOtpDialog) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Đăng Ký", fontSize = 16.sp, fontWeight = FontWeight.Bold , color = Color.White)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Đã có tài khoản? ", color = Color.Gray, fontSize = 14.sp)
-                TextButton(onClick = { onNavigateToLogin() }, contentPadding = PaddingValues(0.dp)) {
-                    Text("Đăng nhập ngay", color = primaryColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Đăng ký", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }

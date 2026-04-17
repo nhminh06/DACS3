@@ -13,6 +13,26 @@ interface AuthApiService {
     ): Response<AuthResponse>
 
     @FormUrlEncoded
+    @POST("api/auth/verify-otp")
+    suspend fun verifyEmailOtp(
+        @Field("email") email: String,
+        @Field("otp") otp: String
+    ): Response<AuthResponse>
+
+    @FormUrlEncoded
+    @POST("api/auth/send-registration-otp")
+    suspend fun sendRegistrationOtp(
+        @Field("email") email: String
+    ): Response<AuthResponse>
+
+    @FormUrlEncoded
+    @POST("api/auth/verify-registration-otp")
+    suspend fun verifyRegistrationOtp(
+        @Field("email") email: String,
+        @Field("otp") otp: String
+    ): Response<AuthResponse>
+
+    @FormUrlEncoded
     @POST("api/auth/reset-password-with-otp")
     suspend fun resetPasswordWithOtp(
         @Field("email") email: String,

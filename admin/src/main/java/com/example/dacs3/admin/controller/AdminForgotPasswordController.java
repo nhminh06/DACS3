@@ -44,7 +44,7 @@ public class AdminForgotPasswordController {
 
             String docId = documents.get(0).getId();
             String name = documents.get(0).getString("name");
-            
+
             // Tạo mã OTP 6 số
             String otp = String.format("%06d", new Random().nextInt(1000000));
 

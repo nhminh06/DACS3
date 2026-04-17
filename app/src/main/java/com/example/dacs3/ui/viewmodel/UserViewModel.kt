@@ -48,6 +48,24 @@ class UserViewModel(
         }
     }
 
+    fun sendRegistrationOtp(email: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.sendRegistrationOtp(email)
+            _isLoading.value = false
+            result.onSuccess { onSuccess() }.onFailure { onError(it.message ?: "Lỗi gửi mã OTP") }
+        }
+    }
+
+    fun verifyRegistrationOtp(email: String, otp: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.verifyRegistrationOtp(email, otp)
+            _isLoading.value = false
+            result.onSuccess { onSuccess() }.onFailure { onError(it.message ?: "Mã OTP không đúng") }
+        }
+    }
+
     fun updateUserInfo(user: User, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -86,6 +104,15 @@ class UserViewModel(
             val result = repository.sendOtp(email)
             _isLoading.value = false
             result.onSuccess { onSuccess() }.onFailure { onError(it.message ?: "Lỗi gửi mã OTP") }
+        }
+    }
+
+    fun verifyEmailOtp(email: String, otp: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.verifyEmailOtp(email, otp)
+            _isLoading.value = false
+            result.onSuccess { onSuccess() }.onFailure { onError(it.message ?: "Mã OTP không đúng") }
         }
     }
 
