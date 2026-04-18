@@ -109,7 +109,7 @@ fun FeaturedToursSection(
 @Composable
 fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
-    val mainColor = Color(0xFF2563EB) // Màu chính (màu giá)
+    val mainColor = Color(0xFF2563EB) // Màu xanh biển chính của app
     
     Card(
         modifier = Modifier
@@ -133,19 +133,40 @@ fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
                     contentScale = ContentScale.Crop
                 )
 
-                // Rating overlay: Nền đen bán trong suốt, chữ trắng
-                Surface(
-                    modifier = Modifier.padding(6.dp).align(Alignment.TopStart),
-                    color = Color.Black.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                // Rating overlay: Chỉ hiển thị nếu rating > 0 và có review thực tế
+                if (tour.rating > 0 && tour.reviewCount > 0) {
+                    Surface(
+                        modifier = Modifier
+                            .padding(top = 12.dp, start = 8.dp) // Hạ thấp xuống
+                            .align(Alignment.TopStart),
+                        color = Color.Black.copy(alpha = 0.5f), // Trong suốt
+                        shape = RoundedCornerShape(6.dp)
                     ) {
-                        Icon(Icons.Default.Star, null, tint = Color(0xFFFACC15), modifier = Modifier.size(10.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text(text = tour.rating.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Star, null, tint = Color(0xFFFACC15), modifier = Modifier.size(10.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(text = tour.rating.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                } else {
+                    // Hiển thị nhãn "Mới" với màu xanh biển của app (giống nút "Xem tất cả")
+                    Surface(
+                        modifier = Modifier
+                            .padding(top = 12.dp, start = 8.dp) // Hạ thấp xuống
+                            .align(Alignment.TopStart),
+                        color = mainColor.copy(alpha = 0.7f), // Màu xanh biển app trong suốt
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = "Mới",
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

@@ -8,7 +8,7 @@ data class Tour(
     val imageRes: Int = R.drawable.a5, // Added for local resources
     val imageUrl: String = "",
     val startDate: String = "",
-    val rating: Double = 5.0,
+    val rating: Double = 0.0, // Đổi mặc định thành 0.0
     val reviewCount: Int = 0,
     val price: Long = 0,
     val duration: String = "",

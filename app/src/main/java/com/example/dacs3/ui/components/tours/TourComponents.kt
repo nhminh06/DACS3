@@ -62,6 +62,7 @@ fun FilterTag(text: String, isSelected: Boolean, onClick: () -> Unit = {}) {
 fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
     val currencyFormatter = remember { NumberFormat.getCurrencyInstance(Locale("vi", "VN")) }
     val scaleInfo = tour.getTourScaleInfo()
+    val appBlue = Color(0xFF2563EB)
     
     Card(
         modifier = Modifier
@@ -92,21 +93,40 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                     contentScale = ContentScale.Crop
                 )
 
-                Surface(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .align(Alignment.TopStart),
-                    color = Color.Black.copy(alpha = 0.6f),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                // Rating overlay
+                if (tour.rating > 0 && tour.reviewCount > 0) {
+                    Surface(
+                        modifier = Modifier
+                            .padding(top = 12.dp, start = 8.dp)
+                            .align(Alignment.TopStart),
+                        color = Color.Black.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(8.dp)
                     ) {
-                        Icon(Icons.Default.Star, null, tint = Color(0xFFFACC15), modifier = Modifier.size(10.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Star, null, tint = Color(0xFFFACC15), modifier = Modifier.size(10.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = tour.rating.toString(),
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                } else {
+                    Surface(
+                        modifier = Modifier
+                            .padding(top = 12.dp, start = 8.dp)
+                            .align(Alignment.TopStart),
+                        color = appBlue.copy(alpha = 0.7f), // Màu xanh biển của app, trong suốt 0.7
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
                         Text(
-                            text = tour.rating.toString(),
+                            text = "Mới",
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             color = Color.White,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
@@ -137,9 +157,9 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
 
                     if (scaleInfo != null) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.DirectionsBus, null, tint = Color(0xFF2563EB), modifier = Modifier.size(10.dp))
+                            Icon(Icons.Default.DirectionsBus, null, tint = appBlue, modifier = Modifier.size(10.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(scaleInfo.transport, color = Color(0xFF2563EB), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Text(scaleInfo.transport, color = appBlue, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                     }
@@ -165,7 +185,7 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                     Column {
                         Text(
                             text = currencyFormatter.format(tour.price),
-                            color = Color(0xFF2563EB),
+                            color = appBlue,
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 16.sp
                         )
@@ -176,7 +196,7 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                         onClick = { onClick(tour) },
                         modifier = Modifier
                             .size(32.dp)
-                            .background(Color(0xFF2563EB), CircleShape)
+                            .background(appBlue, CircleShape)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,

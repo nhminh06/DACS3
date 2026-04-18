@@ -396,22 +396,40 @@ fun TickItem(text: String) {
 @Composable
 fun RatingSection(rating: Double, reviews: Int) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Surface(
-            color = Color(0xFF2563EB),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Text(
-                text = String.format("%.1f", rating),
-                color = Color.White,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp
-            )
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Column {
-            Text("Đánh giá", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
-            Text("($reviews đánh giá)", fontSize = 12.sp, color = Color(0xFF475569))
+        if (reviews > 0) {
+            Surface(
+                color = Color(0xFF2563EB),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = String.format("%.1f", rating),
+                    color = Color.White,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Column {
+                Text("Đánh giá", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+                Text("($reviews đánh giá)", fontSize = 12.sp, color = Color(0xFF475569))
+            }
+        } else {
+            // Hiển thị cho tour chưa có đánh giá
+            Surface(
+                color = Color(0xFF2563EB), // Màu xanh "Mới"
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "Mới",
+                    color = Color.White,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp
+                )
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Text("Chưa có đánh giá", fontSize = 13.sp, color = Color(0xFF64748B))
         }
     }
 }
