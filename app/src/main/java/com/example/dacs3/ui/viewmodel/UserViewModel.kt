@@ -35,6 +35,21 @@ class UserViewModel(
         }
     }
 
+    fun loginWithGoogle(idToken: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val user = repository.loginWithGoogle(idToken)
+            _isLoading.value = false
+            if (user != null) {
+                _currentUser.value = user
+                sessionManager.saveUser(user)
+                onSuccess()
+            } else {
+                onError("Đăng nhập Google thất bại")
+            }
+        }
+    }
+
     fun register(user: User, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true

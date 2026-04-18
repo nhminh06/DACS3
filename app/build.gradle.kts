@@ -27,6 +27,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
         buildConfigField("String", "GROQ_API_KEY", "\"${localProperties.getProperty("groq.api.key") ?: ""}\"")
+        buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${localProperties.getProperty("GOOGLE_CLIENT_ID") ?: ""}\"")
+        buildConfigField("String", "GOOGLE_CLIENT_SECRET", "\"${localProperties.getProperty("GOOGLE_CLIENT_SECRET") ?: ""}\"")
     }
 
     buildTypes {
@@ -72,6 +74,9 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
+
+    // Google Auth - Updated to 21.2.0 (Check for latest if issues persist)
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     // Cloudinary
     implementation(libs.cloudinary.android)

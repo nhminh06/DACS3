@@ -1,5 +1,9 @@
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+
 package com.example.dacs3.ui.screens.tours
 
+import android.annotation.SuppressLint
+import android.net.Uri
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -7,6 +11,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,7 +38,6 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TourDetailScreen(
     tour: Tour,
@@ -42,6 +47,7 @@ fun TourDetailScreen(
 ) {
     var isFavorite by remember { mutableStateOf(false) }
     var showBookingSheet by remember { mutableStateOf(false) }
+    var isMapVisible by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -86,6 +92,42 @@ fun TourDetailScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 QuickInfoGrid(tour)
+
+                // Nút Xem bản đồ
+                if (tour.location.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { isMapVisible = !isMapVisible },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isMapVisible) Color(0xFFE2E8F0) else Color(0xFFF1F5F9),
+                            contentColor = Color(0xFF2563EB)
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                    ) {
+                        Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            if (isMapVisible) "Ẩn bản đồ" else "Xem vị trí trên bản đồ",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (isMapVisible) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(320.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+                        ) {
+                            MapWebView(location = tour.location, title = tour.title)
+                        }
+                    }
+                }
 
                 if (tour.traiNghiem.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(32.dp))
@@ -141,7 +183,122 @@ fun TourDetailScreen(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun MapWebView(location: String, title: String) {
+    val context = LocalContext.current
+    var latLng by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(location, title) {
+        isLoading = true
+        try {
+            val geocoder = android.location.Geocoder(context, Locale.getDefault())
+            
+            // 1. Loại bỏ các từ thừa gây nhiễu tìm kiếm
+            val cleanTitle = title.replace(Regex("(?i)tour|du lịch|khám phá|chuyến đi|trọn gói|tại"), "").trim()
+            
+            // 2. Danh sách truy vấn ưu tiên
+            val queries = mutableListOf<String>()
+            if (cleanTitle.isNotEmpty()) {
+                queries.add("$cleanTitle, $location")
+                queries.add(cleanTitle)
+            }
+            queries.add(location)
+
+            var found = false
+            for (query in queries) {
+                if (query.isBlank()) continue
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocationName(query, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    latLng = Pair(addresses[0].latitude, addresses[0].longitude)
+                    found = true
+                    break
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            isLoading = false
+        }
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(color = Color(0xFF2563EB), strokeWidth = 2.dp)
+        } else if (latLng != null) {
+            // Vệ tinh Hybrid sắc nét
+            val staticMapUrl = "https://static-maps.yandex.ru/1.x/?lang=vi_VN&ll=${latLng!!.second},${latLng!!.first}&z=17&l=sat,skl&size=600,450&pt=${latLng!!.second},${latLng!!.first},pm2rdm"
+            
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(staticMapUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "Satellite Map Preview",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable {
+                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("geo:${latLng!!.first},${latLng!!.second}?q=${Uri.encode(title + " " + location)}"))
+                        context.startActivity(intent)
+                    },
+                contentScale = ContentScale.Crop
+            )
+
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(12.dp),
+                color = Color.Black.copy(alpha = 0.7f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.LocationOn, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (title.length > 25) title.take(25) + "..." else title,
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = {
+                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${Uri.encode(title + " " + location)}"))
+                    context.startActivity(intent)
+                },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                    .size(36.dp)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.OpenInNew, null, modifier = Modifier.size(18.dp), tint = Color(0xFF2563EB))
+            }
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
+                Icon(Icons.Default.LocationOff, null, tint = Color.LightGray, modifier = Modifier.size(32.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Không tìm thấy: $title", fontSize = 11.sp, color = Color.Gray, textAlign = TextAlign.Center)
+                TextButton(onClick = {
+                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(title + " " + location)}"))
+                    context.startActivity(intent)
+                }) {
+                    Text("Tìm thủ công trên Maps", fontSize = 12.sp)
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun ImageCarousel(tour: Tour) {
     val images = remember(tour) {
@@ -378,7 +535,6 @@ fun BookingBottomBar(price: Long, onBook: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingBottomSheet(
     tourPrice: Long,

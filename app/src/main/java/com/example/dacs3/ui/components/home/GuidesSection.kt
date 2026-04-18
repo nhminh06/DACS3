@@ -318,12 +318,12 @@ fun GuideExperienceDialog(guide: Guide, viewModel: MainViewModel, onDismiss: () 
                     // Reviews Tab
                     if (reviews.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Chưa có đánh giá nào.", color = Color.Gray)
+                            Text("Chưa có đánh giá nào từ các tour.", color = Color.Gray)
                         }
                     } else {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            items(reviews) { review ->
-                                ReviewItem(review)
+                            items(reviews) { reviewPair ->
+                                ReviewItem(reviewPair.first, reviewPair.second)
                             }
                         }
                     }
@@ -341,7 +341,7 @@ fun GuideExperienceDialog(guide: Guide, viewModel: MainViewModel, onDismiss: () 
 }
 
 @Composable
-fun ReviewItem(review: com.example.dacs3.data.model.Review) {
+fun ReviewItem(review: com.example.dacs3.data.model.Review, tourTitle: String? = null) {
     val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val date = sdf.format(Date(review.createdAt))
 
@@ -361,18 +361,47 @@ fun ReviewItem(review: com.example.dacs3.data.model.Review) {
             Spacer(modifier = Modifier.width(8.dp))
             Column {
                 Text(review.userName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                Text(date, fontSize = 11.sp, color = Color.Gray)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(date, fontSize = 11.sp, color = Color.Gray)
+                    if (!tourTitle.isNullOrEmpty()) {
+                        Text(" • ", fontSize = 11.sp, color = Color.Gray)
+                        Text(
+                            text = tourTitle,
+                            fontSize = 11.sp,
+                            color = Color(0xFF2563EB),
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.widthIn(max = 120.dp)
+                        )
+                    }
+                }
             }
             Spacer(modifier = Modifier.weight(1f))
-            Row {
-                repeat(review.rating) {
-                    Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFB800), modifier = Modifier.size(14.dp))
-                }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "${review.rating}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    color = Color(0xFFFFB800)
+                )
+                Spacer(modifier = Modifier.width(2.dp))
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = null,
+                    tint = Color(0xFFFFB800),
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
         if (review.comment.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(review.comment, fontSize = 13.sp, color = Color(0xFF475569))
+            Text(
+                text = review.comment,
+                fontSize = 13.sp, 
+                color = Color(0xFF475569),
+                lineHeight = 18.sp
+            )
         }
     }
 }

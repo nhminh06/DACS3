@@ -61,18 +61,18 @@ fun AppHomeScreen(
                     HomePaddingWrapper { 
                         SearchBar(
                             query = searchQuery,
-                            onQueryChange = { 
+                            onQueryChange = {
                                 // Cập nhật query nhưng không làm lọc tour ở dưới
-                                viewModel.setSearchQuery(it) 
+                                viewModel.setSearchQuery(it)
                             },
                             onSearchClick = {
                                 val query = searchQuery.trim().lowercase()
                                 if (query.isNotEmpty()) {
                                     val articles = articleViewModel.explorerArticles.value
-                                    val hasMatchingArticle = articles.any { 
-                                        it.tieu_de.lowercase().contains(query) 
+                                    val hasMatchingArticle = articles.any {
+                                        it.tieu_de.lowercase().contains(query)
                                     }
-                                    
+
                                     if (hasMatchingArticle) {
                                         // Chuyển sang trang bài viết và lọc theo từ khóa
                                         articleViewModel.setSearchQuery(searchQuery)

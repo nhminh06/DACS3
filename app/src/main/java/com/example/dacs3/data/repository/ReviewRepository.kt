@@ -81,6 +81,22 @@ class ReviewRepository {
         }
     }
 
+    suspend fun getReviewsByBookingIds(bookingIds: List<String>): List<Review> {
+        if (bookingIds.isEmpty()) return emptyList()
+        return try {
+            val result = mutableListOf<Review>()
+            // Firestore giới hạn 10-30 items trong whereIn
+            bookingIds.chunked(10).forEach { chunk ->
+                val snapshot = reviewsCollection.whereIn("bookingId", chunk).get().await()
+                result.addAll(snapshot.toObjects(Review::class.java))
+            }
+            result.distinctBy { it.id }.sortedByDescending { it.createdAt }
+        } catch (e: Exception) {
+            Log.e("ReviewRepository", "Error getting reviews by bookingIds: ${e.message}")
+            emptyList()
+        }
+    }
+
     suspend fun getAllReviews(limit: Int = 10): List<Review> {
         return try {
             reviewsCollection.orderBy("createdAt", Query.Direction.DESCENDING)

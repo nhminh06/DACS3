@@ -35,6 +35,7 @@ class GuideRepository(private val firebaseService: FirebaseService) {
                 }
                 
                 guide?.copy(
+                    userId = userId, // Đảm bảo luôn lấy userId từ Auth/Users collection
                     name = userDoc.getString("name") ?: "",
                     email = userDoc.getString("email") ?: "",
                     sdt = userDoc.getString("sdt") ?: "",
@@ -63,6 +64,7 @@ class GuideRepository(private val firebaseService: FirebaseService) {
             }
             
             guide?.copy(
+                userId = userId,
                 name = userDoc.getString("name") ?: "",
                 email = userDoc.getString("email") ?: "",
                 sdt = userDoc.getString("sdt") ?: "",
@@ -84,10 +86,14 @@ class GuideRepository(private val firebaseService: FirebaseService) {
 
     suspend fun getToursForGuide(guideId: String): List<Map<String, Any>> {
         return try {
-            val snapshot = bookingsCollection.whereEqualTo("guideId", guideId).get().await()
+            // Kiểm tra cả guideId và guideIds (cho phép HDV xem tour được gán)
+            val query1 = bookingsCollection.whereEqualTo("guideId", guideId).get().await()
+            val query2 = bookingsCollection.whereArrayContains("guideIds", guideId).get().await()
+            
+            val allDocs = (query1.documents + query2.documents).distinctBy { it.id }
             val toursWithDetails = mutableListOf<Map<String, Any>>()
             
-            for (doc in snapshot.documents) {
+            for (doc in allDocs) {
                 val tourId = doc.getString("tourId") ?: continue
                 val tourDoc = toursCollection.document(tourId).get().await()
                 if (tourDoc.exists()) {

@@ -21,6 +21,7 @@ class BookingRepository {
                 "id" to booking.id,
                 "userId" to booking.userId,
                 "tourId" to booking.tour.id,
+                "guideId" to booking.guideId,
                 "status" to booking.status.name,
                 "startDate" to booking.startDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
                 "adults" to booking.adults,
@@ -62,9 +63,14 @@ class BookingRepository {
                 val tourId = doc.getString("tourId") ?: return@mapNotNull null
                 val tour = tourRepository.getTourById(tourId) ?: return@mapNotNull null
                 
+                // Lấy guideId từ guideIds (List) nếu guideId (String) trống
+                val guideIds = doc.get("guideIds") as? List<*>
+                val guideId = doc.getString("guideId") ?: guideIds?.firstOrNull()?.toString() ?: ""
+                
                 Booking(
                     id = doc.id,
                     userId = doc.getString("userId") ?: "",
+                    guideId = guideId,
                     tour = tour,
                     status = BookingStatus.valueOf(doc.getString("status") ?: "PENDING"),
                     startDate = LocalDate.parse(doc.getString("startDate"), DateTimeFormatter.ISO_LOCAL_DATE),
@@ -100,9 +106,14 @@ class BookingRepository {
             val tourId = doc.getString("tourId") ?: return null
             val tour = TourRepository().getTourById(tourId) ?: return null
             
+            // Lấy guideId từ guideIds (List) nếu guideId (String) trống
+            val guideIds = doc.get("guideIds") as? List<*>
+            val guideId = doc.getString("guideId") ?: guideIds?.firstOrNull()?.toString() ?: ""
+            
             Booking(
                 id = doc.id,
                 userId = doc.getString("userId") ?: "",
+                guideId = guideId,
                 tour = tour,
                 status = BookingStatus.valueOf(doc.getString("status") ?: "PENDING"),
                 startDate = LocalDate.parse(doc.getString("startDate"), DateTimeFormatter.ISO_LOCAL_DATE),

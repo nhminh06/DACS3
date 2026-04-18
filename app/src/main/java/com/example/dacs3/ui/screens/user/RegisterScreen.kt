@@ -1,10 +1,13 @@
 package com.example.dacs3.ui.screens.user
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -17,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -86,7 +90,6 @@ fun RegisterScreen(
                                 email = user.email,
                                 otp = otpCode,
                                 onSuccess = {
-                                    // Sau khi xác thực OTP thành công, mới tiến hành lưu user vào Firestore
                                     userViewModel.register(
                                         user = user,
                                         onSuccess = {
@@ -136,11 +139,12 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(24.dp)
+                .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
+            Spacer(modifier = Modifier.height(20.dp))
             Image(
                 painter = painterResource(id = R.drawable.logo),
                 contentDescription = "Logo",
@@ -249,7 +253,6 @@ fun RegisterScreen(
                     )
                     tempUser = newUser
 
-                    // Gửi OTP đăng ký (Không kiểm tra email tồn tại như send-otp cũ)
                     userViewModel.sendRegistrationOtp(
                         email = email.trim(),
                         onSuccess = {
@@ -272,6 +275,89 @@ fun RegisterScreen(
                     Text("Đăng ký", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Social Sign Up Section
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+                Text(
+                    text = "Hoặc đăng ký bằng",
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    fontSize = 13.sp,
+                    color = Color.Gray
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SocialButton(
+                    icon = R.drawable.logogg,
+                    color = Color.White,
+                    onClick = { /* Handle Google Sign Up */ }
+                )
+                Spacer(modifier = Modifier.width(20.dp))
+                SocialButton(
+                    icon = R.drawable.logofb, 
+                    color = Color.White,
+                    onClick = { /* Handle Facebook Sign Up */ }
+                )
+                Spacer(modifier = Modifier.width(20.dp))
+                SocialButton(
+                    icon = R.drawable.logointa,
+                    color = Color.White,
+                    onClick = { /* Handle Instagram Sign Up */ }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Row(
+                modifier = Modifier.padding(bottom = 24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Bạn đã có tài khoản? ", color = Color.Gray, fontSize = 14.sp)
+                TextButton(onClick = onNavigateToLogin, contentPadding = PaddingValues(0.dp)) {
+                    Text("Đăng nhập", color = primaryColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SocialButton(
+    icon: Int,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .size(56.dp)
+            .clickable { onClick() },
+        shape = CircleShape,
+        color = color,
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        shadowElevation = 2.dp
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = icon),
+                contentDescription = null,
+                modifier = Modifier.size(26.dp)
+            )
         }
     }
 }

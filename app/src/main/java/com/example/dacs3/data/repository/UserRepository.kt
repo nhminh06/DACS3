@@ -7,6 +7,7 @@ import com.example.dacs3.data.remote.FirebaseService
 import com.example.dacs3.data.remote.RetrofitClient
 import com.example.dacs3.data.repository.storage.StorageRepository
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.tasks.await
 
 class UserRepository(private val firebaseService: FirebaseService) {
@@ -28,6 +29,52 @@ class UserRepository(private val firebaseService: FirebaseService) {
         return if (dbPassword == password) {
             document.toObject(User::class.java)?.copy(id = document.id)
         } else {
+            null
+        }
+    }
+
+    suspend fun loginWithGoogle(idToken: String): User? {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            val authResult = firebaseService.getAuth().signInWithCredential(credential).await()
+            val firebaseUser = authResult.user ?: return null
+            
+            val querySnapshot = usersCollection
+                .whereEqualTo("email", firebaseUser.email)
+                .get()
+                .await()
+                
+            if (querySnapshot.isEmpty) {
+                // Tạo user mới nếu chưa tồn tại
+                val newUserMap = hashMapOf(
+                    "name" to (firebaseUser.displayName ?: firebaseUser.email?.split("@")?.get(0) ?: "User"),
+                    "email" to firebaseUser.email,
+                    "password" to "", // Đăng nhập Google không cần mật khẩu hệ thống
+                    "avatar" to (firebaseUser.photoUrl?.toString() ?: ""),
+                    "created_at" to Timestamp.now(),
+                    "dia_chi" to "",
+                    "gioi_tinh" to "Khác",
+                    "ngay_sinh" to "",
+                    "rank" to "Bronze",
+                    "role" to "user",
+                    "sdt" to "",
+                    "trang_thai" to "active"
+                )
+                val docRef = usersCollection.add(newUserMap).await()
+                User(
+                    id = docRef.id,
+                    name = newUserMap["name"] as String,
+                    email = newUserMap["email"] as String,
+                    avatar = newUserMap["avatar"] as String,
+                    role = "user",
+                    trang_thai = "active"
+                )
+            } else {
+                val doc = querySnapshot.documents[0]
+                doc.toObject(User::class.java)?.copy(id = doc.id)
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Lỗi loginWithGoogle: ${e.message}")
             null
         }
     }

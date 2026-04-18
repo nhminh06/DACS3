@@ -29,8 +29,9 @@ class MainViewModel : ViewModel() {
     private val _guides = MutableStateFlow<List<Guide>>(emptyList())
     val guides: StateFlow<List<Guide>> = _guides.asStateFlow()
 
-    private val _guideReviews = MutableStateFlow<List<Review>>(emptyList())
-    val guideReviews: StateFlow<List<Review>> = _guideReviews.asStateFlow()
+    // Danh sách đánh giá hdv kèm theo thông tin tên tour
+    private val _guideReviews = MutableStateFlow<List<Pair<Review, String>>>(emptyList())
+    val guideReviews: StateFlow<List<Pair<Review, String>>> = _guideReviews.asStateFlow()
 
     private val _allReviews = MutableStateFlow<List<Review>>(emptyList())
     val allReviews: StateFlow<List<Review>> = _allReviews.asStateFlow()
@@ -38,11 +39,9 @@ class MainViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    // Search Query
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
-    // Filter States
     private val _selectedTourType = MutableStateFlow("Tất cả")
     val selectedTourType = _selectedTourType.asStateFlow()
 
@@ -99,9 +98,31 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun loadReviewsForGuide(guideId: String) {
+    fun loadReviewsForGuide(guideUserId: String) {
         viewModelScope.launch {
-            _guideReviews.value = reviewRepository.getReviewsByGuide(guideId)
+            _isLoading.value = true
+            // 1. Lấy đánh giá trực tiếp theo guideId
+            val directReviews = reviewRepository.getReviewsByGuide(guideUserId)
+            
+            // 2. Lấy đánh giá thông qua các booking mà HDV này tham gia
+            val guideTours = guideRepository.getToursForGuide(guideUserId)
+            val bookingIds = guideTours.mapNotNull { it["bookingId"] as? String }
+            val bookingReviews = if (bookingIds.isNotEmpty()) {
+                reviewRepository.getReviewsByBookingIds(bookingIds)
+            } else {
+                emptyList()
+            }
+            
+            // Hợp nhất và loại bỏ trùng lặp
+            val allGuideReviews = (directReviews + bookingReviews).distinctBy { it.id }
+            
+            val reviewsWithTours = allGuideReviews.map { review ->
+                val tourTitle = _allTours.value.find { it.id == review.tourId }?.title ?: "Tour không xác định"
+                Pair(review, tourTitle)
+            }.sortedByDescending { it.first.createdAt }
+            
+            _guideReviews.value = reviewsWithTours
+            _isLoading.value = false
         }
     }
 
