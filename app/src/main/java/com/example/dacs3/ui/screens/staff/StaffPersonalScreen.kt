@@ -14,8 +14,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.NoteAdd
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -55,7 +57,6 @@ fun StaffPersonalScreen(
         user?.id?.let { staffViewModel.loadGuideProfile(it) }
     }
 
-    // --- States cho Chỉnh sửa thông tin cơ bản ---
     var isEditingInfo by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
@@ -70,16 +71,13 @@ fun StaffPersonalScreen(
             phone = it.sdt
             email = it.email
             address = it.dia_chi
-            gender = it.gioi_tinh
-            dob = it.ngay_sinh
+            gender = it.gioi_tinh ?: "Chưa xác định"
+            dob = it.ngay_sinh ?: "Chưa cập nhật"
         }
     }
 
-    // --- States cho Bio Dialog ---
     var showBioDialog by remember { mutableStateOf(false) }
     var tempBio by remember { mutableStateOf("") }
-
-    // --- States cho Experience Dialog ---
     var showExpDialog by remember { mutableStateOf(false) }
     var expTitle by remember { mutableStateOf("") }
     var expStart by remember { mutableStateOf("") }
@@ -105,11 +103,11 @@ fun StaffPersonalScreen(
                 .padding(padding)
                 .verticalScroll(scrollState)
         ) {
-            // --- PHẦN 1: THÔNG TIN CÁ NHÂN (HEADER) ---
+            // --- PHẦN 1: HEADER (AVATAR TRÊN CÙNG) ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(260.dp)
+                    .height(240.dp)
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(primaryColor, Color(0xFF3B82F6))
@@ -123,7 +121,7 @@ fun StaffPersonalScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 40.dp),
+                        .padding(top = 32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(contentAlignment = Alignment.BottomEnd) {
@@ -131,35 +129,25 @@ fun StaffPersonalScreen(
                             model = user?.avatar.takeIf { !it.isNullOrEmpty() } ?: R.drawable.a8,
                             contentDescription = null,
                             modifier = Modifier
-                                .size(110.dp)
+                                .size(100.dp)
                                 .clip(CircleShape)
                                 .border(4.dp, Color.White, CircleShape)
                                 .clickable { imagePicker.launch("image/*") },
                             contentScale = ContentScale.Crop
                         )
-                        Surface(
-                            modifier = Modifier.size(32.dp),
-                            shape = CircleShape,
-                            color = Color.White,
-                            shadowElevation = 4.dp
-                        ) {
-                            Icon(
-                                Icons.Default.CameraAlt,
-                                null,
-                                modifier = Modifier.padding(6.dp),
-                                tint = primaryColor
-                            )
+                        Surface(modifier = Modifier.size(28.dp), shape = CircleShape, color = Color.White, shadowElevation = 4.dp) {
+                            Icon(Icons.Default.CameraAlt, null, modifier = Modifier.padding(6.dp), tint = primaryColor)
                         }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(user?.name ?: "Nhân viên", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Text(user?.name ?: "Hướng dẫn viên", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Surface(
                         color = Color.White.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.padding(top = 4.dp)
                     ) {
                         Text(
-                            "Nhân viên • ⭐ Rank ${user?.rank ?: "3"}",
+                            "Staff • Rank ${user?.rank ?: "3"}",
                             color = Color.White,
                             fontSize = 13.sp,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
@@ -168,100 +156,76 @@ fun StaffPersonalScreen(
                 }
             }
 
-            // --- PHẦN 2: NỘI DUNG CHI TIẾT ---
+            // --- PHẦN 2: NỘI DUNG ---
             Column(
                 modifier = Modifier
                     .offset(y = (-30).dp)
                     .padding(horizontal = 20.dp)
             ) {
-                // 3.1 Thông tin cơ bản
-                StaffSectionCard(
+                // --- 2.1 CÔNG CỤ TÁC VỤ (4 DÒNG) ---
+                Text(
+                    "CÔNG CỤ TÁC VỤ", 
+                    fontWeight = FontWeight.ExtraBold, 
+                    color = Color(0xFFFFFFFF),
+                    fontSize = 14.sp, 
+                    modifier = Modifier.padding(bottom = 12.dp, start = 8.dp)
+                )
+                
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Dòng 1: Lịch & Thông báo
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        StaffToolButton("Lịch Tour", Icons.Default.CalendarMonth, Modifier.weight(1f)) { onNavigate("staff_schedule") }
+                        StaffToolButton("Thông báo", Icons.Default.Notifications, Modifier.weight(1f)) { onNavigate("notifications") }
+                    }
+                    // Dòng 2: Viết bài & Bài viết
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        StaffToolButton("Viết bài", Icons.Default.EditNote, Modifier.weight(1f)) { onNavigate("create_article") }
+                        StaffToolButton("Bài viết", Icons.AutoMirrored.Filled.Article, Modifier.weight(1f)) { onNavigate("my_articles") }
+                    }
+                    // Dòng 3: Ghi chú
+                    StaffToolButton("Ghi chú chuyến đi", Icons.AutoMirrored.Filled.NoteAdd, Modifier.fillMaxWidth()) { onNavigate("staff_notes") }
+                    // Dòng 4: Mật khẩu
+                    StaffToolButton("Đổi mật khẩu tài khoản", Icons.Default.LockPerson, Modifier.fillMaxWidth()) { onNavigate("change_password") }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 2.2 Thông tin cơ bản
+                StaffCard(
                     title = "THÔNG TIN CƠ BẢN",
                     action = {
-                        Row {
+                        TextButton(onClick = {
                             if (isEditingInfo) {
-                                TextButton(onClick = {
-                                    val updated = user?.copy(
-                                        name = name, sdt = phone, email = email,
-                                        dia_chi = address, gioi_tinh = gender, ngay_sinh = dob
-                                    )
-                                    updated?.let {
-                                        userViewModel.updateUserInfo(it,
-                                            onSuccess = { isEditingInfo = false },
-                                            onError = { e -> Toast.makeText(context, e, Toast.LENGTH_SHORT).show() }
-                                        )
-                                    }
-                                }) {
-                                    Text("Lưu", fontWeight = FontWeight.Bold)
-                                }
-                                TextButton(onClick = { isEditingInfo = false }) {
-                                    Text("Hủy", color = Color.Gray)
-                                }
-                            } else {
-                                TextButton(onClick = { isEditingInfo = true }) {
-                                    Text("Chỉnh sửa", fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
+                                val updated = user?.copy(name = name, sdt = phone, email = email, dia_chi = address, gioi_tinh = gender, ngay_sinh = dob)
+                                updated?.let { userViewModel.updateUserInfo(it, onSuccess = { isEditingInfo = false }, onError = { e -> Toast.makeText(context, e, Toast.LENGTH_SHORT).show() }) }
+                            } else { isEditingInfo = true }
+                        }) { Text(if (isEditingInfo) "Lưu" else "Chỉnh sửa", fontWeight = FontWeight.Bold) }
                     }
                 ) {
-                    StaffProfileInfoRow("Họ tên", name, { name = it }, isEditingInfo, editable = true)
-                    StaffProfileInfoRow("Giới tính", gender, { gender = it }, isEditingInfo, editable = true)
-                    StaffProfileInfoRow("Ngày sinh", dob, { dob = it }, isEditingInfo, editable = true)
-                    StaffProfileInfoRow("Địa chỉ", address, { address = it }, isEditingInfo, editable = true)
-                    StaffProfileInfoRow("Email", email, { email = it }, isEditingInfo, editable = true)
-                    StaffProfileInfoRow("SĐT", phone, { phone = it }, isEditingInfo, editable = true)
+                    StaffInfoField("Họ tên", name, { name = it }, isEditingInfo)
+                    StaffInfoField("Giới tính", gender, { gender = it }, isEditingInfo)
+                    StaffInfoField("Ngày sinh", dob, { dob = it }, isEditingInfo)
+                    StaffInfoField("SĐT", phone, { phone = it }, isEditingInfo)
+                    StaffInfoField("Email", email, { email = it }, isEditingInfo)
+                    StaffInfoField("Địa chỉ", address, { address = it }, isEditingInfo)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 3.2 Giới thiệu bản thân
-                StaffSectionCard("GIỚI THIỆU BẢN THÂN") {
-                    if (guideProfile?.bio.isNullOrEmpty()) {
-                        Text("Bạn chưa có giới thiệu", color = Color.Gray, fontSize = 14.sp)
-                        Button(
-                            onClick = { 
-                                tempBio = ""
-                                showBioDialog = true 
-                            },
-                            modifier = Modifier.padding(top = 8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = primaryColor.copy(0.1f))
-                        ) {
-                            Text("+ Thêm", color = primaryColor)
-                        }
-                    } else {
-                        Text(guideProfile?.bio ?: "", fontSize = 14.sp, color = Color(0xFF334155))
-                        TextButton(onClick = { 
-                            tempBio = guideProfile?.bio ?: ""
-                            showBioDialog = true 
-                        }, modifier = Modifier.align(Alignment.End)) {
-                            Text("Chỉnh sửa", color = primaryColor)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 3.3 Kỹ năng
-                StaffSectionCard("KỸ NĂNG") {
+                // 2.3 Kỹ năng
+                StaffCard("KỸ NĂNG") {
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        guideProfile?.skills?.forEach { skill ->
-                            Surface(
-                                color = primaryColor.copy(alpha = 0.08f),
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, primaryColor.copy(0.1f))
-                            ) {
-                                Text(
-                                    skill, 
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    fontSize = 13.sp,
-                                    color = primaryColor,
-                                    fontWeight = FontWeight.Medium
-                                )
+                        if (guideProfile?.skills.isNullOrEmpty()) {
+                            Text("Chưa cập nhật kỹ năng", color = Color.Gray, fontSize = 13.sp)
+                        } else {
+                            guideProfile?.skills?.forEach { skill ->
+                                Surface(color = primaryColor.copy(alpha = 0.08f), shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, primaryColor.copy(0.1f))) {
+                                    Text(skill, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 13.sp, color = primaryColor, fontWeight = FontWeight.Medium)
+                                }
                             }
                         }
                     }
@@ -272,43 +236,47 @@ fun StaffPersonalScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 3.4 KINH NGHIỆM
-                StaffSectionCard("KINH NGHIỆM") {
+                // 2.4 Giới thiệu
+                StaffCard("GIỚI THIỆU") {
+                    if (guideProfile?.bio.isNullOrEmpty()) {
+                        Button(onClick = { tempBio = ""; showBioDialog = true }, colors = ButtonDefaults.buttonColors(containerColor = primaryColor.copy(0.1f))) { Text("+ Thêm giới thiệu", color = primaryColor) }
+                    } else {
+                        Text(guideProfile?.bio ?: "", fontSize = 14.sp, color = Color(0xFF334155))
+                        TextButton(onClick = { tempBio = guideProfile?.bio ?: ""; showBioDialog = true }, modifier = Modifier.align(Alignment.End)) { Text("Chỉnh sửa", color = primaryColor) }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 2.5 Kinh nghiệm
+                StaffCard("KINH NGHIỆM") {
                     if (guideProfile?.experiences.isNullOrEmpty()) {
-                        Text("Bạn chưa thêm kinh nghiệm", color = Color.Gray, fontSize = 14.sp)
+                        Text("Chưa có dữ liệu kinh nghiệm", color = Color.Gray, fontSize = 13.sp)
                     } else {
                         guideProfile?.experiences?.forEach { exp ->
-                            StaffExperienceItem(exp)
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF1F5F9))
+                            Column {
+                                Text(exp.title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text("${exp.startTime} - ${exp.endTime}", color = primaryColor, fontSize = 12.sp)
+                                Text(exp.description, fontSize = 13.sp, color = Color.Gray)
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color(0xFFF1F5F9))
+                            }
                         }
                     }
-                    Button(
-                        onClick = { 
-                            expTitle = ""; expStart = ""; expEnd = ""; expDesc = ""
-                            showExpDialog = true 
-                        },
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Default.Add, null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Thêm kinh nghiệm")
-                    }
+                    Button(onClick = { showExpDialog = true }, modifier = Modifier.fillMaxWidth()) { Text("Thêm kinh nghiệm") }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-                // --- PHẦN 3: CÁC NÚT CHỨC NĂNG ---
-                Text("CÔNG CỤ TÁC VỤ", fontWeight = FontWeight.Bold, color = Color.Gray, fontSize = 13.sp, modifier = Modifier.padding(bottom = 12.dp))
-                
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StaffActionButton("Lịch Tour", Icons.Default.CalendarMonth, Modifier.weight(1f)) { onNavigate("staff_schedule") }
-                    StaffActionButton("Thông báo hệ thống", Icons.Default.Notifications, Modifier.weight(1f)) { onNavigate("notifications") }
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StaffActionButton("Ghi chú chuyến đi", Icons.AutoMirrored.Filled.NoteAdd, Modifier.weight(1f)) { onNavigate("staff_notes") }
-                    StaffActionButton("Đổi mật khẩu", Icons.Default.LockPerson, Modifier.weight(1f)) { onNavigate("change_password") }
+                // --- NÚT ĐĂNG XUẤT ---
+                Button(
+                    onClick = { onNavigate("login") },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Logout, null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Đăng xuất tài khoản", fontWeight = FontWeight.Bold, color = Color.White)
                 }
                 
                 Spacer(modifier = Modifier.height(40.dp))
@@ -316,39 +284,13 @@ fun StaffPersonalScreen(
         }
     }
 
-    // Dialogs
+    // Dialogs...
     if (showBioDialog) {
         AlertDialog(
             onDismissRequest = { showBioDialog = false },
-            title = { Text("Giới thiệu bản thân", color = Color.Black, fontWeight = FontWeight.Bold) },
-            text = {
-                OutlinedTextField(
-                    value = tempBio,
-                    onValueChange = { tempBio = it },
-                    modifier = Modifier.fillMaxWidth().height(150.dp),
-                    placeholder = { Text("Nhập giới thiệu của bạn...") },
-                    textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black,
-                        focusedBorderColor = primaryColor,
-                        unfocusedBorderColor = Color.Gray,
-                        cursorColor = primaryColor
-                    )
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    staffViewModel.updateBio(
-                        newBio = tempBio,
-                        onSuccess = {
-                            showBioDialog = false
-                            Toast.makeText(context, "Đã cập nhật giới thiệu", Toast.LENGTH_SHORT).show()
-                        },
-                        onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
-                    )
-                }) { Text("Lưu", fontWeight = FontWeight.Bold) }
-            },
+            title = { Text("Giới thiệu", fontWeight = FontWeight.Bold) },
+            text = { OutlinedTextField(value = tempBio, onValueChange = { tempBio = it }, modifier = Modifier.fillMaxWidth().height(150.dp)) },
+            confirmButton = { TextButton(onClick = { staffViewModel.updateBio(tempBio, onSuccess = { showBioDialog = false }, onError = {}) }) { Text("Lưu") } },
             dismissButton = { TextButton(onClick = { showBioDialog = false }) { Text("Hủy") } }
         )
     }
@@ -356,86 +298,21 @@ fun StaffPersonalScreen(
     if (showExpDialog) {
         AlertDialog(
             onDismissRequest = { showExpDialog = false },
-            title = { Text("Thêm kinh nghiệm", color = Color.Black, fontWeight = FontWeight.Bold) },
+            title = { Text("Thêm kinh nghiệm", fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = expTitle, 
-                        onValueChange = { expTitle = it }, 
-                        label = { Text("Chức danh *") }, 
-                        modifier = Modifier.fillMaxWidth(),
-                        textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black,
-                            focusedBorderColor = primaryColor,
-                            unfocusedBorderColor = Color.Gray,
-                            cursorColor = primaryColor
-                        )
-                    )
+                    OutlinedTextField(value = expTitle, onValueChange = { expTitle = it }, label = { Text("Chức danh") }, modifier = Modifier.fillMaxWidth())
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = expStart, 
-                            onValueChange = { expStart = it }, 
-                            label = { Text("Bắt đầu *") }, 
-                            modifier = Modifier.weight(1f),
-                            textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.Black,
-                                unfocusedTextColor = Color.Black,
-                                focusedBorderColor = primaryColor,
-                                unfocusedBorderColor = Color.Gray,
-                                cursorColor = primaryColor
-                            )
-                        )
-                        OutlinedTextField(
-                            value = expEnd, 
-                            onValueChange = { expEnd = it }, 
-                            label = { Text("Kết thúc") }, 
-                            modifier = Modifier.weight(1f),
-                            textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.Black,
-                                unfocusedTextColor = Color.Black,
-                                focusedBorderColor = primaryColor,
-                                unfocusedBorderColor = Color.Gray,
-                                cursorColor = primaryColor
-                            )
-                        )
+                        OutlinedTextField(value = expStart, onValueChange = { expStart = it }, label = { Text("Bắt đầu") }, modifier = Modifier.weight(1f))
+                        OutlinedTextField(value = expEnd, onValueChange = { expEnd = it }, label = { Text("Kết thúc") }, modifier = Modifier.weight(1f))
                     }
-                    OutlinedTextField(
-                        value = expDesc, 
-                        onValueChange = { expDesc = it }, 
-                        label = { Text("Mô tả chi tiết *") }, 
-                        modifier = Modifier.fillMaxWidth().height(100.dp),
-                        placeholder = { Text("BẮT BUỘC: Nhập mô tả...") },
-                        textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black,
-                            focusedBorderColor = primaryColor,
-                            unfocusedBorderColor = Color.Gray,
-                            cursorColor = primaryColor
-                        )
-                    )
-                    Text("* Thông tin bắt buộc", fontSize = 11.sp, color = Color.Red)
+                    OutlinedTextField(value = expDesc, onValueChange = { expDesc = it }, label = { Text("Mô tả") }, modifier = Modifier.fillMaxWidth().height(100.dp))
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
-                    if (expTitle.isEmpty() || expStart.isEmpty() || expDesc.isEmpty()) {
-                        Toast.makeText(context, "Vui lòng điền đủ: Chức danh, Năm bắt đầu và Mô tả", Toast.LENGTH_LONG).show()
-                    } else {
-                        staffViewModel.addExperience(
-                            Experience(title = expTitle, startTime = expStart, endTime = expEnd, description = expDesc),
-                            onSuccess = { 
-                                showExpDialog = false
-                                Toast.makeText(context, "Đã thêm kinh nghiệm", Toast.LENGTH_SHORT).show()
-                            },
-                            onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
-                        )
-                    }
-                }) { Text("Thêm", fontWeight = FontWeight.Bold) }
+                    staffViewModel.addExperience(Experience(title = expTitle, startTime = expStart, endTime = expEnd, description = expDesc), onSuccess = { showExpDialog = false }, onError = {})
+                }) { Text("Thêm") }
             },
             dismissButton = { TextButton(onClick = { showExpDialog = false }) { Text("Hủy") } }
         )
@@ -443,13 +320,27 @@ fun StaffPersonalScreen(
 }
 
 @Composable
-private fun StaffSectionCard(title: String, action: @Composable (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+fun StaffToolButton(title: String, icon: ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(
+        modifier = modifier.height(56.dp).clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        shadowElevation = 2.dp,
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
     ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp)) {
+            Icon(icon, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(Icons.Default.ChevronRight, null, tint = Color.LightGray, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+@Composable
+fun StaffCard(title: String, action: @Composable (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(title, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), fontSize = 13.sp)
@@ -462,68 +353,14 @@ private fun StaffSectionCard(title: String, action: @Composable (() -> Unit)? = 
 }
 
 @Composable
-private fun StaffProfileInfoRow(label: String, value: String, onValueChange: (String) -> Unit, isEditing: Boolean, editable: Boolean) {
-    val primaryColor = Color(0xFF2563EB)
+fun StaffInfoField(label: String, value: String, onValueChange: (String) -> Unit, isEditing: Boolean) {
     Column(modifier = Modifier.padding(bottom = 12.dp)) {
-        Text(label, fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
-        if (isEditing && editable) {
-            TextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.fillMaxWidth(),
-                textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
-                colors = TextFieldDefaults.colors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                    errorContainerColor = Color.Transparent,
-                    focusedIndicatorColor = primaryColor,
-                    unfocusedIndicatorColor = Color.Gray
-                ),
-                singleLine = true
-            )
+        Text(label, fontSize = 11.sp, color = Color.Gray)
+        if (isEditing) {
+            TextField(value = value, onValueChange = onValueChange, modifier = Modifier.fillMaxWidth(), singleLine = true)
         } else {
-            Text(value.ifEmpty { "Chưa cập nhật" }, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color(0xFF1E293B))
-            HorizontalDivider(modifier = Modifier.padding(top = 8.dp), color = Color(0xFFF1F5F9))
-        }
-    }
-}
-
-@Composable
-private fun StaffExperienceItem(exp: Experience) {
-    Column {
-        Text(exp.title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
-        Text("${exp.startTime} - ${exp.endTime.ifEmpty { "Hiện tại" }}", color = Color(0xFF2563EB), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(exp.description, fontSize = 14.sp, color = Color(0xFF475569), lineHeight = 20.sp)
-    }
-}
-
-@Composable
-private fun StaffActionButton(title: String, icon: ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Surface(
-        modifier = modifier
-            .height(100.dp)
-            .clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
-        color = Color.White,
-        shadowElevation = 3.dp
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Box(
-                modifier = Modifier.size(40.dp).background(Color(0xFF2563EB).copy(0.1f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, null, tint = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+            Text(value.ifEmpty { "N/A" }, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
+            HorizontalDivider(modifier = Modifier.padding(top = 4.dp), color = Color(0xFFF1F5F9))
         }
     }
 }

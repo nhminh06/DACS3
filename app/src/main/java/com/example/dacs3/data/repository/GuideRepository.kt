@@ -90,19 +90,30 @@ class GuideRepository(private val firebaseService: FirebaseService) {
             val query1 = bookingsCollection.whereEqualTo("guideId", guideId).get().await()
             val query2 = bookingsCollection.whereArrayContains("guideIds", guideId).get().await()
             
-            val allDocs = (query1.documents + query2.documents).distinctBy { it.id }
+            // Gộp kết quả và loại bỏ trùng lặp document
+            val combinedDocs = (query1.documents + query2.documents).associateBy { it.id }.values
+            
+            // Gom nhóm theo tourId và startDate để HDV chỉ thấy 1 dòng cho mỗi chuyến đi
+            val groupedByTrip = combinedDocs.groupBy { 
+                val tId = it.getString("tourId") ?: ""
+                val sDate = it.getString("startDate") ?: ""
+                "$tId-$sDate"
+            }
+            
             val toursWithDetails = mutableListOf<Map<String, Any>>()
             
-            for (doc in allDocs) {
-                val tourId = doc.getString("tourId") ?: continue
+            for (docs in groupedByTrip.values) {
+                val firstDoc = docs.first()
+                val tourId = firstDoc.getString("tourId") ?: continue
                 val tourDoc = toursCollection.document(tourId).get().await()
+                
                 if (tourDoc.exists()) {
                     val tourData = tourDoc.data ?: continue
-                    val bookingData = doc.data ?: emptyMap()
+                    val bookingData = firstDoc.data ?: emptyMap()
                     
                     val combinedData = tourData.toMutableMap()
-                    combinedData["id"] = doc.id 
-                    combinedData["bookingId"] = doc.id
+                    combinedData["id"] = firstDoc.id 
+                    combinedData["bookingId"] = firstDoc.id // Dùng ID của booking đầu tiên làm định danh
                     combinedData["tourId"] = tourId
                     combinedData["startDate"] = bookingData["startDate"] ?: "N/A"
                     combinedData["status"] = bookingData["tripStatus"] ?: "preparing"
@@ -118,8 +129,11 @@ class GuideRepository(private val firebaseService: FirebaseService) {
         }
     }
     
-    suspend fun getBookingsForTour(tourId: String): List<Map<String, Any>> {
-        val snapshot = bookingsCollection.whereEqualTo("tourId", tourId).get().await()
+    suspend fun getBookingsForTour(tourId: String, startDate: String): List<Map<String, Any>> {
+        val snapshot = bookingsCollection
+            .whereEqualTo("tourId", tourId)
+            .whereEqualTo("startDate", startDate)
+            .get().await()
         return snapshot.documents.map { (it.data ?: emptyMap()) + ("id" to it.id) }
     }
 

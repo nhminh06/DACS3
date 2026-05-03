@@ -126,7 +126,7 @@ fun TripNotesCard(trip: Map<String, Any>, staffViewModel: StaffViewModel) {
             if (expanded) {
                 // Hiển thị ghi chú từ các khách hàng trong đoàn
                 // Trong thực tế, bạn có thể cần load bookings của trip này
-                // Ở đây ta hiển thị một loading hoặc nội dung dựa trên state
+                // Ở đây ta hiển thị một nội dung dựa trên state
                 TripCustomerNotesList(tourId, startDate, staffViewModel)
             }
         }
@@ -142,8 +142,8 @@ fun TripCustomerNotesList(tourId: String, startDate: String, staffViewModel: Sta
         it["tourId"] == tourId && it["startDate"] == startDate && it["note"]?.toString()?.isNotBlank() == true
     }
 
-    LaunchedEffect(tourId) {
-        staffViewModel.loadBookingsForTour(tourId)
+    LaunchedEffect(tourId, startDate) {
+        staffViewModel.loadBookingsForTour(tourId, startDate)
     }
 
     Column(modifier = Modifier.padding(top = 8.dp)) {
@@ -162,7 +162,7 @@ fun TripCustomerNotesList(tourId: String, startDate: String, staffViewModel: Sta
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(text = booking["customerName"] as? String ?: "Khách hàng", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        Text(text = booking["note"] as String, fontSize = 13.sp, color = Color(0xFF334155))
+                        Text(text = booking["note"] as? String ?: "", fontSize = 13.sp, color = Color(0xFF334155))
                     }
                 }
             }

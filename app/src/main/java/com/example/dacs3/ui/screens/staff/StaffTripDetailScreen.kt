@@ -42,7 +42,8 @@ fun StaffTripDetailScreen(
     LaunchedEffect(bookingId) {
         tour?.let {
             val tourId = it["tourId"] as? String ?: ""
-            staffViewModel.loadBookingsForTour(tourId)
+            val startDate = it["startDate"] as? String ?: ""
+            staffViewModel.loadBookingsForTour(tourId, startDate)
         }
     }
 
@@ -82,6 +83,7 @@ fun StaffTripDetailScreen(
                 )
                 
                 Column(modifier = Modifier.padding(20.dp)) {
+                    @Suppress("UNCHECKED_CAST")
                     Text(
                         text = tour["title"] as? String ?: "",
                         fontSize = 20.sp,

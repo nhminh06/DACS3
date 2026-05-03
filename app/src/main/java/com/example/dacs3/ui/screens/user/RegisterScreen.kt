@@ -233,8 +233,16 @@ fun RegisterScreen(
 
             Button(
                 onClick = {
-                    if (username.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+                    if (username.trim().isEmpty() || email.trim().isEmpty() || password.trim().isEmpty() || confirmPassword.trim().isEmpty()) {
                         Toast.makeText(context, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    if (username.trim().length < 6) {
+                        Toast.makeText(context, "Tên đăng nhập phải có ít nhất 6 ký tự", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    if (password.trim().length < 6) {
+                        Toast.makeText(context, "Mật khẩu phải có ít nhất 6 ký tự", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     if (password != confirmPassword) {

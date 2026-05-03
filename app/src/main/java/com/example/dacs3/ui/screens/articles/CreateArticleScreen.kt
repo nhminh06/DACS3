@@ -8,8 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,7 +45,6 @@ fun CreateArticleScreen(
 ) {
     val context = LocalContext.current
     val primaryColor = Color(0xFF2563EB)
-    val coroutineScope = rememberCoroutineScope()
     
     var title by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(ArticleCategory.CULTURE) }
@@ -146,7 +143,13 @@ fun CreateArticleScreen(
                     }
                     
                     isSubmitting = true
-                    val currentUserId = userViewModel.currentUser.value?.id ?: ""
+                    val currentUser = userViewModel.currentUser.value
+                    val currentUserId = currentUser?.id ?: ""
+                    
+                    // Gửi thêm chức vụ và tên HDV
+                    val roleLabel = if (currentUser?.role == "guide") "Hướng dẫn viên" else "Người dùng"
+                    val source = if (currentUser?.role == "guide") "guide" else "user"
+
                     val newArticle = ArticleEntity(
                         tieu_de = title,
                         loai_id = when(selectedCategory) {
@@ -157,9 +160,10 @@ fun CreateArticleScreen(
                         sections = sections.toList(),
                         ngay_tao = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
                         trang_thai = 0, // Chờ duyệt
-                        nguon_goc = "user",
-                        tac_gia = userViewModel.currentUser.value?.name ?: "Người dùng",
-                        tac_gia_id = currentUserId
+                        nguon_goc = source,
+                        tac_gia = currentUser?.name ?: "Người dùng",
+                        tac_gia_id = currentUserId,
+                        chuc_vu = roleLabel
                     )
                     
                     articleViewModel.createArticle(newArticle) { success ->

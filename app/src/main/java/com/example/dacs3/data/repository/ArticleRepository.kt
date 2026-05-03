@@ -19,6 +19,7 @@ data class ArticleEntity(
     val nguon_goc: String = "admin", // admin hoặc user
     val tac_gia: String = "Admin",
     val tac_gia_id: String = "", // ID của user nếu nguon_goc là user
+    val chuc_vu: String = "", // Chức vụ của tác giả (ví dụ: Hướng dẫn viên)
     val is_edited: Boolean = false // Đánh dấu bài viết đã được chỉnh sửa
 )
 
@@ -86,6 +87,7 @@ class ArticleRepository {
                 "nguon_goc" to article.nguon_goc,
                 "tac_gia" to article.tac_gia,
                 "tac_gia_id" to article.tac_gia_id,
+                "chuc_vu" to article.chuc_vu,
                 "is_edited" to false
             )
             db.collection("articles").add(articleData).await()
@@ -103,6 +105,7 @@ class ArticleRepository {
                 "loai_id" to article.loai_id,
                 "sections" to article.sections,
                 "so_muc" to article.sections.size,
+                "chuc_vu" to article.chuc_vu,
                 "is_edited" to true // Giữ nguyên trạng thái cũ, chỉ đánh dấu đã sửa
             )
             db.collection("articles").document(article.id)

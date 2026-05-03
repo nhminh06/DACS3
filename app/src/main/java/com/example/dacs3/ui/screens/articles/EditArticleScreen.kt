@@ -130,6 +130,9 @@ fun EditArticleScreen(
                     }
                     
                     isSubmitting = true
+                    val currentUser = userViewModel.currentUser.value
+                    val roleLabel = if (currentUser?.role == "guide") "Hướng dẫn viên" else "Người dùng"
+
                     val updatedArticle = article.copy(
                         tieu_de = title,
                         loai_id = when(selectedCategory) {
@@ -137,7 +140,8 @@ fun EditArticleScreen(
                             ArticleCategory.CUISINE -> 2
                             ArticleCategory.CULTURE -> 3
                         },
-                        sections = sections.toList()
+                        sections = sections.toList(),
+                        chuc_vu = roleLabel
                     )
                     
                     articleViewModel.updateArticle(updatedArticle) { success ->

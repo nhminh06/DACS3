@@ -43,10 +43,10 @@ class StaffViewModel(private val repository: GuideRepository) : ViewModel() {
         }
     }
     
-    fun loadBookingsForTour(tourId: String) {
+    fun loadBookingsForTour(tourId: String, startDate: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            _selectedTourBookings.value = repository.getBookingsForTour(tourId)
+            _selectedTourBookings.value = repository.getBookingsForTour(tourId, startDate)
             _isLoading.value = false
         }
     }

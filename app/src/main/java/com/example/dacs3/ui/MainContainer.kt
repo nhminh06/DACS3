@@ -10,7 +10,6 @@ import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.data.repository.ContactRepository
 import com.example.dacs3.data.repository.GuideRepository
-import com.example.dacs3.ui.screens.*
 import com.example.dacs3.ui.screens.user.*
 import com.example.dacs3.ui.screens.articles.*
 import com.example.dacs3.ui.screens.home.*
@@ -47,6 +46,7 @@ fun MainContainer() {
     val mainViewModel: MainViewModel = viewModel()
     val articleViewModel: ArticleViewModel = viewModel()
     val bookingViewModel: BookingViewModel = viewModel()
+    val notificationViewModel: NotificationViewModel = viewModel()
 
     val user by userViewModel.currentUser
     
@@ -54,6 +54,7 @@ fun MainContainer() {
     LaunchedEffect(user?.id) {
         user?.id?.let { uid ->
             bookingViewModel.listenAndNotifyBookingStatus(uid)
+            notificationViewModel.startListening(uid) // Bắt đầu lắng nghe thông báo thời gian thực
             if (user?.role == "guide") {
                 staffViewModel.loadGuideProfile(uid)
             }
@@ -114,6 +115,8 @@ fun MainContainer() {
                 onNavigate = { screen -> currentScreen = screen },
                 viewModel = mainViewModel,
                 articleViewModel = articleViewModel,
+                userViewModel = userViewModel,
+                notificationViewModel = notificationViewModel,
                 onTourClick = { tour ->
                     selectedTour = tour
                     currentScreen = "tour_detail"
@@ -223,7 +226,13 @@ fun MainContainer() {
             CreateArticleScreen(
                 userViewModel = userViewModel,
                 articleViewModel = articleViewModel,
-                onBack = { currentScreen = "profile" }
+                onBack = { 
+                    if (user?.role == "guide") {
+                        currentScreen = "staff_personal"
+                    } else {
+                        currentScreen = "profile"
+                    }
+                }
             )
         }
         "edit_article" -> {
@@ -266,7 +275,13 @@ fun MainContainer() {
         }
         "my_articles" -> {
             MyArticlesScreen(
-                onBack = { currentScreen = "profile" },
+                onBack = { 
+                    if (user?.role == "guide") {
+                        currentScreen = "staff_personal"
+                    } else {
+                        currentScreen = "profile"
+                    }
+                },
                 onNavigateToDetail = { article ->
                     selectedArticle = article
                     previousScreenForDetail = "my_articles"
@@ -294,7 +309,13 @@ fun MainContainer() {
         }
         "my_bookings" -> {
             MyBookingsScreen(
-                onBack = { currentScreen = "profile" },
+                onBack = { 
+                    if (user?.role == "guide") {
+                        currentScreen = "staff_personal"
+                    } else {
+                        currentScreen = "profile"
+                    }
+                },
                 onBookingClick = { bookingId ->
                     selectedBookingId = bookingId
                     currentScreen = "booking_detail"
@@ -316,11 +337,12 @@ fun MainContainer() {
             NotificationsScreen(
                 userViewModel = userViewModel,
                 contactViewModel = contactViewModel,
+                notificationViewModel = notificationViewModel,
                 onBack = { 
                     if (user?.role == "guide") {
                         currentScreen = "staff_personal"
                     } else {
-                        currentScreen = "profile"
+                        currentScreen = "home"
                     }
                 }
             )
