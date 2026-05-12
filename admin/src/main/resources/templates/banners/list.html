@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý Banner - WIND Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/admin-style.css}">
+    <style>
+        body { background-color: #0f172a; color: #f1f5f9; }
+        .banner-card { background: #1e293b; border-radius: 16px; border: 1px solid #334155; overflow: hidden; transition: 0.3s; margin-bottom: 20px; position: relative; }
+        .banner-card:hover { transform: translateY(-5px); border-color: #3b82f6; }
+        .banner-img { width: 100%; height: 200px; object-fit: cover; }
+        .banner-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; opacity: 0; transition: 0.3s; }
+        .banner-card:hover .banner-actions { opacity: 1; }
+        .form-container { background: #1e293b; padding: 25px; border-radius: 16px; border: 1px solid #334155; margin-bottom: 30px; }
+        .preview-box { width: 100%; height: 250px; background: #0f172a; border: 2px dashed #334155; border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; transition: 0.3s; }
+        .preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .preview-box i { font-size: 3rem; color: #334155; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar :: sidebar('banners')}"></div>
+
+    <div class="main">
+        <header class="header mb-4">
+            <div>
+                <h1 class="h4 mb-0">Quản lý Banner</h1>
+                <p class="text-muted small mb-0">Chỉ cần chọn ảnh để cập nhật banner trang chủ</p>
+            </div>
+            <button class="btn btn-primary" onclick="showAddForm()"><i class="bi bi-plus-lg me-2"></i>Thêm Banner</button>
+        </header>
+
+        <!-- Form Tối giản: Chỉ chọn ảnh -->
+        <div id="bannerFormContainer" class="form-container" style="display: none;">
+            <form th:action="@{/admin/banners/save}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="id" id="bannerId">
+                <input type="hidden" name="order" value="0">
+
+                <div class="preview-box mb-3" id="previewContainer" onclick="document.getElementById('imageFileInput').click()">
+                    <i class="bi bi-cloud-arrow-up"></i>
+                </div>
+                <input type="file" id="imageFileInput" class="d-none" name="imageFile" accept="image/*" onchange="previewImage(this)">
+                <input type="hidden" name="imageUrl" id="bannerUrl">
+
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-outline-light" onclick="hideForm()">Hủy</button>
+                    <button type="submit" class="btn btn-primary px-5">Lưu Banner</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="row">
+            <div th:each="banner : ${banners}" class="col-md-6 col-lg-4">
+                <div class="banner-card">
+                    <img th:src="${banner.imageUrl}" class="banner-img">
+                    <div class="banner-actions">
+                        <button class="btn btn-sm btn-info" th:onclick="editBanner([[${banner}]])"><i class="bi bi-pencil"></i></button>
+                        <a th:href="@{/admin/banners/delete/{id}(id=${banner.id})}" class="btn btn-sm btn-danger" onclick="return confirm('Xóa banner?')"><i class="bi bi-trash"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showAddForm() {
+            document.getElementById('bannerId').value = '';
+            document.getElementById('previewContainer').innerHTML = '<i class="bi bi-cloud-arrow-up"></i>';
+            document.getElementById('bannerFormContainer').style.display = 'block';
+        }
+        function hideForm() { document.getElementById('bannerFormContainer').style.display = 'none'; }
+        function editBanner(banner) {
+            document.getElementById('bannerId').value = banner.id;
+            document.getElementById('bannerUrl').value = banner.imageUrl;
+            document.getElementById('previewContainer').innerHTML = `<img src="${banner.imageUrl}">`;
+            document.getElementById('bannerFormContainer').style.display = 'block';
+        }
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => { document.getElementById('previewContainer').innerHTML = `<img src="${e.target.result}">`; }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+</body>
+</html>

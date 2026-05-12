@@ -39,10 +39,9 @@ fun BookingDetailScreen(
 ) {
     val booking by bookingViewModel.currentBooking.collectAsState()
     val isLoading by bookingViewModel.isLoading.collectAsState()
-    
+
     var showCancelDialog by remember { mutableStateOf(false) }
 
-    // Tải dữ liệu từ Firestore khi màn hình được mở
     LaunchedEffect(bookingId) {
         bookingViewModel.loadBookingById(bookingId)
     }
@@ -50,10 +49,21 @@ fun BookingDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chi tiết đặt tour", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black) },
+                title = {
+                    Text(
+                        "Chi tiết đặt tour",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color.Black
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại", tint = Color.DarkGray)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Quay lại",
+                            tint = Color.DarkGray
+                        )
                     }
                 },
                 actions = {
@@ -66,7 +76,6 @@ fun BookingDetailScreen(
         },
         bottomBar = {
             booking?.let { b ->
-                // Chỉ hiển thị ActionButtons nếu tour có thể hủy (PENDING) hoặc có thể đánh giá (completed)
                 if (b.status == BookingStatus.PENDING || b.tripStatus == "completed") {
                     ActionButtons(b, onCancelClick = { showCancelDialog = true })
                 }
@@ -99,7 +108,12 @@ fun BookingDetailScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Default.SearchOff, null, modifier = Modifier.size(64.dp), tint = Color.Gray)
+                    Icon(
+                        Icons.Default.SearchOff,
+                        null,
+                        modifier = Modifier.size(64.dp),
+                        tint = Color.Gray
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Không tìm thấy thông tin đặt chỗ", color = Color.Gray)
                     Button(onClick = onNavigateBack, modifier = Modifier.padding(16.dp)) {
@@ -110,12 +124,13 @@ fun BookingDetailScreen(
         }
     }
 
-    // Dialog xác nhận hủy tour
     if (showCancelDialog && booking != null) {
         AlertDialog(
             onDismissRequest = { showCancelDialog = false },
             title = { Text("Hủy đặt tour", fontWeight = FontWeight.Bold) },
-            text = { Text("Bạn có chắc chắn muốn hủy tour '${booking?.tour?.title}' không? Hành động này không thể hoàn tác.") },
+            text = {
+                Text("Bạn có chắc chắn muốn hủy tour '${booking?.tour?.title}' không? Hành động này không thể hoàn tác.")
+            },
             confirmButton = {
                 Button(
                     onClick = {
@@ -159,16 +174,18 @@ fun TourHeader(booking: Booking) {
                         .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
                     contentScale = ContentScale.Crop
                 )
-                
+
                 val statusColor = when {
                     booking.status == BookingStatus.CANCELLED -> Color(0xFFEF4444)
                     booking.tripStatus == "completed" -> Color(0xFF10B981)
                     booking.status == BookingStatus.CONFIRMED -> Color(0xFF22C55E)
                     else -> Color(0xFFF59E0B)
                 }
-                
+
                 Surface(
-                    modifier = Modifier.padding(16.dp).align(Alignment.TopEnd),
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.TopEnd),
                     color = statusColor,
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -186,7 +203,7 @@ fun TourHeader(booking: Booking) {
                     )
                 }
             }
-            
+
             Column(modifier = Modifier.padding(20.dp)) {
                 Text(
                     text = booking.tour.title,
@@ -195,22 +212,30 @@ fun TourHeader(booking: Booking) {
                     color = Color(0xFF0F172A),
                     lineHeight = 28.sp
                 )
-                
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, null, tint = Color(0xFF64748B), modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Default.LocationOn,
+                        null,
+                        tint = Color(0xFF64748B),
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(booking.tour.location, color = Color(0xFF64748B), fontSize = 15.sp)
-                    
+
                     Spacer(modifier = Modifier.weight(1f))
-                    
+
                     Surface(
                         color = Color(0xFF2563EB).copy(alpha = 0.1f),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = "#${if(booking.id.length > 6) booking.id.takeLast(6).uppercase() else booking.id.uppercase()}",
+                            text = "#${
+                                if (booking.id.length > 6) booking.id.takeLast(6)
+                                    .uppercase() else booking.id.uppercase()
+                            }",
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             color = Color(0xFF2563EB),
                             fontSize = 12.sp,
@@ -226,17 +251,25 @@ fun TourHeader(booking: Booking) {
 @Composable
 fun TourQuickInfo(booking: Booking) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             QuickInfoItem(Icons.Default.CalendarMonth, booking.tour.duration, "Thời gian")
             QuickInfoItem(Icons.Default.DirectionsBus, "Xe du lịch", "Phương tiện")
-            QuickInfoItem(Icons.Default.Tag, booking.tour.maTour.ifEmpty { "TOUR001" }, "Mã tour")
+            QuickInfoItem(
+                Icons.Default.Tag,
+                booking.tour.maTour.ifEmpty { "TOUR001" },
+                "Mã tour"
+            )
         }
     }
 }
@@ -254,11 +287,16 @@ fun QuickInfoItem(icon: ImageVector, value: String, label: String) {
 @Composable
 fun BookingTimeline(booking: Booking) {
     val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    
+
     Column(modifier = Modifier.padding(24.dp)) {
-        Text("Tiến trình chuyến đi", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color(0xFF0F172A))
+        Text(
+            "Tiến trình chuyến đi",
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 18.sp,
+            color = Color(0xFF0F172A)
+        )
         Spacer(modifier = Modifier.height(20.dp))
-        
+
         TimelineItem(
             title = "Đặt tour thành công",
             date = "Hoàn tất",
@@ -266,8 +304,12 @@ fun BookingTimeline(booking: Booking) {
             isLast = false
         )
         TimelineItem(
-            title = if (booking.status == BookingStatus.CONFIRMED) "Đã xác nhận" else if (booking.status == BookingStatus.CANCELLED) "Đã hủy" else "Đang xử lý",
-            date = if (booking.status == BookingStatus.CONFIRMED) "Admin đã phê duyệt" else if (booking.status == BookingStatus.CANCELLED) "Yêu cầu đã bị hủy" else "Chờ Admin xác nhận",
+            title = if (booking.status == BookingStatus.CONFIRMED) "Đã xác nhận"
+            else if (booking.status == BookingStatus.CANCELLED) "Đã hủy"
+            else "Đang xử lý",
+            date = if (booking.status == BookingStatus.CONFIRMED) "Admin đã phê duyệt"
+            else if (booking.status == BookingStatus.CANCELLED) "Yêu cầu đã bị hủy"
+            else "Chờ Admin xác nhận",
             isCompleted = booking.status == BookingStatus.CONFIRMED,
             isLast = false,
             color = if (booking.status == BookingStatus.CANCELLED) Color.Red else Color(0xFF2563EB)
@@ -282,17 +324,34 @@ fun BookingTimeline(booking: Booking) {
 }
 
 @Composable
-fun TimelineItem(title: String, date: String, isCompleted: Boolean, isLast: Boolean, color: Color = Color(0xFF22C55E)) {
+fun TimelineItem(
+    title: String,
+    date: String,
+    isCompleted: Boolean,
+    isLast: Boolean,
+    color: Color = Color(0xFF22C55E)
+) {
     Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(32.dp)) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.width(32.dp)
+        ) {
             Box(
                 modifier = Modifier
                     .size(16.dp)
-                    .background(if (isCompleted) color else Color(0xFFE2E8F0), CircleShape),
+                    .background(
+                        if (isCompleted) color else Color(0xFFE2E8F0),
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 if (isCompleted) {
-                    Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(10.dp))
+                    Icon(
+                        Icons.Default.Check,
+                        null,
+                        tint = Color.White,
+                        modifier = Modifier.size(10.dp)
+                    )
                 }
             }
             if (!isLast) {
@@ -304,9 +363,14 @@ fun TimelineItem(title: String, date: String, isCompleted: Boolean, isLast: Bool
                 )
             }
         }
-        
+
         Column(modifier = Modifier.padding(start = 12.dp, bottom = 24.dp)) {
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = if (isCompleted) Color(0xFF1E293B) else Color.Gray)
+            Text(
+                title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = if (isCompleted) Color(0xFF1E293B) else Color.Gray
+            )
             Text(date, fontSize = 13.sp, color = Color.Gray)
         }
     }
@@ -315,7 +379,7 @@ fun TimelineItem(title: String, date: String, isCompleted: Boolean, isLast: Bool
 @Composable
 fun BookingCustomerInfo(booking: Booking) {
     val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -324,36 +388,68 @@ fun BookingCustomerInfo(booking: Booking) {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Chi tiết khách hàng", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color(0xFF0F172A))
+            Text(
+                "Chi tiết khách hàng",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 17.sp,
+                color = Color(0xFF0F172A)
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            
-            DetailInfoRow(Icons.Default.FlightTakeoff, "Khởi hành", booking.startDate.format(dateFormatter))
-            DetailInfoRow(Icons.Default.FlightLand, "Ngày về", booking.endDate.format(dateFormatter))
-            
-            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = Color(0xFFF1F5F9))
-            
+
+            DetailInfoRow(
+                Icons.Default.FlightTakeoff,
+                "Khởi hành",
+                booking.startDate.format(dateFormatter)
+            )
+            DetailInfoRow(
+                Icons.Default.FlightLand,
+                "Ngày về",
+                booking.endDate.format(dateFormatter)
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 16.dp),
+                color = Color(0xFFF1F5F9)
+            )
+
             DetailInfoRow(Icons.Default.Person, "Hành khách", booking.customerName)
             DetailInfoRow(Icons.Default.Email, "Email", booking.email)
             DetailInfoRow(Icons.Default.Phone, "Số điện thoại", booking.phone)
-            
-            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = Color(0xFFF1F5F9))
-            
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Groups, null, tint = Color(0xFF64748B), modifier = Modifier.size(20.dp))
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 16.dp),
+                color = Color(0xFFF1F5F9)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Groups,
+                    null,
+                    tint = Color(0xFF64748B),
+                    modifier = Modifier.size(20.dp)
+                )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("Tổng khách:", color = Color(0xFF64748B), fontSize = 14.sp)
                 Spacer(modifier = Modifier.weight(1f))
-                Text("${booking.totalPeople} người", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = Color(0xFF1E293B))
+                Text(
+                    "${booking.totalPeople} người",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 15.sp,
+                    color = Color(0xFF1E293B)
+                )
             }
-            
+
             val details = mutableListOf<String>()
             if (booking.adults > 0) details.add("${booking.adults} người lớn")
             if (booking.children > 0) details.add("${booking.children} trẻ em")
             if (booking.infants > 0) details.add("${booking.infants} trẻ nhỏ")
-            
+
             Text(
-                "(${details.joinToString(", ")})", 
-                fontSize = 12.sp, 
+                "(${details.joinToString(", ")})",
+                fontSize = 12.sp,
                 color = Color.Gray,
                 modifier = Modifier.padding(start = 32.dp)
             )
@@ -363,7 +459,12 @@ fun BookingCustomerInfo(booking: Booking) {
 
 @Composable
 fun DetailInfoRow(icon: ImageVector, label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Icon(icon, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
         Spacer(modifier = Modifier.width(12.dp))
         Text(label, color = Color(0xFF64748B), fontSize = 14.sp)
@@ -375,7 +476,7 @@ fun DetailInfoRow(icon: ImageVector, label: String, value: String) {
 @Composable
 fun PaymentSummary(booking: Booking) {
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -384,21 +485,49 @@ fun PaymentSummary(booking: Booking) {
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Thanh toán", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color(0xFF0F172A))
+            Text(
+                "Thanh toán",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 17.sp,
+                color = Color(0xFF0F172A)
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            
-            PaymentRow("Người lớn x${booking.adults}", currencyFormatter.format(booking.tour.price * booking.adults))
+
+            // Dùng helper functions thay vì truy cập trực tiếp
+            PaymentRow(
+                "Người lớn x${booking.adults}",
+                currencyFormatter.format(booking.tour.getPrice() * booking.adults)
+            )
             if (booking.children > 0) {
-                PaymentRow("Trẻ em x${booking.children}", currencyFormatter.format(booking.tour.giaTreEm * booking.children))
+                PaymentRow(
+                    "Trẻ em x${booking.children}",
+                    currencyFormatter.format(booking.tour.getGiaTreEm() * booking.children)
+                )
             }
             if (booking.infants > 0) {
-                PaymentRow("Trẻ nhỏ x${booking.infants}", currencyFormatter.format(booking.tour.giaTreNho * booking.infants))
+                PaymentRow(
+                    "Trẻ nhỏ x${booking.infants}",
+                    currencyFormatter.format(booking.tour.getGiaTreNho() * booking.infants)
+                )
             }
-            
-            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), thickness = 1.dp, color = Color(0xFFF1F5F9))
-            
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Tổng thanh toán", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 16.dp),
+                thickness = 1.dp,
+                color = Color(0xFFF1F5F9)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Tổng thanh toán",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color(0xFF0F172A)
+                )
                 Text(
                     currencyFormatter.format(booking.totalPrice),
                     fontWeight = FontWeight.ExtraBold,
@@ -412,7 +541,12 @@ fun PaymentSummary(booking: Booking) {
 
 @Composable
 fun PaymentRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
         Text(label, color = Color(0xFF64748B), fontSize = 14.sp)
         Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1E293B))
     }
@@ -431,26 +565,33 @@ fun ActionButtons(booking: Booking, onCancelClick: () -> Unit) {
                 .navigationBarsPadding(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // CHỈ cho phép hủy nếu trạng thái là PENDING (Chờ xác nhận)
             if (booking.status == BookingStatus.PENDING) {
                 Button(
                     onClick = onCancelClick,
-                    modifier = Modifier.weight(1f).height(54.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(54.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFEE2E2), contentColor = Color(0xFFEF4444))
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFEE2E2),
+                        contentColor = Color(0xFFEF4444)
+                    )
                 ) {
                     Text("HỦY ĐẶT TOUR", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
                 }
             } else if (booking.tripStatus == "completed") {
-                // Nếu hoàn thành thì hiện nút Đánh giá
                 Button(
                     onClick = { /* Navigate to Review Screen */ },
-                    modifier = Modifier.weight(1f).height(54.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(54.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                     contentPadding = PaddingValues(0.dp)
                 ) {
-                    val brush = Brush.horizontalGradient(listOf(Color(0xFFf093fb), Color(0xFFf5576c)))
+                    val brush = Brush.horizontalGradient(
+                        listOf(Color(0xFFf093fb), Color(0xFFf5576c))
+                    )
                     Box(
                         modifier = Modifier
                             .fillMaxSize()

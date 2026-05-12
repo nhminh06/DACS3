@@ -9,32 +9,20 @@
     <link rel="stylesheet" th:href="@{/css/admin-style.css}">
     <style>
         body { background-color: #0f172a !important; color: #f1f5f9 !important; }
-        .main { background-color: #0f172a !important; }
+        .main { background-color: #0f172a !important; padding: 25px; margin-left: 260px; }
         .header { background: #1e293b !important; border-bottom: 1px solid #334155 !important; padding: 15px 25px; margin: -25px -25px 30px -25px; }
-        .header h1 { color: #f1f5f9 !important; }
-
-        .form-container { background: #1e293b !important; padding: 30px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #334155 !important; color: #f1f5f9 !important; }
+        .form-container { background: #1e293b !important; padding: 30px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #334155 !important; }
         .section-title { font-size: 18px; font-weight: 600; margin: 25px 0 15px; padding-bottom: 10px; border-bottom: 1px solid #334155 !important; color: #3b82f6 !important; display: flex; align-items: center; }
-        .section-title i { margin-right: 10px; }
-
         .muc-section { background: #0f172a !important; padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #334155 !important; }
-        .muc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px dashed #334155 !important; }
-        .muc-header h6 { margin-bottom: 0; font-weight: 600; color: #f1f5f9 !important; }
+        .form-label { color: #94a3b8 !important; font-weight: 500; font-size: 13px; }
+        .form-control, .form-select { background-color: #0f172a !important; border: 1px solid #334155 !important; color: #f1f5f9 !important; }
+        .img-preview { width: 150px; height: 100px; object-fit: cover; border-radius: 8px; margin-top: 10px; border: 1px solid #334155; display: block; }
+        .btn-add-muc { background: rgba(16, 185, 129, 0.1) !important; color: #10b981 !important; border: 1px dashed #10b981 !important; padding: 12px; border-radius: 8px; font-weight: 600; width: 100%; cursor: pointer; }
 
-        .form-label { color: #94a3b8 !important; font-weight: 500; font-size: 13px; margin-bottom: 8px; }
-        .form-control, .form-select { background-color: #0f172a !important; border: 1px solid #334155 !important; color: #f1f5f9 !important; padding: 10px 15px; }
-        .form-control:focus, .form-select:focus { background-color: #0f172a !important; border-color: #3b82f6 !important; color: #ffffff !important; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important; }
-
-        /* Style cho nút trong form */
-        .btn-custom { padding: 10px 30px; border-radius: 8px; font-weight: 600; transition: 0.2s; border: none; text-decoration: none !important; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-submit { background-color: #3b82f6 !important; color: white !important; }
-        .btn-cancel { background-color: #475569 !important; color: white !important; margin-right: 10px; }
-        .btn-custom:hover { opacity: 0.9; transform: translateY(-1px); }
-
-        .btn-add-muc { background: rgba(16, 185, 129, 0.1) !important; color: #10b981 !important; border: 1px dashed #10b981 !important; padding: 12px; border-radius: 8px; font-weight: 600; width: 100%; margin-bottom: 30px; cursor: pointer; }
-        .btn-remove-muc { background: rgba(239, 68, 68, 0.1) !important; color: #ef4444 !important; border: 1px solid #ef4444 !important; padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
-
-        .img-preview { width: 120px; height: 80px; object-fit: cover; border-radius: 8px; margin-top: 10px; border: 1px solid #334155; }
+        /* AI Gallery Styles */
+        .ai-gallery-item { cursor: pointer; transition: 0.2s; border-radius: 8px; overflow: hidden; border: 2px solid transparent; position: relative; background: #0f172a; }
+        .ai-gallery-item:hover { transform: scale(1.03); border-color: #3b82f6; }
+        .ai-gallery-item img { width: 100%; height: 120px; object-fit: cover; }
     </style>
 </head>
 <body>
@@ -44,8 +32,7 @@
         <header class="header">
             <h1 class="h4 mb-0" th:text="${article != null ? 'Chỉnh sửa bài viết' : 'Thêm bài viết mới'}">Quản lý bài viết</h1>
             <div class="user-info">
-                Xin chào <strong>Admin</strong>
-                <a href="/admin/articles" class="btn btn-warning btn-sm ms-3 text-dark fw-bold"><i class="bi bi-arrow-left"></i> Quay lại</a>
+                <a href="/admin/articles" class="btn btn-warning btn-sm text-dark fw-bold"><i class="bi bi-arrow-left"></i> Quay lại</a>
             </div>
         </header>
 
@@ -53,7 +40,7 @@
             <form id="articleForm" action="/admin/articles/save" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="id" th:value="${article != null ? article['id'] : ''}">
 
-                <div class="section-title"><i class="bi bi-info-circle-fill"></i> Thông tin cơ bản</div>
+                <div class="section-title"><i class="bi bi-info-circle-fill me-2"></i> Thông tin cơ bản</div>
 
                 <div class="row mb-4">
                     <div class="col-md-3">
@@ -67,19 +54,14 @@
                     <div class="col-md-3">
                         <label class="form-label required">Loại bài viết</label>
                         <select name="loai_id" class="form-select" required>
-                            <option value="">-- Chọn loại --</option>
                             <option value="1" th:selected="${article != null && #strings.toString(article['loai_id']) == '1'}">Làng nghề</option>
                             <option value="2" th:selected="${article != null && #strings.toString(article['loai_id']) == '2'}">Ẩm thực</option>
                             <option value="3" th:selected="${article != null && #strings.toString(article['loai_id']) == '3'}">Văn hóa</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-6">
                         <label class="form-label">Tên tác giả</label>
                         <input type="text" name="tac_gia" class="form-control" th:value="${article != null ? article['tac_gia'] : 'Admin'}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">ID tác giả (nếu là user)</label>
-                        <input type="text" name="tac_gia_id" class="form-control" th:value="${article != null ? article['tac_gia_id'] : ''}" placeholder="Để trống nếu là Admin">
                     </div>
                 </div>
 
@@ -88,13 +70,13 @@
                     <input type="text" name="tieu_de" class="form-control" required th:value="${article != null ? article['tieu_de'] : ''}">
                 </div>
 
-                <div class="section-title"><i class="bi bi-layout-text-sidebar-reverse"></i> Nội dung chi tiết</div>
+                <div class="section-title"><i class="bi bi-layout-text-sidebar-reverse me-2"></i> Nội dung chi tiết</div>
 
                 <div id="mucContainer">
+                    <!-- Default Section for New Article -->
                     <div th:if="${article == null}" class="muc-section" data-muc="1">
-                        <div class="muc-header">
-                            <h6><i class="bi bi-bookmark-fill me-2 text-primary"></i>Mục 1</h6>
-                            <button type="button" class="btn-remove-muc" onclick="removeMuc(this)">Xóa mục</button>
+                        <div class="muc-header d-flex justify-content-between mb-3 border-bottom border-secondary pb-2">
+                            <h6 class="mb-0"><i class="bi bi-bookmark-fill me-2 text-primary"></i>Mục 1</h6>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Tiêu đề mục</label>
@@ -105,16 +87,24 @@
                             <textarea name="noi_dung_muc[]" class="form-control" rows="5" required></textarea>
                         </div>
                         <div class="mb-0">
-                            <label class="form-label">Hình ảnh minh họa</label>
-                            <input type="file" name="hinh_anh_muc[]" class="form-control" accept="image/*">
+                            <label class="form-label d-flex justify-content-between">
+                                <span>Hình ảnh minh họa</span>
+                                <button type="button" class="btn btn-sm btn-link p-0 text-info" onclick="openAiGallery(1)">
+                                    <i class="bi bi-magic"></i> Chọn từ Thư viện AI
+                                </button>
+                            </label>
+                            <input type="file" name="hinh_anh_muc[]" class="form-control mb-2" accept="image/*" onchange="previewImage(this, 1)">
+                            <input type="hidden" name="hinh_anh_cu[]" id="hinh_anh_cu_1">
+                            <div th:id="'preview-container-1'"></div>
                         </div>
                     </div>
 
+                    <!-- Existing Sections for Edit -->
                     <th:block th:if="${article != null}">
                         <div th:each="muc, iter : ${article['sections']}" class="muc-section" th:data-muc="${iter.index + 1}">
-                            <div class="muc-header">
-                                <h6 th:utext="'<i class=\'bi bi-bookmark-fill me-2 text-primary\'></i>Mục ' + ${iter.index + 1}"></h6>
-                                <button type="button" class="btn-remove-muc" onclick="removeMuc(this)">Xóa mục</button>
+                            <div class="muc-header d-flex justify-content-between mb-3 border-bottom border-secondary pb-2">
+                                <h6 class="mb-0" th:utext="'<i class=\'bi bi-bookmark-fill me-2 text-primary\'></i>Mục ' + ${iter.index + 1}"></h6>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMuc(this)">Xóa mục</button>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Tiêu đề mục</label>
@@ -125,53 +115,160 @@
                                 <textarea name="noi_dung_muc[]" class="form-control" rows="5" required th:text="${muc['noi_dung']}"></textarea>
                             </div>
                             <div class="mb-0">
-                                <label class="form-label">Hình ảnh minh họa</label>
-                                <input type="file" name="hinh_anh_muc[]" class="form-control" accept="image/*">
-                                <input type="hidden" name="hinh_anh_cu[]" th:value="${muc['hinh_anh']}">
-                                <img th:if="${muc['hinh_anh'] != null && !#strings.isEmpty(muc['hinh_anh'])}" th:src="${muc['hinh_anh']}" class="img-preview">
+                                <label class="form-label d-flex justify-content-between">
+                                    <span>Hình ảnh minh họa</span>
+                                    <button type="button" class="btn btn-sm btn-link p-0 text-info" th:onclick="'openAiGallery(' + ${iter.index + 1} + ')'">
+                                        <i class="bi bi-magic"></i> Chọn từ Thư viện AI
+                                    </button>
+                                </label>
+                                <input type="file" name="hinh_anh_muc[]" class="form-control mb-2" accept="image/*" th:onchange="'previewImage(this, ' + ${iter.index + 1} + ')'">
+                                <input type="hidden" name="hinh_anh_cu[]" th:id="'hinh_anh_cu_' + ${iter.index + 1}" th:value="${muc['hinh_anh']}">
+                                <div th:id="'preview-container-' + ${iter.index + 1}">
+                                    <img th:if="${muc['hinh_anh'] != null}" th:src="${muc['hinh_anh']}" class="img-preview">
+                                </div>
                             </div>
                         </div>
                     </th:block>
                 </div>
 
-                <button type="button" class="btn-add-muc" onclick="addMuc()">+ Thêm đoạn nội dung mới</button>
+                <button type="button" class="btn-add-muc mt-2" onclick="addMuc()">+ Thêm đoạn nội dung mới</button>
 
-                <div class="d-flex justify-content-end mt-4">
-                    <a href="/admin/articles" class="btn-custom btn-cancel">Hủy bỏ</a>
-                    <button type="submit" class="btn-custom btn-submit">Lưu bài viết</button>
+                <div class="d-flex justify-content-end mt-5 gap-3">
+                    <a href="/admin/articles" class="btn btn-secondary px-4">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-primary px-5 fw-bold">LƯU BÀI VIẾT</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- AI Gallery Modal -->
+    <div class="modal fade" id="aiGalleryModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title"><i class="bi bi-stars text-warning me-2"></i>Thư viện ảnh AI</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+                    <div id="aiGalleryLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2 text-muted">Đang tải lịch sử ảnh...</p>
+                    </div>
+                    <div class="row g-3" id="aiGalleryGrid"></div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <a href="/admin/ai-images" target="_blank" class="btn btn-outline-info">Tạo ảnh mới</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script th:inline="javascript">
-        let mucCount = [[${article != null && article['sections'] != null ? article['sections'].size() : 1}]];
+        let currentTargetMuc = null;
+        const aiModal = new bootstrap.Modal(document.getElementById('aiGalleryModal'));
+
         function addMuc() {
-            mucCount++;
+            const count = document.querySelectorAll('.muc-section').length + 1;
             const html = `
-                <div class="muc-section" data-muc="${mucCount}">
-                    <div class="muc-header">
-                        <h6><i class="bi bi-bookmark-fill me-2 text-primary"></i>Mục ${mucCount}</h6>
-                        <button type="button" class="btn-remove-muc" onclick="removeMuc(this)">Xóa mục</button>
+                <div class="muc-section" data-muc="${count}">
+                    <div class="muc-header d-flex justify-content-between mb-3 border-bottom border-secondary pb-2">
+                        <h6 class="mb-0"><i class="bi bi-bookmark-fill me-2 text-primary"></i>Mục ${count}</h6>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMuc(this)">Xóa mục</button>
                     </div>
                     <div class="mb-3"><label class="form-label">Tiêu đề mục</label><input type="text" name="tieu_de_muc[]" class="form-control"></div>
                     <div class="mb-3"><label class="form-label required">Nội dung văn bản</label><textarea name="noi_dung_muc[]" class="form-control" rows="5" required></textarea></div>
-                    <div class="mb-0"><label class="form-label">Hình ảnh minh họa</label><input type="file" name="hinh_anh_muc[]" class="form-control" accept="image/*"></div>
+                    <div class="mb-0">
+                        <label class="form-label d-flex justify-content-between">
+                            <span>Hình ảnh minh họa</span>
+                            <button type="button" class="btn btn-sm btn-link p-0 text-info" onclick="openAiGallery(${count})">
+                                <i class="bi bi-magic"></i> Chọn từ Thư viện AI
+                            </button>
+                        </label>
+                        <input type="file" name="hinh_anh_muc[]" class="form-control mb-2" accept="image/*" onchange="previewImage(this, ${count})">
+                        <input type="hidden" name="hinh_anh_cu[]" id="hinh_anh_cu_${count}">
+                        <div id="preview-container-${count}"></div>
+                    </div>
                 </div>`;
             document.getElementById('mucContainer').insertAdjacentHTML('beforeend', html);
         }
+
         function removeMuc(btn) {
             if (document.querySelectorAll('.muc-section').length > 1) {
                 btn.closest('.muc-section').remove();
                 updateLabels();
             } else alert('Phải có ít nhất một mục nội dung!');
         }
+
         function updateLabels() {
             document.querySelectorAll('.muc-section').forEach((s, i) => {
-                s.querySelector('h6').innerHTML = `<i class="bi bi-bookmark-fill me-2 text-primary"></i>Mục ${i + 1}`;
-                s.setAttribute('data-muc', i + 1);
+                const num = i + 1;
+                s.querySelector('h6').innerHTML = `<i class="bi bi-bookmark-fill me-2 text-primary"></i>Mục ${num}`;
+                s.setAttribute('data-muc', num);
+                // Cập nhật IDs cho AI selection
+                s.querySelector('button[onclick^="openAiGallery"]').setAttribute('onclick', `openAiGallery(${num})`);
+                s.querySelector('input[type="hidden"]').id = `hinh_anh_cu_${num}`;
+                s.querySelector('div[id^="preview-container"]').id = `preview-container-${num}`;
+                s.querySelector('input[type="file"]').setAttribute('onchange', `previewImage(this, ${num})`);
             });
-            mucCount = document.querySelectorAll('.muc-section').length;
+        }
+
+        function openAiGallery(mucId) {
+            currentTargetMuc = mucId;
+            aiModal.show();
+            loadAiHistory();
+        }
+
+        async function loadAiHistory() {
+            const grid = document.getElementById('aiGalleryGrid');
+            const loader = document.getElementById('aiGalleryLoading');
+            grid.innerHTML = '';
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch('/admin/ai-images/api/history');
+                const data = await response.json();
+                loader.style.display = 'none';
+
+                if (data.length === 0) {
+                    grid.innerHTML = '<div class="col-12 text-center text-muted">Chưa có ảnh AI nào.</div>';
+                    return;
+                }
+
+                data.forEach(item => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-3 col-6';
+                    col.innerHTML = `
+                        <div class="ai-gallery-item" onclick="selectAiImage('${item.imageUrl}')">
+                            <img src="${item.imageUrl}" alt="AI Image">
+                            <div class="p-1 smaller text-truncate text-center text-muted">${item.category}</div>
+                        </div>`;
+                    grid.appendChild(col);
+                });
+            } catch (e) {
+                grid.innerHTML = '<div class="col-12 text-center text-danger">Lỗi tải thư viện.</div>';
+                loader.style.display = 'none';
+            }
+        }
+
+        function selectAiImage(url) {
+            document.getElementById(`hinh_anh_cu_${currentTargetMuc}`).value = url;
+            document.getElementById(`preview-container-${currentTargetMuc}`).innerHTML = `<img src="${url}" class="img-preview">`;
+            aiModal.hide();
+        }
+
+        function previewImage(input, mucId) {
+            const container = document.getElementById(`preview-container-${mucId}`);
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    container.innerHTML = `<img src="${e.target.result}" class="img-preview">`;
+                    document.getElementById(`hinh_anh_cu_${mucId}`).value = '';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
         }
     </script>
 </body>

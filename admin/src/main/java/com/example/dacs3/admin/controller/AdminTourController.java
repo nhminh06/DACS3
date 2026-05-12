@@ -43,21 +43,13 @@ public class AdminTourController {
             long totalCount = documents.size();
             long activeCount = documents.stream().filter(d -> {
                 Object status = d.get("trang_thai");
-                return status == null || "active".equals(status) || Integer.valueOf(1).equals(status);
+                return status == null || "active".equals(status);
             }).count();
             
             long hiddenCount = totalCount - activeCount;
             
             double avgPrice = documents.stream()
-                    .mapToLong(d -> {
-                        Object p = d.get("price");
-                        if (p instanceof Long) return (Long) p;
-                        if (p instanceof Integer) return ((Integer) p).longValue();
-                        if (p instanceof String) {
-                            try { return Long.parseLong((String)p); } catch(Exception e) {}
-                        }
-                        return 0L;
-                    })
+                    .mapToLong(d -> getPriceAsLong(d.get("price")))
                     .average().orElse(0.0);
 
             model.addAttribute("total", totalCount);
@@ -84,39 +76,27 @@ public class AdminTourController {
             if (sort != null) {
                 switch (sort) {
                     case "name":
-                        tourList.sort(Comparator.comparing(t -> {
-                            String title = (String) t.get("title");
-                            return title != null ? title : "";
-                        }));
+                        tourList.sort(Comparator.comparing(t -> (String) t.getOrDefault("title", "")));
                         break;
                     case "price_asc":
                         tourList.sort(Comparator.comparingLong(t -> getPriceAsLong(t.get("price"))));
                         break;
                     case "price_desc":
-                        tourList.sort((t1, t2) -> {
-                            Long p1 = getPriceAsLong(t1.get("price"));
-                            Long p2 = getPriceAsLong(t2.get("price"));
-                            return Long.compare(p2, p1);
-                        });
+                        tourList.sort((t1, t2) -> Long.compare(getPriceAsLong(t2.get("price")), getPriceAsLong(t1.get("price"))));
                         break;
-                    case "newest":
                     default:
                         break;
                 }
             }
 
-            int pageSize = 6; 
+            int pageSize = 10; 
             int totalFiltered = tourList.size();
             int totalPages = (int) Math.ceil((double) totalFiltered / pageSize);
-            
             page = Math.max(1, Math.min(page, totalPages > 0 ? totalPages : 1));
-            
             int start = (page - 1) * pageSize;
             int end = Math.min(start + pageSize, totalFiltered);
             
-            List<Map<String, Object>> pagedTours = (start < totalFiltered) ? tourList.subList(start, end) : new ArrayList<>();
-
-            model.addAttribute("tours", pagedTours);
+            model.addAttribute("tours", (start < totalFiltered) ? tourList.subList(start, end) : new ArrayList<>());
             model.addAttribute("currentPage", page);
             model.addAttribute("totalPages", totalPages);
             model.addAttribute("totalFiltered", totalFiltered);
@@ -133,29 +113,36 @@ public class AdminTourController {
         if (p instanceof Long) return (Long) p;
         if (p instanceof Integer) return ((Integer) p).longValue();
         if (p instanceof String) {
-            try { return Long.parseLong((String)p); } catch(Exception e) {}
+            try { return Long.parseLong(((String)p).replaceAll("[^0-9]", "")); } catch(Exception e) {}
         }
         return 0L;
     }
 
     @GetMapping("/add")
     public String addTourForm(Model model) {
-        model.addAttribute("tour", new HashMap<>());
+        model.addAttribute("tour", new HashMap<String, Object>());
         model.addAttribute("tourId", null);
         return "tours/form";
     }
 
     @GetMapping("/edit/{id}")
-    public String editTourForm(@PathVariable String id, Model model) {
+    public String editTourForm(@PathVariable String id, @RequestParam(required = false) Boolean promo, Model model) {
+        Map<String, Object> tourData = new HashMap<>();
+        String tourId = null;
         try {
             var doc = firestore.collection("tours").document(id).get().get();
             if (doc.exists()) {
-                model.addAttribute("tour", doc.getData());
-                model.addAttribute("tourId", id);
+                tourData = new HashMap<>(doc.getData());
+                if (Boolean.TRUE.equals(promo)) {
+                    tourData.put("isOffer", true);
+                }
+                tourId = id;
             }
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
+        model.addAttribute("tour", tourData);
+        model.addAttribute("tourId", tourId);
         return "tours/form";
     }
 
@@ -173,23 +160,25 @@ public class AdminTourController {
                            @RequestParam String vitri,
                            @RequestParam(required = false) String anhDaiDien,
                            @RequestParam(required = false) MultipartFile mainImageFile,
-                           @RequestParam(required = false) MultipartFile[] bannerImageFiles,
                            @RequestParam String dichVu,
                            @RequestParam String loTrinh,
                            @RequestParam String traiNghiem,
                            @RequestParam(defaultValue = "1") Integer minGuests,
                            @RequestParam(defaultValue = "50") Integer maxGuests,
-                           @RequestParam(required = false) String tourScale) throws IOException, ExecutionException, InterruptedException {
+                           @RequestParam(required = false) String tourScale,
+                           @RequestParam(required = false) Boolean isOffer,
+                           @RequestParam(required = false) String originalPrice,
+                           @RequestParam(required = false) String originalPriceChild,
+                           @RequestParam(required = false) String originalPriceInfant,
+                           @RequestParam(required = false) String discountTag,
+                           @RequestParam(required = false) String timeLeft,
+                           @RequestParam(required = false) String offerImageUrl,
+                           @RequestParam(required = false) MultipartFile offerImageFile) throws IOException, ExecutionException, InterruptedException {
         
         Map<String, Object> data = new HashMap<>();
-
         if (id != null && !id.isEmpty()) {
-            try {
-                var oldDoc = firestore.collection("tours").document(id).get().get();
-                if (oldDoc.exists()) {
-                    data.putAll(oldDoc.getData());
-                }
-            } catch (Exception e) {}
+            var oldDoc = firestore.collection("tours").document(id).get().get();
+            if (oldDoc.exists()) data.putAll(oldDoc.getData());
         }
 
         String finalMainImageUrl = anhDaiDien;
@@ -198,30 +187,16 @@ public class AdminTourController {
             finalMainImageUrl = (String) uploadResult.get("secure_url");
         }
 
-        Object bannersObj = data.getOrDefault("banners", new ArrayList<>());
-        List<String> bannerUrls = new ArrayList<>();
-        if (bannersObj instanceof List) {
-            for (Object item : (List<?>) bannersObj) {
-                if (item instanceof String) bannerUrls.add((String) item);
-            }
-        }
-
-        if (bannerImageFiles != null && bannerImageFiles.length > 0) {
-            for (MultipartFile file : bannerImageFiles) {
-                if (!file.isEmpty()) {
-                    Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-                    bannerUrls.add((String) uploadResult.get("secure_url"));
-                }
-            }
-        }
-        if (bannerUrls.size() > 5) {
-            bannerUrls = bannerUrls.subList(bannerUrls.size() - 5, bannerUrls.size());
+        String finalOfferImageUrl = offerImageUrl;
+        if (offerImageFile != null && !offerImageFile.isEmpty()) {
+            Map uploadResult = cloudinary.uploader().upload(offerImageFile.getBytes(), ObjectUtils.emptyMap());
+            finalOfferImageUrl = (String) uploadResult.get("secure_url");
         }
 
         data.put("maTour", maTour);
         data.put("title", tenTour);
         data.put("type", "1".equals(loaiTour) ? "DAY_TOUR" : "MULTI_DAY");
-        data.put("startDate", ngayKhoiHanh); // Now stores comma-separated dates
+        data.put("startDate", ngayKhoiHanh);
         data.put("diemKhoiHanh", diemKhoiHanh);
         data.put("duration", soNgay + " ngày");
         data.put("price", parsePriceToLong(giaNguoiLon));
@@ -229,16 +204,21 @@ public class AdminTourController {
         data.put("giaTreNho", parsePriceToLong(giaTreNho));
         data.put("location", vitri);
         data.put("imageUrl", finalMainImageUrl); 
-        data.put("banners", bannerUrls);
         data.put("dichVu", dichVu);
         data.put("loTrinh", loTrinh);
         data.put("traiNghiem", traiNghiem);
         data.put("minGuests", minGuests);
         data.put("maxGuests", maxGuests);
         data.put("scale", tourScale);
+        
+        data.put("isOffer", isOffer != null && isOffer);
+        data.put("originalPrice", parsePriceToLong(originalPrice));
+        data.put("originalPriceChild", parsePriceToLong(originalPriceChild));
+        data.put("originalPriceInfant", parsePriceToLong(originalPriceInfant));
+        data.put("discountTag", discountTag);
+        data.put("timeLeft", (timeLeft == null || timeLeft.isEmpty()) ? "00:00:00" : timeLeft);
+        data.put("offerImageUrl", finalOfferImageUrl);
         data.put("trang_thai", data.getOrDefault("trang_thai", "active"));
-        data.put("rating", data.getOrDefault("rating", 5.0));
-        data.put("reviewCount", data.getOrDefault("reviewCount", 0));
 
         if (id == null || id.isEmpty()) {
             firestore.collection("tours").add(data).get();
@@ -250,12 +230,7 @@ public class AdminTourController {
 
     private Long parsePriceToLong(String priceStr) {
         if (priceStr == null || priceStr.isEmpty()) return 0L;
-        try {
-            String cleanPrice = priceStr.replaceAll("[^0-9]", "");
-            return Long.parseLong(cleanPrice);
-        } catch (Exception e) {
-            return 0L;
-        }
+        try { return Long.parseLong(priceStr.replaceAll("[^0-9]", "")); } catch (Exception e) { return 0L; }
     }
 
     @GetMapping("/toggle-status/{id}")
@@ -264,7 +239,7 @@ public class AdminTourController {
         var snapshot = docRef.get().get();
         if (snapshot.exists()) {
             String currentStatus = snapshot.getString("trang_thai");
-            String newStatus = "active".equals(currentStatus) ? "hidden" : "active";
+            String newStatus = "hidden".equals(currentStatus) ? "active" : "hidden";
             docRef.update("trang_thai", newStatus).get();
         }
         return "redirect:/admin/tours";

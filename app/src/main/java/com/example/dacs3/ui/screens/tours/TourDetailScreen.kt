@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,9 +53,24 @@ fun TourDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(tour.title, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A)) },
+                title = {
+                    Text(
+                        tour.title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF0F172A)) }
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color(0xFF0F172A)
+                        )
+                    }
                 },
                 actions = {
                     IconButton(onClick = { isFavorite = !isFavorite }) {
@@ -64,13 +80,22 @@ fun TourDetailScreen(
                             tint = if (isFavorite) Color.Red else Color(0xFF0F172A)
                         )
                     }
-                    IconButton(onClick = { /* Share */ }) { Icon(Icons.Default.Share, contentDescription = "Share", tint = Color(0xFF0F172A)) }
+                    IconButton(onClick = { /* Share */ }) {
+                        Icon(
+                            Icons.Default.Share,
+                            contentDescription = "Share",
+                            tint = Color(0xFF0F172A)
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
         bottomBar = {
-            BookingBottomBar(tour.price) { showBookingSheet = true }
+            BookingBottomBar(
+                price = tour.getPrice(),
+                originalPrice = if (tour.isOffer) tour.originalPrice else 0
+            ) { showBookingSheet = true }
         }
     ) { paddingValues ->
         Column(
@@ -83,17 +108,61 @@ fun TourDetailScreen(
             ImageCarousel(tour)
 
             Column(modifier = Modifier.padding(20.dp)) {
-                RatingSection(tour.rating, tour.reviewCount)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    RatingSection(tour.rating, tour.reviewCount)
+                    
+                    if (tour.isOffer && tour.discountTag.isNotEmpty()) {
+                        Surface(
+                            color = Color(0xFFFF5722),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = tour.discountTag,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(tour.title, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
+                Text(
+                    tour.title,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF0F172A)
+                )
+
+                if (tour.isOffer) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.AccessTime, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Ưu đãi kết thúc sau: ",
+                            fontSize = 13.sp,
+                            color = Color(0xFF64748B)
+                        )
+                        Text(
+                            text = tour.timeLeft.ifEmpty { "00:00:00" },
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFEF4444)
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
                 QuickInfoGrid(tour)
 
-                // Nút Xem bản đồ
                 if (tour.location.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
@@ -106,7 +175,11 @@ fun TourDetailScreen(
                         ),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
                     ) {
-                        Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Default.Map,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             if (isMapVisible) "Ẩn bản đồ" else "Xem vị trí trên bản đồ",
@@ -153,10 +226,10 @@ fun TourDetailScreen(
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))
                     ) {
                         Text(
-                            tour.loTrinh, 
+                            tour.loTrinh,
                             modifier = Modifier.padding(16.dp),
-                            fontSize = 14.sp, 
-                            color = Color(0xFF334155), 
+                            fontSize = 14.sp,
+                            color = Color(0xFF334155),
                             lineHeight = 22.sp
                         )
                     }
@@ -171,12 +244,11 @@ fun TourDetailScreen(
 
         if (showBookingSheet) {
             BookingBottomSheet(
-                tourPrice = tour.price,
                 tour = tour,
                 onDismiss = { showBookingSheet = false },
                 onConfirm = { adults, children, infants ->
                     showBookingSheet = false
-                    onNavigateToBooking(adults, children, infants) 
+                    onNavigateToBooking(adults, children, infants)
                 }
             )
         }
@@ -193,11 +265,9 @@ fun MapWebView(location: String, title: String) {
         isLoading = true
         try {
             val geocoder = android.location.Geocoder(context, Locale.getDefault())
-            
-            // 1. Loại bỏ các từ thừa gây nhiễu tìm kiếm
-            val cleanTitle = title.replace(Regex("(?i)tour|du lịch|khám phá|chuyến đi|trọn gói|tại"), "").trim()
-            
-            // 2. Danh sách truy vấn ưu tiên
+            val cleanTitle =
+                title.replace(Regex("(?i)tour|du lịch|khám phá|chuyến đi|trọn gói|tại"), "")
+                    .trim()
             val queries = mutableListOf<String>()
             if (cleanTitle.isNotEmpty()) {
                 queries.add("$cleanTitle, $location")
@@ -205,14 +275,12 @@ fun MapWebView(location: String, title: String) {
             }
             queries.add(location)
 
-            var found = false
             for (query in queries) {
                 if (query.isBlank()) continue
                 @Suppress("DEPRECATION")
                 val addresses = geocoder.getFromLocationName(query, 1)
                 if (!addresses.isNullOrEmpty()) {
                     latLng = Pair(addresses[0].latitude, addresses[0].longitude)
-                    found = true
                     break
                 }
             }
@@ -223,26 +291,23 @@ fun MapWebView(location: String, title: String) {
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         if (isLoading) {
             CircularProgressIndicator(color = Color(0xFF2563EB), strokeWidth = 2.dp)
         } else if (latLng != null) {
-            // Vệ tinh Hybrid sắc nét
-            val staticMapUrl = "https://static-maps.yandex.ru/1.x/?lang=vi_VN&ll=${latLng!!.second},${latLng!!.first}&z=17&l=sat,skl&size=600,450&pt=${latLng!!.second},${latLng!!.first},pm2rdm"
-            
+            val staticMapUrl =
+                "https://static-maps.yandex.ru/1.x/?lang=vi_VN&ll=${latLng!!.second},${latLng!!.first}&z=17&l=sat,skl&size=600,450&pt=${latLng!!.second},${latLng!!.first},pm2rdm"
+
             AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(staticMapUrl)
-                    .crossfade(true)
-                    .build(),
+                model = ImageRequest.Builder(context).data(staticMapUrl).crossfade(true).build(),
                 contentDescription = "Satellite Map Preview",
                 modifier = Modifier
                     .fillMaxSize()
                     .clickable {
-                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("geo:${latLng!!.first},${latLng!!.second}?q=${Uri.encode(title + " " + location)}"))
+                        val intent = android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            Uri.parse("geo:${latLng!!.first},${latLng!!.second}?q=${Uri.encode(title + " " + location)}")
+                        )
                         context.startActivity(intent)
                     },
                 contentScale = ContentScale.Crop
@@ -259,7 +324,12 @@ fun MapWebView(location: String, title: String) {
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.LocationOn, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                    Icon(
+                        Icons.Default.LocationOn,
+                        null,
+                        tint = Color.White,
+                        modifier = Modifier.size(14.dp)
+                    )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = if (title.length > 25) title.take(25) + "..." else title,
@@ -272,7 +342,10 @@ fun MapWebView(location: String, title: String) {
 
             IconButton(
                 onClick = {
-                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${Uri.encode(title + " " + location)}"))
+                    val intent = android.content.Intent(
+                        android.content.Intent.ACTION_VIEW,
+                        Uri.parse("geo:0,0?q=${Uri.encode(title + " " + location)}")
+                    )
                     context.startActivity(intent)
                 },
                 modifier = Modifier
@@ -281,15 +354,36 @@ fun MapWebView(location: String, title: String) {
                     .background(Color.White.copy(alpha = 0.9f), CircleShape)
                     .size(36.dp)
             ) {
-                Icon(Icons.AutoMirrored.Filled.OpenInNew, null, modifier = Modifier.size(18.dp), tint = Color(0xFF2563EB))
+                Icon(
+                    Icons.AutoMirrored.Filled.OpenInNew,
+                    null,
+                    modifier = Modifier.size(18.dp),
+                    tint = Color(0xFF2563EB)
+                )
             }
         } else {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
-                Icon(Icons.Default.LocationOff, null, tint = Color.LightGray, modifier = Modifier.size(32.dp))
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Icon(
+                    Icons.Default.LocationOff,
+                    null,
+                    tint = Color.LightGray,
+                    modifier = Modifier.size(32.dp)
+                )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Không tìm thấy: $title", fontSize = 11.sp, color = Color.Gray, textAlign = TextAlign.Center)
+                Text(
+                    "Không tìm thấy: $title",
+                    fontSize = 11.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
                 TextButton(onClick = {
-                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(title + " " + location)}"))
+                    val intent = android.content.Intent(
+                        android.content.Intent.ACTION_VIEW,
+                        Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(title + " " + location)}")
+                    )
                     context.startActivity(intent)
                 }) {
                     Text("Tìm thủ công trên Maps", fontSize = 12.sp)
@@ -305,17 +399,18 @@ fun ImageCarousel(tour: Tour) {
         val list = mutableListOf<String>()
         if (tour.imageUrl.isNotEmpty()) list.add(tour.imageUrl)
         list.addAll(tour.banners)
-        if (list.isEmpty()) list.add("") 
+        if (list.isEmpty()) list.add("")
         list.take(5)
     }
-    
+
     val pagerState = rememberPagerState(pageCount = { images.size })
 
-    Box(modifier = Modifier.fillMaxWidth().height(280.dp)) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize()
-        ) { pageIndex ->
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(280.dp)
+    ) {
+        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pageIndex ->
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(images[pageIndex])
@@ -328,7 +423,7 @@ fun ImageCarousel(tour: Tour) {
                 contentScale = ContentScale.Crop
             )
         }
-        
+
         if (images.size > 1) {
             Row(
                 modifier = Modifier
@@ -343,7 +438,10 @@ fun ImageCarousel(tour: Tour) {
                         modifier = Modifier
                             .size(if (pagerState.currentPage == index) 8.dp else 6.dp)
                             .clip(CircleShape)
-                            .background(if (pagerState.currentPage == index) Color.White else Color.White.copy(alpha = 0.5f))
+                            .background(
+                                if (pagerState.currentPage == index) Color.White
+                                else Color.White.copy(alpha = 0.5f)
+                            )
                     )
                 }
             }
@@ -354,7 +452,12 @@ fun ImageCarousel(tour: Tour) {
 @Composable
 fun SectionTitleWithIcon(icon: ImageVector, title: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = Color(0xFF2563EB), modifier = Modifier.size(22.dp))
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = Color(0xFF2563EB),
+            modifier = Modifier.size(22.dp)
+        )
         Spacer(modifier = Modifier.width(8.dp))
         Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
     }
@@ -367,9 +470,7 @@ fun DetailTextWithTicks(text: String) {
         if (lines.isEmpty() && text.isNotBlank()) {
             TickItem(text)
         } else {
-            lines.forEach { line ->
-                TickItem(line.trim())
-            }
+            lines.forEach { line -> TickItem(line.trim()) }
         }
     }
 }
@@ -378,18 +479,15 @@ fun DetailTextWithTicks(text: String) {
 fun TickItem(text: String) {
     Row(verticalAlignment = Alignment.Top) {
         Icon(
-            Icons.Default.CheckCircle, 
-            contentDescription = null, 
-            tint = Color(0xFF10B981), 
-            modifier = Modifier.size(18.dp).padding(top = 2.dp)
+            Icons.Default.CheckCircle,
+            contentDescription = null,
+            tint = Color(0xFF10B981),
+            modifier = Modifier
+                .size(18.dp)
+                .padding(top = 2.dp)
         )
         Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = text, 
-            fontSize = 14.sp, 
-            color = Color(0xFF334155), 
-            lineHeight = 20.sp
-        )
+        Text(text = text, fontSize = 14.sp, color = Color(0xFF334155), lineHeight = 20.sp)
     }
 }
 
@@ -397,10 +495,7 @@ fun TickItem(text: String) {
 fun RatingSection(rating: Double, reviews: Int) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         if (reviews > 0) {
-            Surface(
-                color = Color(0xFF2563EB),
-                shape = RoundedCornerShape(8.dp)
-            ) {
+            Surface(color = Color(0xFF2563EB), shape = RoundedCornerShape(8.dp)) {
                 Text(
                     text = String.format("%.1f", rating),
                     color = Color.White,
@@ -411,15 +506,16 @@ fun RatingSection(rating: Double, reviews: Int) {
             }
             Spacer(modifier = Modifier.width(10.dp))
             Column {
-                Text("Đánh giá", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF2563EB))
+                Text(
+                    "Đánh giá",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = Color(0xFF2563EB)
+                )
                 Text("($reviews đánh giá)", fontSize = 12.sp, color = Color(0xFF475569))
             }
         } else {
-            // Hiển thị cho tour chưa có đánh giá
-            Surface(
-                color = Color(0xFF2563EB), // Màu xanh "Mới"
-                shape = RoundedCornerShape(8.dp)
-            ) {
+            Surface(color = Color(0xFF2563EB), shape = RoundedCornerShape(8.dp)) {
                 Text(
                     text = "Mới",
                     color = Color.White,
@@ -438,16 +534,30 @@ fun RatingSection(rating: Double, reviews: Int) {
 fun QuickInfoGrid(tour: Tour) {
     val scaleInfo = tour.getTourScaleInfo()
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            InfoItem(Icons.Default.LocationOn, "Khởi hành", tour.diemKhoiHanh.ifEmpty { "Liên hệ" })
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
             InfoItem(
-                Icons.Default.DirectionsCar, 
-                if (scaleInfo != null) scaleInfo.label else "Phương tiện", 
+                Icons.Default.LocationOn,
+                "Khởi hành",
+                tour.diemKhoiHanh.ifEmpty { "Liên hệ" }
+            )
+            InfoItem(
+                Icons.Default.DirectionsCar,
+                if (scaleInfo != null) scaleInfo.label else "Phương tiện",
                 if (scaleInfo != null) scaleInfo.transport else "Xe du lịch"
             )
         }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            InfoItem(Icons.Default.ConfirmationNumber, "Mã tour", tour.maTour.ifEmpty { "N/A" })
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            InfoItem(
+                Icons.Default.ConfirmationNumber,
+                "Mã tour",
+                tour.maTour.ifEmpty { "N/A" }
+            )
             InfoItem(Icons.Default.CalendarToday, "Thời gian", tour.duration)
         }
     }
@@ -455,12 +565,22 @@ fun QuickInfoGrid(tour: Tour) {
 
 @Composable
 fun InfoItem(icon: ImageVector, label: String, value: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.width(160.dp)) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.width(160.dp)
+    ) {
         Icon(icon, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
         Spacer(modifier = Modifier.width(8.dp))
         Column {
             Text(label, fontSize = 11.sp, color = Color(0xFF64748B))
-            Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                value,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF0F172A),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -468,17 +588,27 @@ fun InfoItem(icon: ImageVector, label: String, value: String) {
 @Composable
 fun CustomerReviewsSection(tourId: String, reviewViewModel: ReviewViewModel) {
     val reviews by reviewViewModel.reviews.collectAsState()
-    
+
     LaunchedEffect(tourId) {
         reviewViewModel.loadReviewsForTour(tourId)
     }
 
     Column {
-        Text("Đánh giá khách hàng", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+        Text(
+            "Đánh giá khách hàng",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF0F172A)
+        )
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         if (reviews.isEmpty()) {
-            Text("Chưa có đánh giá nào cho tour này.", fontSize = 14.sp, color = Color(0xFF64748B), modifier = Modifier.padding(vertical = 8.dp))
+            Text(
+                "Chưa có đánh giá nào cho tour này.",
+                fontSize = 14.sp,
+                color = Color(0xFF64748B),
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
         } else {
             reviews.forEach { review ->
                 ReviewCard(review)
@@ -503,16 +633,31 @@ fun ReviewCard(review: Review) {
             AsyncImage(
                 model = if (!review.userAvatar.isNullOrEmpty()) review.userAvatar else R.drawable.a9,
                 contentDescription = null,
-                modifier = Modifier.size(40.dp).clip(CircleShape),
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape),
                 contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(review.userName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF0F172A))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        review.userName,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = Color(0xFF0F172A)
+                    )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         repeat(review.rating) {
-                            Icon(Icons.Default.Star, null, tint = Color(0xFFE9BC3C), modifier = Modifier.size(14.dp))
+                            Icon(
+                                Icons.Default.Star,
+                                null,
+                                tint = Color(0xFFE9BC3C),
+                                modifier = Modifier.size(14.dp)
+                            )
                         }
                     }
                 }
@@ -525,7 +670,7 @@ fun ReviewCard(review: Review) {
 }
 
 @Composable
-fun BookingBottomBar(price: Long, onBook: () -> Unit) {
+fun BookingBottomBar(price: Long, originalPrice: Long = 0, onBook: () -> Unit) {
     val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -533,21 +678,41 @@ fun BookingBottomBar(price: Long, onBook: () -> Unit) {
         color = Color.White
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).navigationBarsPadding(),
+            modifier = Modifier
+                .padding(16.dp)
+                .navigationBarsPadding(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
                 Text("Giá từ", fontSize = 12.sp, color = Color(0xFF64748B))
-                Text(formatter.format(price), fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF2563EB))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        formatter.format(price),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF2563EB)
+                    )
+                    if (originalPrice > 0) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            formatter.format(originalPrice),
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                            textDecoration = TextDecoration.LineThrough
+                        )
+                    }
+                }
             }
             Button(
                 onClick = onBook,
-                modifier = Modifier.height(50.dp).width(160.dp),
+                modifier = Modifier
+                    .height(50.dp)
+                    .width(160.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
             ) {
-                Text("Đặt ngay", fontSize = 16.sp, fontWeight = FontWeight.Bold , color = Color.White)
+                Text("Đặt ngay", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
     }
@@ -555,7 +720,6 @@ fun BookingBottomBar(price: Long, onBook: () -> Unit) {
 
 @Composable
 fun BookingBottomSheet(
-    tourPrice: Long,
     tour: Tour,
     onDismiss: () -> Unit,
     onConfirm: (Int, Int, Int) -> Unit
@@ -563,66 +727,151 @@ fun BookingBottomSheet(
     var adultCount by remember { mutableIntStateOf(1) }
     var childCount by remember { mutableIntStateOf(0) }
     var infantCount by remember { mutableIntStateOf(0) }
-    
+
     val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+
+    val priceTreEm = if (tour.getGiaTreEm() > 0) tour.getGiaTreEm() else (tour.getPrice() * 0.7).toLong()
+    val priceTreSoSinh = if (tour.getGiaTreNho() > 0) tour.getGiaTreNho() else (tour.getPrice() * 0.5).toLong()
     
-    val priceTreEm = if (tour.giaTreEm > 0) tour.giaTreEm else (tourPrice * 0.7).toLong()
-    val priceTreSoSinh = if (tour.giaTreNho > 0) tour.giaTreNho else (tourPrice * 0.5).toLong()
-    val totalPrice = (adultCount * tourPrice) + (childCount * priceTreEm) + (infantCount * priceTreSoSinh)
+    val origPriceTreEm = if (tour.originalPriceChild > 0) tour.originalPriceChild else (tour.originalPrice * 0.7).toLong()
+    val origPriceTreSoSinh = if (tour.originalPriceInfant > 0) tour.originalPriceInfant else (tour.originalPrice * 0.5).toLong()
+
+    val totalPrice = (adultCount * tour.getPrice()) + (childCount * priceTreEm) + (infantCount * priceTreSoSinh)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
-        Column(modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 32.dp).fillMaxWidth().verticalScroll(rememberScrollState())) {
-            Text("Chọn số lượng khách", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text(
+                "Chọn số lượng khách",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF0F172A)
+            )
             Spacer(modifier = Modifier.height(24.dp))
+
+            CounterItem(
+                title = "Người lớn",
+                subtitle = "Giá: ${formatter.format(tour.getPrice())}",
+                originalPrice = if (tour.isOffer) tour.originalPrice else 0,
+                count = adultCount
+            ) { adultCount = it }
             
-            CounterItem("Người lớn", "Giá: ${formatter.format(tourPrice)}", adultCount) { adultCount = it }
             Spacer(modifier = Modifier.height(16.dp))
-            CounterItem("Trẻ em", "Giá: ${formatter.format(priceTreEm)}", childCount) { childCount = it }
+            
+            CounterItem(
+                title = "Trẻ em",
+                subtitle = "Giá: ${formatter.format(priceTreEm)}",
+                originalPrice = if (tour.isOffer) origPriceTreEm else 0,
+                count = childCount
+            ) { childCount = it }
+            
             Spacer(modifier = Modifier.height(16.dp))
-            CounterItem("Trẻ nhỏ", "Giá: ${formatter.format(priceTreSoSinh)}", infantCount) { infantCount = it }
+            
+            CounterItem(
+                title = "Trẻ nhỏ",
+                subtitle = "Giá: ${formatter.format(priceTreSoSinh)}",
+                originalPrice = if (tour.isOffer) origPriceTreSoSinh else 0,
+                count = infantCount
+            ) { infantCount = it }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             HorizontalDivider(color = Color(0xFFF1F5F9))
-            
+
             Row(
-                modifier = Modifier.padding(vertical = 20.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(vertical = 20.dp)
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Tổng tạm tính", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
-                Text(formatter.format(totalPrice), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF2563EB))
+                Text(
+                    "Tổng tạm tính",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A)
+                )
+                Text(
+                    formatter.format(totalPrice),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF2563EB)
+                )
             }
-            
+
             Button(
                 onClick = { onConfirm(adultCount, childCount, infantCount) },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
             ) {
-                Text("Xác nhận đặt tour", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(
+                    "Xác nhận đặt tour",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
         }
     }
 }
 
 @Composable
-fun CounterItem(title: String, subtitle: String, count: Int, onCountChange: (Int) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+fun CounterItem(
+    title: String,
+    subtitle: String,
+    originalPrice: Long = 0,
+    count: Int,
+    onCountChange: (Int) -> Unit
+) {
+    val formatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
-            Text(subtitle, fontSize = 12.sp, color = Color(0xFF64748B))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(subtitle, fontSize = 12.sp, color = Color(0xFF64748B))
+                if (originalPrice > 0) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        formatter.format(originalPrice),
+                        fontSize = 10.sp,
+                        color = Color.Gray,
+                        textDecoration = TextDecoration.LineThrough
+                    )
+                }
+            }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(
                 onClick = { if (count > 0) onCountChange(count - 1) },
                 enabled = count > 0
-            ) { Icon(Icons.Default.RemoveCircleOutline, null, tint = if (count > 0) Color(0xFF2563EB) else Color(0xFFCBD5E1)) }
-            Text(count.toString(), modifier = Modifier.padding(horizontal = 12.dp), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+            ) {
+                Icon(
+                    Icons.Default.RemoveCircleOutline,
+                    null,
+                    tint = if (count > 0) Color(0xFF2563EB) else Color(0xFFCBD5E1)
+                )
+            }
+            Text(
+                count.toString(),
+                modifier = Modifier.padding(horizontal = 12.dp),
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = Color(0xFF0F172A)
+            )
             IconButton(onClick = { onCountChange(count + 1) }) {
                 Icon(Icons.Default.AddCircleOutline, null, tint = Color(0xFF2563EB))
             }

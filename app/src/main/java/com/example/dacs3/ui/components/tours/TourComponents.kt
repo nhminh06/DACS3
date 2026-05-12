@@ -30,6 +30,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,7 +86,7 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(tour.imageUrl)
+                        .data(tour.imageUrl.ifEmpty { tour.imageRes })
                         .crossfade(true)
                         .build(),
                     contentDescription = null,
@@ -93,8 +94,27 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                     contentScale = ContentScale.Crop
                 )
 
-                // Rating overlay
-                if (tour.rating > 0 && tour.reviewCount > 0) {
+                // Nhãn giảm giá góc trái
+                if (tour.isOffer && tour.discountTag.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier
+                            .padding(top = 8.dp, start = 8.dp)
+                            .align(Alignment.TopStart),
+                        color = Color(0xFFFF5722),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = tour.discountTag,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                // Rating overlay (Nếu không có nhãn giảm giá hoặc hiển thị đè)
+                if (tour.rating > 0 && tour.reviewCount > 0 && !tour.isOffer) {
                     Surface(
                         modifier = Modifier
                             .padding(top = 12.dp, start = 8.dp)
@@ -115,22 +135,6 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                                 fontWeight = FontWeight.Bold
                             )
                         }
-                    }
-                } else {
-                    Surface(
-                        modifier = Modifier
-                            .padding(top = 12.dp, start = 8.dp)
-                            .align(Alignment.TopStart),
-                        color = appBlue.copy(alpha = 0.7f), // Màu xanh biển của app, trong suốt 0.7
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = "Mới",
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            color = Color.White,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
                     }
                 }
             }
@@ -183,12 +187,23 @@ fun TourCard(tour: Tour, onClick: (Tour) -> Unit = {}) {
                     verticalAlignment = Alignment.Bottom
                 ) {
                     Column {
-                        Text(
-                            text = currencyFormatter.format(tour.price),
-                            color = appBlue,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 16.sp
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = currencyFormatter.format(tour.price ?: 0),
+                                color = if (tour.isOffer) Color(0xFFEF4444) else appBlue,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 16.sp
+                            )
+                            if (tour.isOffer && tour.originalPrice > 0) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = currencyFormatter.format(tour.originalPrice),
+                                    color = Color.Gray,
+                                    fontSize = 10.sp,
+                                    textDecoration = TextDecoration.LineThrough
+                                )
+                            }
+                        }
                         Text("mỗi khách", color = Color(0xFF64748B), fontSize = 9.sp, fontWeight = FontWeight.Medium)
                     }
                     
@@ -223,7 +238,6 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
     val selectedRating by viewModel.selectedRating.collectAsState()
     val primaryColor = Color(0xFF2563EB)
 
-    // Internal state for text fields, initialized empty if they are default values
     var minPriceText by remember { 
         mutableStateOf(if (priceRange.start == 0f) "" else priceRange.start.toLong().toString()) 
     }
@@ -242,7 +256,6 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
         Text("Bộ lọc tìm kiếm", fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = Color(0xFF0F172A))
         Spacer(modifier = Modifier.height(24.dp))
         
-        // 1. Loại tour
         FilterSectionTitle("Loại tour")
         Row(modifier = Modifier.padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterSelectButton("Tất cả", selectedTourType == "Tất cả") { viewModel.setTourType("Tất cả") }
@@ -250,7 +263,6 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
             FilterSelectButton("Dài ngày", selectedTourType == "Dài ngày") { viewModel.setTourType("Dài ngày") }
         }
 
-        // 2. Địa điểm
         FilterSectionTitle("Địa điểm")
         Column(modifier = Modifier.padding(vertical = 8.dp)) {
             if (availableProvinces.isEmpty()) {
@@ -271,7 +283,6 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
             }
         }
 
-        // 3. Khoảng giá
         FilterSectionTitle("Khoảng giá (đ)")
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -333,7 +344,6 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
             )
         }
 
-        // 4. Thời gian
         FilterSectionTitle("Thời gian")
         val durations = listOf("Tất cả", "1 ngày", "2-3 ngày", "4-5 ngày", "6+ ngày")
         LazyRow(modifier = Modifier.padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -342,7 +352,6 @@ fun FilterContent(viewModel: MainViewModel, onApply: () -> Unit) {
             }
         }
 
-        // 5. Đánh giá
         FilterSectionTitle("Đánh giá")
         val ratings = listOf(
             Triple(9.0f, "Tuyệt vời (9.0+)", Color(0xFF1E3A8A)),

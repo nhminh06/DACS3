@@ -25,6 +25,20 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
-tasks.named('test') {
+// Đọc local.properties từ root project
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localProperties.load(new FileInputStream(localPropertiesFile))
+}
+
+// Truyền thuộc tính vào bootRun để Spring @Value có thể đọc được
+bootRun {
+    systemProperty "pixazo.api.key", localProperties.getProperty("pixazo.api.key")
+}
+
+// Cũng truyền vào test nếu cần
+test {
     useJUnitPlatform()
+    systemProperty "pixazo.api.key", localProperties.getProperty("pixazo.api.key")
 }

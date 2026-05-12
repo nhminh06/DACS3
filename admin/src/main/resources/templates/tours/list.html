@@ -8,45 +8,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" th:href="@{/css/admin-style.css}">
     <style>
-        .pagination-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-            padding: 15px;
-            background: #26263b;
-            border-radius: 8px;
-        }
-        .pagination-info {
-            color: #ccc;
-            font-size: 14px;
-        }
-        .pagination .page-link {
-            background: #1e1e2f;
-            border-color: #3f3f5f;
-            color: #fff;
-            padding: 8px 16px;
-        }
-        .pagination .page-item.active .page-link {
-            background: #667eea;
-            border-color: #667eea;
-        }
-        .pagination .page-item.disabled .page-link {
-            background: #161625;
-            border-color: #2f2f45;
-            color: #666;
-        }
-        .scale-badge {
-            font-size: 10px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 15px; background: #26263b; border-radius: 8px; }
+        .scale-badge { font-size: 10px; padding: 4px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
         .scale-small { background: #0ea5e9; color: white; }
         .scale-medium { background: #8b5cf6; color: white; }
         .scale-large { background: #f59e0b; color: white; }
         .scale-custom { background: #64748b; color: white; }
+        .offer-badge { background: #f59e0b; color: #000; font-size: 9px; padding: 2px 5px; border-radius: 3px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -55,9 +23,7 @@
     <div class="main">
         <header class="header">
             <h1 class="h4 mb-0">Quản lý Tour</h1>
-            <div class="user-info">
-                Xin chào <strong>Admin</strong>
-            </div>
+            <div class="user-info">Xin chào <strong>Admin</strong></div>
         </header>
 
         <div class="stats-cards">
@@ -114,14 +80,16 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:each="tour, iterStat : ${tours}">
-                        <td class="id-cell" th:text="'#' + ${tour.get('maTour') ?: (currentPage - 1) * 10 + iterStat.index + 1}"></td>
+                    <tr th:each="tour : ${tours}">
+                        <td class="id-cell" th:text="'#' + ${tour.get('maTour')}"></td>
                         <td>
                             <img th:if="${tour.get('imageUrl')}" th:src="${tour.get('imageUrl')}" class="thumbnail-img">
-                            <div th:unless="${tour.get('imageUrl')}" class="thumbnail-img bg-secondary d-flex align-items-center justify-content-center"><i class="bi bi-image"></i></div>
                         </td>
                         <td class="tour-title">
-                            <div th:text="${tour.get('title')}"></div>
+                            <div>
+                                <span th:text="${tour.get('title')}"></span>
+                                <span th:if="${tour.get('isOffer') == true}" class="offer-badge">GIẢM GIÁ</span>
+                            </div>
                             <small class="text-muted" th:text="${tour.get('location')}"></small>
                         </td>
                         <td>
@@ -131,15 +99,17 @@
                             <span th:if="${tour.get('scale') == 'custom' || tour.get('scale') == null}" class="scale-badge scale-custom">Tùy chỉnh</span>
                         </td>
                         <td class="guests-cell">
-                            <span class="badge bg-dark text-info" th:text="|${tour.get('minGuests') ?: 1} - ${tour.get('maxGuests') ?: 50}|">1 - 50</span>
+                            <span class="badge bg-dark text-info" th:text="|${tour.get('minGuests') ?: 1} - ${tour.get('maxGuests') ?: 50}|"></span>
                         </td>
                         <td class="price-cell" th:text="${#numbers.formatDecimal(tour.get('price') ?: 0, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
                         <td>
-                            <span th:if="${tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null}" class="badge badge-status status-confirmed">Đang hiển thị</span>
-                            <span th:unless="${tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null}" class="badge badge-status status-cancelled">Đang ẩn</span>
+                            <span th:if="${tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null}" class="badge badge-status status-confirmed">Đang hiện</span>
+                            <span th:unless="${tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null}" class="badge badge-status status-cancelled">Đã ẩn</span>
                         </td>
                         <td class="text-end">
-                            <a th:href="@{/admin/tours/toggle-status/{id}(id=${tour.get('id')})}" class="btn-action"><i class="bi bi-gear"></i></a>
+                            <a th:href="@{/admin/tours/toggle-status/{id}(id=${tour.get('id')})}" class="btn-action" th:title="${tour.get('trang_thai') == 'active' ? 'Ẩn tour' : 'Hiện tour'}">
+                                <i th:class="${(tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null) ? 'bi bi-eye-slash' : 'bi bi-eye'}"></i>
+                            </a>
                             <a th:href="@{/admin/tours/edit/{id}(id=${tour.get('id')})}" class="btn-action"><i class="bi bi-pencil"></i></a>
                             <a th:href="@{/admin/tours/delete/{id}(id=${tour.get('id')})}" class="btn-action" onclick="return confirm('Xóa tour?')"><i class="bi bi-trash"></i></a>
                         </td>
@@ -148,30 +118,14 @@
             </table>
         </div>
 
-        <!-- Pagination -->
         <div class="pagination-container" th:if="${totalPages > 0}">
-            <div class="pagination-info">
-                Hiển thị <span th:text="${tours.size()}">0</span> / <span th:text="${totalFiltered}">0</span> tour
-            </div>
-            <nav aria-label="Page navigation">
-                <ul class="pagination mb-0">
-                    <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'">
-                        <a class="page-link" th:href="@{/admin/tours(page=${currentPage - 1}, search=${search}, sort=${sort})}" aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                    <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'">
-                        <a class="page-link" th:text="${i}" th:href="@{/admin/tours(page=${i}, search=${search}, sort=${sort})}">1</a>
-                    </li>
-                    <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'">
-                        <a class="page-link" th:href="@{/admin/tours(page=${currentPage + 1}, search=${search}, sort=${sort})}" aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+            <div class="pagination-info">Hiển thị <span th:text="${tours.size()}">0</span> / <span th:text="${totalFiltered}">0</span> tour</div>
+            <nav><ul class="pagination mb-0">
+                <li class="page-item" th:classappend="${currentPage == 1} ? 'disabled'"><a class="page-link" th:href="@{/admin/tours(page=${currentPage - 1})}">&laquo;</a></li>
+                <li class="page-item" th:each="i : ${#numbers.sequence(1, totalPages)}" th:classappend="${i == currentPage} ? 'active'"><a class="page-link" th:text="${i}" th:href="@{/admin/tours(page=${i})}"></a></li>
+                <li class="page-item" th:classappend="${currentPage == totalPages} ? 'disabled'"><a class="page-link" th:href="@{/admin/tours(page=${currentPage + 1})}">&raquo;</a></li>
+            </ul></nav>
         </div>
     </div>
-    <script th:src="@{/js/admin-common.js}"></script>
 </body>
 </html>

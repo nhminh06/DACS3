@@ -155,13 +155,13 @@ public class AdminArticleController {
                 Map<String, Object> articleData = doc.getData();
                 String title = (String) articleData.getOrDefault("tieu_de", "Không có tiêu đề");
                 List<Map<String, Object>> sections = (List<Map<String, Object>>) articleData.get("sections");
-                
+
                 StringBuilder fullContent = new StringBuilder();
                 if (sections != null) {
                     for (Map<String, Object> section : sections) {
                         String sectionTitle = (String) section.get("tieu_de");
                         String sectionContent = (String) section.get("noi_dung");
-                        
+
                         if (sectionTitle != null && !sectionTitle.isEmpty()) {
                             fullContent.append(sectionTitle).append(". ");
                         }

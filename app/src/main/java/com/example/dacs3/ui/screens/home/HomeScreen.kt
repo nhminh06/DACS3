@@ -50,11 +50,15 @@ fun AppHomeScreen(
     val allTours by viewModel.allTours.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
-    
+    val banners by viewModel.banners.collectAsState()
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
     val systemMeta by notificationViewModel.systemMeta.collectAsState()
     val reportMeta by notificationViewModel.reportMeta.collectAsState()
     val contactMeta by notificationViewModel.contactMeta.collectAsState()
+
+    val offerTours = remember(allTours) {
+        allTours.filter { it.isOffer }
+    }
 
     var showNotifDialog by remember { mutableStateOf(false) }
 
@@ -70,15 +74,14 @@ fun AppHomeScreen(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Sắp xếp: Ưu tiên các mục có thông báo mới lên đầu, sau đó sắp xếp theo thời gian mới nhất
                     val sortedCategories = remember(systemMeta, reportMeta, contactMeta) {
                         listOf(
                             Triple("system", systemMeta.first, systemMeta.second),
                             Triple("report", reportMeta.first, reportMeta.second),
                             Triple("contact", contactMeta.first, contactMeta.second)
                         ).sortedWith(
-                            compareByDescending<Triple<String, Int, Long>> { it.second > 0 } // Có tin mới lên đầu
-                                .thenByDescending { it.third } // Mới nhất lên đầu
+                            compareByDescending<Triple<String, Int, Long>> { it.second > 0 }
+                                .thenByDescending { it.third }
                         )
                     }
 
@@ -208,6 +211,24 @@ fun AppHomeScreen(
                     HomePaddingWrapper { 
                         CategorySection(onCategoryClick = onCategoryClick)
                     } 
+                }
+
+                // Promo Banners
+                item {
+                    HomePaddingWrapper {
+                        PromoBannersSection(banners = banners)
+                    }
+                }
+
+                // Special Offers (Luôn hiển thị, dùng fallback nếu không có tour thật)
+                item {
+                    HomePaddingWrapper {
+                        SpecialOffersSection(
+                            tours = offerTours,
+                            onTourClick = onTourClick,
+                            onSeeAllClick = { onNavigate("tours") }
+                        )
+                    }
                 }
 
                 if (allTours.isNotEmpty()) {

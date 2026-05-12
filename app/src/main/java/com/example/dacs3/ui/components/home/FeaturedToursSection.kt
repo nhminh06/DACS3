@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -133,13 +134,32 @@ fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
                     contentScale = ContentScale.Crop
                 )
 
-                // Rating overlay: Chỉ hiển thị nếu rating > 0 và có review thực tế
+                // Tag ưu đãi góc phải nếu có
+                if (tour.isOffer && tour.discountTag.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier
+                            .padding(top = 8.dp, end = 8.dp)
+                            .align(Alignment.TopEnd),
+                        color = Color(0xFFFF5722),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = tour.discountTag,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                // Rating overlay
                 if (tour.rating > 0 && tour.reviewCount > 0) {
                     Surface(
                         modifier = Modifier
-                            .padding(top = 12.dp, start = 8.dp) // Hạ thấp xuống
+                            .padding(top = 12.dp, start = 8.dp)
                             .align(Alignment.TopStart),
-                        color = Color.Black.copy(alpha = 0.5f), // Trong suốt
+                        color = Color.Black.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Row(
@@ -151,13 +171,12 @@ fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
                             Text(text = tour.rating.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                     }
-                } else {
-                    // Hiển thị nhãn "Mới" với màu xanh biển của app (giống nút "Xem tất cả")
+                } else if (!tour.isOffer) {
                     Surface(
                         modifier = Modifier
-                            .padding(top = 12.dp, start = 8.dp) // Hạ thấp xuống
+                            .padding(top = 12.dp, start = 8.dp)
                             .align(Alignment.TopStart),
-                        color = mainColor.copy(alpha = 0.7f), // Màu xanh biển app trong suốt
+                        color = mainColor.copy(alpha = 0.7f),
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
@@ -184,7 +203,7 @@ fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
-                // 3. Du khách & Địa điểm - Icon cùng màu với giá
+                // 3. Du khách & Địa điểm
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Groups, null, tint = mainColor, modifier = Modifier.size(11.dp))
@@ -200,25 +219,34 @@ fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(2.dp))
 
-                // 4. Thời gian - Icon cùng màu với giá
+                // 4. Thời gian
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.AccessTime, null, tint = mainColor, modifier = Modifier.size(11.dp))
                     Spacer(modifier = Modifier.width(3.dp))
                     Text(text = tour.duration, color = Color(0xFF64748B), fontSize = 9.sp)
                 }
                 
-                // Thu hẹp khoảng trống bằng cách sử dụng height thay vì weight(1f)
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 // 5. Giá
-                Text(
-                    text = currencyFormatter.format(tour.price),
-                    color = mainColor,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 14.sp
-                )
-                
-                // Đẩy phần trống xuống dưới cùng của thẻ nếu cần
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = currencyFormatter.format(tour.price ?: 0),
+                        color = if (tour.isOffer) Color(0xFFEF4444) else mainColor,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 14.sp
+                    )
+                    if (tour.isOffer && tour.originalPrice > 0) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = currencyFormatter.format(tour.originalPrice),
+                            color = Color.Gray,
+                            fontSize = 9.sp,
+                            textDecoration = TextDecoration.LineThrough
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.weight(1f))
             }
         }

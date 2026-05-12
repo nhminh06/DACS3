@@ -14,6 +14,11 @@
                 <i class="bi bi-bar-chart"></i> Thống kê Dashboard
             </a>
             <div class="nav-divider" style="height: 1px; background: rgba(255,255,255,0.05); margin: 10px 20px;"></div>
+
+            <a class="nav-link" th:classappend="${activeMenu == 'banners' ? 'active' : ''}" href="/admin/banners">
+                <i class="bi bi-images"></i> Quản lý Banner
+            </a>
+
             <a class="nav-link" th:classappend="${activeMenu == 'tours' ? 'active' : ''}" href="/admin/tours">
                 <i class="bi bi-map"></i> Quản lý Tour
             </a>
