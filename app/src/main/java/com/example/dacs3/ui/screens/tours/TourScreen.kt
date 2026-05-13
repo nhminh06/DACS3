@@ -50,34 +50,22 @@ fun TourScreen(
     onTourClick: (Tour) -> Unit,
     viewModel: MainViewModel
 ) {
-    val tours by viewModel.tours.collectAsState()
+    // SỬ DỤNG TRỰC TIẾP DỮ LIỆU ĐÃ PHÂN TRANG VÀ TỔNG SỐ TRANG TỪ VIEWMODEL
+    val pagedTours by viewModel.pagedTours.collectAsState()
+    val currentPage by viewModel.currentPage.collectAsState()
+    val totalPages by viewModel.totalPages.collectAsState()
+    
     val isLoading by viewModel.isLoading.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
-    
+    val selectedTourType by viewModel.selectedTourType.collectAsState()
+    val selectedScale by viewModel.selectedScale.collectAsState()
+    val tours by viewModel.tours.collectAsState()
+
     var showFilterSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-
-    // Phân trang
-    var currentPage by remember { mutableIntStateOf(1) }
-    val itemsPerPage = 6
-    val totalPages = maxOf(1, (tours.size + itemsPerPage - 1) / itemsPerPage)
-
-    // Filter states
-    val selectedTourType by viewModel.selectedTourType.collectAsState()
-    val selectedScale by viewModel.selectedScale.collectAsState()
-
-    // Reset về trang 1 khi danh sách tour thay đổi
-    LaunchedEffect(tours) {
-        currentPage = 1
-    }
-
-    val pagedTours = remember(tours, currentPage) {
-        val startIndex = (currentPage - 1) * itemsPerPage
-        tours.drop(startIndex).take(itemsPerPage)
-    }
 
     Scaffold(
         bottomBar = {
@@ -228,7 +216,8 @@ fun TourScreen(
                     }
                 }
 
-                items(pagedTours) { tour ->
+                // HIỂN THỊ DANH SÁCH TOUR ĐÃ CHIA TRANG TỪ VIEWMODEL
+                items(pagedTours, key = { it.id }) { tour ->
                     TourCard(tour = tour, onClick = { onTourClick(tour) })
                 }
 
@@ -238,8 +227,10 @@ fun TourScreen(
                             currentPage = currentPage,
                             totalPages = totalPages,
                             onPageChange = { 
-                                currentPage = it
-                                coroutineScope.launch { listState.animateScrollToItem(1) }
+                                viewModel.setPage(it)
+                                coroutineScope.launch { 
+                                    listState.animateScrollToItem(1) 
+                                }
                             }
                         )
                     }

@@ -170,7 +170,7 @@ fun ArticleCard(article: ArticleEntity, onClick: () -> Unit) {
                         modifier = Modifier.height(28.dp),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("Xem thêm", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("Xem thêm", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 }
             }

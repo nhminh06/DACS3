@@ -56,8 +56,14 @@ fun AppHomeScreen(
     val reportMeta by notificationViewModel.reportMeta.collectAsState()
     val contactMeta by notificationViewModel.contactMeta.collectAsState()
 
+    // Chỉ lấy những tour đang có ưu đãi
     val offerTours = remember(allTours) {
         allTours.filter { it.isOffer }
+    }
+    
+    // Chỉ lấy những tour thường (không phải ưu đãi) để hiện ở mục Nổi bật
+    val featuredTours = remember(allTours) {
+        allTours.filter { !it.isOffer }
     }
 
     var showNotifDialog by remember { mutableStateOf(false) }
@@ -220,7 +226,7 @@ fun AppHomeScreen(
                     }
                 }
 
-                // Special Offers (Luôn hiển thị, dùng fallback nếu không có tour thật)
+                // Special Offers (Flash Sale)
                 item {
                     HomePaddingWrapper {
                         SpecialOffersSection(
@@ -231,11 +237,12 @@ fun AppHomeScreen(
                     }
                 }
 
-                if (allTours.isNotEmpty()) {
+                // Featured Tours (Tour nổi bật - chỉ hiện tour KHÔNG giảm giá hoặc tour mặc định)
+                if (featuredTours.isNotEmpty()) {
                     item {
                         HomePaddingWrapper {
                             FeaturedToursSection(
-                                tours = allTours, 
+                                tours = featuredTours,
                                 onTourClick = onTourClick,
                                 onSeeAllClick = { onNavigate("tours") }
                             )

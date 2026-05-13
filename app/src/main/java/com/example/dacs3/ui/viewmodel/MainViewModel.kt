@@ -18,7 +18,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
+import java.util.Locale
 
 class MainViewModel : ViewModel() {
     private val tourRepository = TourRepository()
@@ -31,14 +33,17 @@ class MainViewModel : ViewModel() {
     private val _tours = MutableStateFlow<List<Tour>>(emptyList())
     val tours: StateFlow<List<Tour>> = _tours.asStateFlow()
 
-    private val _guides = MutableStateFlow<List<Guide>>(emptyList())
-    val guides: StateFlow<List<Guide>> = _guides.asStateFlow()
+    // PHÂN TRANG: UI sẽ lấy dữ liệu từ đây
+    private val _pagedTours = MutableStateFlow<List<Tour>>(emptyList())
+    val pagedTours: StateFlow<List<Tour>> = _pagedTours.asStateFlow()
 
-    private val _guideReviews = MutableStateFlow<List<Pair<Review, String>>>(emptyList())
-    val guideReviews: StateFlow<List<Pair<Review, String>>> = _guideReviews.asStateFlow()
+    private val _currentPage = MutableStateFlow(1)
+    val currentPage: StateFlow<Int> = _currentPage.asStateFlow()
 
-    private val _allReviews = MutableStateFlow<List<Review>>(emptyList())
-    val allReviews: StateFlow<List<Review>> = _allReviews.asStateFlow()
+    private val _totalPages = MutableStateFlow(1)
+    val totalPages: StateFlow<Int> = _totalPages.asStateFlow()
+
+    private val itemsPerPage = 6
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -68,223 +73,177 @@ class MainViewModel : ViewModel() {
     private val _availableProvinces = MutableStateFlow<List<String>>(emptyList())
     val availableProvinces = _availableProvinces.asStateFlow()
 
+    private val _banners = MutableStateFlow<List<Map<String, Any>>>(emptyList())
+    val banners: StateFlow<List<Map<String, Any>>> = _banners.asStateFlow()
+
+    private val _guides = MutableStateFlow<List<Guide>>(emptyList())
+    val guides: StateFlow<List<Guide>> = _guides.asStateFlow()
+
+    private val _allReviews = MutableStateFlow<List<Review>>(emptyList())
+    val allReviews: StateFlow<List<Review>> = _allReviews.asStateFlow()
+
+    private val _guideReviews = MutableStateFlow<List<Pair<Review, String>>>(emptyList())
+    val guideReviews: StateFlow<List<Pair<Review, String>>> = _guideReviews.asStateFlow()
+
     init {
         fetchBanners()
         loadTours()
         loadGuides()
         loadAllReviews()
+        startCountdownTimer()
     }
-    // Trong HomeViewModel.kt
-    private val _banners = MutableStateFlow<List<Map<String, Any>>>(emptyList())
-    val banners: StateFlow<List<Map<String, Any>>> = _banners.asStateFlow()
 
-
-
-    private fun fetchBanners() {
-        viewModelScope.launch {
-            try {
-                val snapshot = FirebaseFirestore.getInstance()
-                    .collection("banners")
-                    .orderBy("order", Query.Direction.ASCENDING)
-                    .get()
-                    .await()
-
-                _banners.value = snapshot.documents.mapNotNull { doc ->
-                    doc.data?.also { it["id"] = doc.id }
+    private fun startCountdownTimer() {
+        viewModelScope.launch(Dispatchers.Default) {
+            while (true) {
+                delay(1000)
+                val currentTours = _allTours.value
+                if (currentTours.any { it.isOffer }) {
+                    val updatedTours = currentTours.map { tour ->
+                        if (tour.isOffer) {
+                            val newTime = decrementTime(tour.timeLeft)
+                            if (newTime == "00:00:00") {
+                                tour.copy(
+                                    isOffer = false,
+                                    price = if (tour.originalPrice > 0) tour.originalPrice else tour.price,
+                                    giaTreEm = if (tour.originalPriceChild > 0) tour.originalPriceChild else tour.giaTreEm,
+                                    giaTreNho = if (tour.originalPriceInfant > 0) tour.originalPriceInfant else tour.giaTreNho,
+                                    timeLeft = "00:00:00"
+                                )
+                            } else tour.copy(timeLeft = newTime)
+                        } else tour
+                    }
+                    _allTours.value = updatedTours
+                    applyFilters(resetPage = false)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
         }
     }
+
+    private fun decrementTime(timeStr: String): String {
+        if (timeStr.isBlank() || timeStr == "00:00:00") return "00:00:00"
+        return try {
+            val cleanStr = timeStr.trim().lowercase()
+            var totalSecs: Long = 0
+            if (cleanStr.endsWith("h")) {
+                totalSecs = (cleanStr.removeSuffix("h").toLongOrNull() ?: 0) * 3600
+            } else {
+                val parts = cleanStr.split(":").mapNotNull { it.toLongOrNull() }
+                totalSecs = when (parts.size) {
+                    3 -> parts[0] * 3600 + parts[1] * 60 + parts[2]
+                    2 -> parts[0] * 3600 + parts[1] * 60
+                    1 -> parts[0]
+                    else -> 0
+                }
+            }
+            if (totalSecs <= 0) return "00:00:00"
+            totalSecs--
+            String.format(Locale.US, "%02d:%02d:%02d", totalSecs / 3600, (totalSecs % 3600) / 60, totalSecs % 60)
+        } catch (e: Exception) { "00:00:00" }
+    }
+
     fun loadTours() {
         viewModelScope.launch {
             _isLoading.value = true
             val result = tourRepository.getActiveTours()
-            _allTours.value = result
-
-            // Chuyển việc xử lý dữ liệu tỉnh thành sang background thread
-            val provinces = withContext(Dispatchers.Default) {
-                result.map { tour ->
-                    tour.location.split(",").last().trim()
-                }.distinct().filter {
-                    it.isNotBlank() && !it.contains("Đà Lạt", ignoreCase = true)
-                }.sorted()
+            val unique = withContext(Dispatchers.Default) {
+                result.groupBy { tour -> tour.title.lowercase().filter { it.isLetterOrDigit() } }
+                    .map { (_, group) -> group.find { it.isOffer } ?: group.first() }
             }
-            _availableProvinces.value = provinces
-
-            applyFilters()
+            _allTours.value = unique
+            _availableProvinces.value = withContext(Dispatchers.Default) {
+                unique.map { it.location.split(",").last().trim() }
+                    .distinct().filter { it.isNotBlank() && !it.contains("Đà Lạt", true) }.sorted()
+            }
+            applyFilters(resetPage = true)
             _isLoading.value = false
         }
     }
 
-    fun loadGuides() {
-        viewModelScope.launch {
-            _guides.value = guideRepository.getAllGuides()
+    fun applyFilters(resetPage: Boolean = true) {
+        if (resetPage) _currentPage.value = 1
+        viewModelScope.launch(Dispatchers.Default) {
+            var list = _allTours.value
+            val q = _searchQuery.value.trim().lowercase()
+            if (q.isNotEmpty()) {
+                list = list.filter { it.title.lowercase().contains(q) || it.location.lowercase().contains(q) || it.traiNghiem.lowercase().contains(q) }
+            }
+            if (_selectedTourType.value != "Tất cả") {
+                list = list.filter { tour ->
+                    val isSingle = tour.duration.lowercase().let { (it.contains("1 ngày") || it.contains("trong ngày")) && !it.contains("đêm") }
+                    if (_selectedTourType.value == "Trong ngày") isSingle else !isSingle
+                }
+            }
+            if (_selectedScale.value != "Tất cả") {
+                list = list.filter { (it.getTourScaleInfo()?.label ?: "Tùy chỉnh") == _selectedScale.value }
+            }
+            if (_selectedLocations.value.isNotEmpty()) {
+                list = list.filter { tour -> _selectedLocations.value.any { loc -> tour.location.contains(loc, true) } }
+            }
+            list = list.filter { it.getPrice().toFloat() in _priceRange.value }
+            if (_selectedRating.value > 0) list = list.filter { it.rating >= _selectedRating.value }
+            
+            _tours.value = list
+            updatePagedList()
         }
     }
 
-    fun loadAllReviews() {
+    fun setPage(page: Int) {
+        _currentPage.value = page
+        updatePagedList()
+    }
+
+    private fun updatePagedList() {
+        val filtered = _tours.value
+        _totalPages.value = maxOf(1, (filtered.size + itemsPerPage - 1) / itemsPerPage)
+        val start = (_currentPage.value - 1) * itemsPerPage
+        _pagedTours.value = filtered.drop(start).take(itemsPerPage)
+    }
+
+    fun setSearchQuery(q: String) { _searchQuery.value = q; applyFilters(true) }
+    fun setTourType(t: String) { _selectedTourType.value = t; applyFilters(true) }
+    fun setTourScale(s: String) { _selectedScale.value = s; applyFilters(true) }
+    fun toggleLocation(l: String) {
+        val current = _selectedLocations.value.toMutableSet()
+        if (current.contains(l)) current.remove(l) else current.add(l)
+        _selectedLocations.value = current
+        applyFilters(true)
+    }
+    fun setMinPrice(p: Float?) { _priceRange.value = (p ?: 0f).._priceRange.value.endInclusive; applyFilters(true) }
+    fun setMaxPrice(p: Float?) { _priceRange.value = _priceRange.value.start..(p ?: DEFAULT_MAX_PRICE); applyFilters(true) }
+    fun setDuration(d: String) { _selectedDuration.value = d; applyFilters(true) }
+    fun setRating(r: Float) { _selectedRating.value = r; applyFilters(true) }
+    fun resetFilters() {
+        _searchQuery.value = ""; _selectedTourType.value = "Tất cả"; _selectedScale.value = "Tất cả"
+        _selectedLocations.value = emptySet(); _priceRange.value = 0f..DEFAULT_MAX_PRICE
+        _selectedDuration.value = "Tất cả"; _selectedRating.value = 0f
+        applyFilters(true)
+    }
+
+    private fun fetchBanners() {
         viewModelScope.launch {
-            _allReviews.value = reviewRepository.getAllReviews(10)
+            try {
+                val snapshot = FirebaseFirestore.getInstance().collection("banners").orderBy("order", Query.Direction.ASCENDING).get().await()
+                _banners.value = snapshot.documents.mapNotNull { doc -> doc.data?.also { it["id"] = doc.id } }
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
+    fun loadGuides() { viewModelScope.launch { _guides.value = guideRepository.getAllGuides() } }
+    fun loadAllReviews() { viewModelScope.launch { _allReviews.value = reviewRepository.getAllReviews(10) } }
     fun loadReviewsForGuide(guideUserId: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            val directReviews = reviewRepository.getReviewsByGuide(guideUserId)
-
+            val direct = reviewRepository.getReviewsByGuide(guideUserId)
             val guideTours = guideRepository.getToursForGuide(guideUserId)
             val bookingIds = guideTours.mapNotNull { it["bookingId"] as? String }
-            val bookingReviews = if (bookingIds.isNotEmpty()) {
-                reviewRepository.getReviewsByBookingIds(bookingIds)
-            } else {
-                emptyList()
+            val bookingReviews = if (bookingIds.isNotEmpty()) reviewRepository.getReviewsByBookingIds(bookingIds) else emptyList()
+            val all = (direct + bookingReviews).distinctBy { it.id }
+            _guideReviews.value = withContext(Dispatchers.Default) {
+                all.map { r -> Pair(r, _allTours.value.find { it.id == r.tourId }?.title ?: "Tour không xác định") }.sortedByDescending { it.first.createdAt }
             }
-
-            val allGuideReviews = (directReviews + bookingReviews).distinctBy { it.id }
-
-            // Xử lý map và sort trên Default dispatcher để tránh lag UI
-            val reviewsWithTours = withContext(Dispatchers.Default) {
-                allGuideReviews.map { review ->
-                    val tourTitle =
-                        _allTours.value.find { it.id == review.tourId }?.title ?: "Tour không xác định"
-                    Pair(review, tourTitle)
-                }.sortedByDescending { it.first.createdAt }
-            }
-
-            _guideReviews.value = reviewsWithTours
             _isLoading.value = false
         }
     }
-
-    fun setSearchQuery(query: String) {
-        _searchQuery.value = query
-        applyFilters()
-    }
-
-    fun setTourType(type: String) {
-        _selectedTourType.value = type
-        applyFilters()
-    }
-
-    fun setTourScale(scale: String) {
-        _selectedScale.value = scale
-        applyFilters()
-    }
-
-    fun toggleLocation(location: String) {
-        val current = _selectedLocations.value.toMutableSet()
-        if (current.contains(location)) current.remove(location) else current.add(location)
-        _selectedLocations.value = current
-        applyFilters()
-    }
-
-    fun setMinPrice(price: Float?) {
-        val currentRange = _priceRange.value
-        _priceRange.value = (price ?: 0f)..currentRange.endInclusive
-        applyFilters()
-    }
-
-    fun setMaxPrice(price: Float?) {
-        val currentRange = _priceRange.value
-        _priceRange.value = currentRange.start..(price ?: DEFAULT_MAX_PRICE)
-        applyFilters()
-    }
-
-    fun setDuration(duration: String) {
-        _selectedDuration.value = duration
-        applyFilters()
-    }
-
-    fun setRating(rating: Float) {
-        _selectedRating.value = rating
-        applyFilters()
-    }
-
-    fun resetFilters() {
-        _searchQuery.value = ""
-        _selectedTourType.value = "Tất cả"
-        _selectedScale.value = "Tất cả"
-        _selectedLocations.value = emptySet()
-        _priceRange.value = 0f..DEFAULT_MAX_PRICE
-        _selectedDuration.value = "Tất cả"
-        _selectedRating.value = 0f
-        applyFilters()
-    }
-
-    fun applyFilters() {
-        viewModelScope.launch(Dispatchers.Default) {
-            var filteredList = _allTours.value
-
-            if (_searchQuery.value.isNotBlank()) {
-                val query = _searchQuery.value.trim().lowercase()
-                filteredList = filteredList.filter { tour ->
-                    tour.title.lowercase().contains(query) ||
-                            tour.location.lowercase().contains(query) ||
-                            tour.traiNghiem.lowercase().contains(query)
-                }
-            }
-
-            fun isSingleDay(tour: Tour): Boolean {
-                if (tour.type == TourType.DAY_TOUR) return true
-                if (tour.type == TourType.MULTI_DAY) return false
-                val d = tour.duration.lowercase()
-                return (d.contains("1 ngày") || d.contains("trong ngày")) && !d.contains("đêm")
-            }
-
-            if (_selectedTourType.value != "Tất cả") {
-                filteredList = filteredList.filter { tour ->
-                    val singleDay = isSingleDay(tour)
-                    if (_selectedTourType.value == "Trong ngày") singleDay else !singleDay
-                }
-            }
-
-            if (_selectedScale.value != "Tất cả") {
-                filteredList = filteredList.filter { tour ->
-                    val scale = tour.getTourScaleInfo()?.label ?: "Tùy chỉnh"
-                    scale == _selectedScale.value
-                }
-            }
-
-            if (_selectedDuration.value != "Tất cả") {
-                filteredList = filteredList.filter { tour ->
-                    val d = tour.duration.lowercase()
-                    val dayMatch = Regex("(\\d+)\\s*ngày").find(d)
-                    val days = dayMatch?.groupValues?.get(1)?.toIntOrNull()
-                        ?: (if (d.contains("trong ngày") || d.contains("1 ngày")) 1 else 0)
-
-                    when (_selectedDuration.value) {
-                        "1 ngày" -> days == 1 && !d.contains("đêm")
-                        "2-3 ngày" -> days in 2..3
-                        "4-5 ngày" -> days in 4..5
-                        "6+ ngày" -> days >= 6
-                        else -> true
-                    }
-                }
-            }
-
-            if (_selectedLocations.value.isNotEmpty()) {
-                filteredList = filteredList.filter { tour ->
-                    _selectedLocations.value.any { loc ->
-                        tour.location.contains(loc, ignoreCase = true)
-                    }
-                }
-            }
-
-            // Dùng helper function thay vì it.price trực tiếp
-            filteredList = filteredList.filter { it.getPrice().toFloat() in _priceRange.value }
-
-            if (_selectedRating.value > 0) {
-                filteredList = filteredList.filter { it.rating >= _selectedRating.value }
-            }
-
-            _tours.value = filteredList
-        }
-    }
-
-    suspend fun getTourById(tourId: String): Tour? {
-        return tourRepository.getTourById(tourId)
-    }
+    suspend fun getTourById(id: String) = tourRepository.getTourById(id)
 }
