@@ -59,15 +59,21 @@
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label class="form-label text-warning">Giá gốc NL (Sẽ gạch ngang)</label>
-                                <input type="number" class="form-control border-warning" id="origNL" name="originalPrice" th:value="${tour != null && tour.get('originalPrice') != null ? tour.get('originalPrice') : 0}" oninput="autoCalculate()">
+                                <input type="number" class="form-control border-warning" id="origNL" name="originalPrice"
+                                       th:value="${tour != null && tour.get('originalPrice') != null ? tour.get('originalPrice') : 0}"
+                                       oninput="autoCalculate()">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label text-warning">Giá gốc Trẻ em</label>
-                                <input type="number" class="form-control border-warning" id="origTE" name="originalPriceChild" th:value="${tour != null && tour.get('originalPriceChild') != null ? tour.get('originalPriceChild') : 0}" oninput="autoCalculate()">
+                                <input type="number" class="form-control border-warning" id="origTE" name="originalPriceChild"
+                                       th:value="${tour != null && tour.get('originalPriceChild') != null ? tour.get('originalPriceChild') : 0}"
+                                       oninput="autoCalculate()">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label text-warning">Giá gốc Trẻ nhỏ</label>
-                                <input type="number" class="form-control border-warning" id="origTN" name="originalPriceInfant" th:value="${tour != null && tour.get('originalPriceInfant') != null ? tour.get('originalPriceInfant') : 0}" oninput="autoCalculate()">
+                                <input type="number" class="form-control border-warning" id="origTN" name="originalPriceInfant"
+                                       th:value="${tour != null && tour.get('originalPriceInfant') != null ? tour.get('originalPriceInfant') : 0}"
+                                       oninput="autoCalculate()">
                             </div>
                         </div>
                         <div class="row mb-3 align-items-end">
@@ -93,7 +99,20 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <label class="form-label">Thời gian còn lại (HH:mm:ss)</label>
-                                <input type="text" class="form-control" name="timeLeft" th:value="${tour != null ? tour.get('timeLeft') : '00:00:00'}">
+                                <label class="form-label">Thời gian ưu đãi còn lại</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="offerHours"
+                                           placeholder="Giờ" min="0" style="max-width:100px">
+                                    <span class="input-group-text text-muted">giờ</span>
+                                    <input type="number" class="form-control" id="offerMinutes"
+                                           placeholder="Phút" min="0" max="59" style="max-width:100px">
+                                    <span class="input-group-text text-muted">phút</span>
+                                </div>
+                                <input type="hidden" name="timeLeft" id="timeLeftHidden">
+                                <small class="text-muted" th:if="${tour != null && tour.get('timeLeft') != null}">
+                                    Hết hạn lúc: <span id="currentExpiry"
+                                                       th:text="${tour.get('timeLeft')}"></span>
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -170,10 +189,20 @@
                         <input type="number" class="form-control" name="maxGuests" th:value="${tour != null ? tour.get('maxGuests') : 50}">
                     </div>
                 </div>
-
                 <div class="mb-4">
-                    <label class="form-label">Ngày khởi hành (Dùng dấu phẩy ngăn cách)</label>
-                    <input type="text" class="form-control" name="ngayKhoiHanh" th:value="${tour != null ? tour.get('startDate') : ''}">
+                    <label class="form-label">Ngày khởi hành</label>
+                    <div class="d-flex gap-2 mb-2">
+                        <input type="date" class="form-control" id="datePicker" style="max-width:200px">
+                        <button type="button" class="btn btn-primary" onclick="addDate()">
+                            <i class="bi bi-plus-circle me-1"></i> Thêm ngày
+                        </button>
+                    </div>
+                    <div id="tagsWrap" class="d-flex flex-wrap gap-2 p-2"
+                         style="min-height:42px; border:1px dashed #334155; border-radius:8px; background:#0f172a;">
+                        <span id="emptyHint" class="text-muted small align-self-center">Chưa có ngày nào</span>
+                    </div>
+                    <input type="hidden" id="ngayKhoiHanh" name="ngayKhoiHanh"
+                           th:value="${tour != null ? tour.get('startDate') : ''}">
                 </div>
 
                 <div class="section-title"><i class="bi bi-card-text me-2"></i> Nội dung chi tiết</div>
@@ -205,7 +234,20 @@
                 autoCalculate();
             }
         }
+        // Trước khi submit form, tính epoch ms từ giờ + phút nhập vào
+document.getElementById('tourForm').addEventListener('submit', function() {
+    const hours   = parseInt(document.getElementById('offerHours').value)   || 0;
+    const minutes = parseInt(document.getElementById('offerMinutes').value) || 0;
 
+    const isOffer = document.getElementById('isOffer').checked;
+    if (isOffer && (hours > 0 || minutes > 0)) {
+        const expiry = Date.now() + (hours * 60 + minutes) * 60 * 1000;
+        document.getElementById('timeLeftHidden').value = String(expiry);
+    } else if (!isOffer) {
+        document.getElementById('timeLeftHidden').value = '0';
+    }
+    // Nếu isOffer bật nhưng không nhập giờ/phút → giữ nguyên timestamp cũ (hidden rỗng, backend giữ cũ)
+});
         function autoCalculate() {
             const pct = parseFloat(document.getElementById('discountPercent').value) || 0;
             const factor = (100 - pct) / 100;
@@ -255,12 +297,20 @@
             });
         }
 
-        window.addEventListener('DOMContentLoaded', (event) => {
-            const isChecked = document.getElementById('isOffer').checked;
-            if (isChecked) {
-                document.getElementById('offerSection').style.display = 'block';
-            }
-        });
+       window.addEventListener('DOMContentLoaded', (event) => {
+    const isChecked = document.getElementById('isOffer').checked;
+    if (isChecked) {
+        document.getElementById('offerSection').style.display = 'block';
+
+        // Nếu origNL = 0 (tour mới bật offer) thì sync từ giá thực tế lên
+        const origNL = parseFloat(document.getElementById('origNL').value) || 0;
+        if (origNL === 0) {
+            syncToOriginal(true);
+        }
+        // Sau đó tính lại % và discountTag
+        autoCalculate();
+    }
+});
 
         function previewMain(input) {
             if (input.files && input.files[0]) {
@@ -276,6 +326,58 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
+        let dates = [];
+
+// Khi load trang edit, parse ngày cũ thành tags
+window.addEventListener('DOMContentLoaded', () => {
+    const existing = document.getElementById('ngayKhoiHanh').value;
+    if (existing) {
+        existing.split(',').map(s => s.trim()).filter(Boolean).forEach(label => {
+            const parts = label.split('/');
+            if (parts.length === 3) {
+                const val = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                dates.push({ val, label });
+            }
+        });
+        renderTags();
+    }
+});
+
+function addDate() {
+    const input = document.getElementById('datePicker');
+    const val = input.value;
+    if (!val || dates.find(d => d.val === val)) { input.value = ''; return; }
+    const d = new Date(val + 'T00:00:00');
+    const label = d.toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' });
+    dates.push({ val, label });
+    renderTags();
+    input.value = '';
+}
+
+function removeDate(val) {
+    dates = dates.filter(d => d.val !== val);
+    renderTags();
+}
+
+function renderTags() {
+    const wrap = document.getElementById('tagsWrap');
+    const hidden = document.getElementById('ngayKhoiHanh');
+    if (!dates.length) {
+        wrap.innerHTML = '<span id="emptyHint" class="text-muted small align-self-center">Chưa có ngày nào</span>';
+        hidden.value = '';
+        return;
+    }
+    const sorted = [...dates].sort((a,b) => a.val.localeCompare(b.val));
+    wrap.innerHTML = sorted.map(d => `
+        <span class="badge d-inline-flex align-items-center gap-1"
+              style="background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid #1d4ed8;font-size:13px;padding:6px 10px;border-radius:6px">
+            <i class="bi bi-calendar3"></i> ${d.label}
+            <button type="button" onclick="removeDate('${d.val}')"
+                    style="background:none;border:none;color:inherit;cursor:pointer;padding:0;margin-left:4px;font-size:15px;line-height:1">&times;</button>
+        </span>
+    `).join('');
+    hidden.value = sorted.map(d => d.label).join(', ');
+}
     </script>
 </body>
 </html>

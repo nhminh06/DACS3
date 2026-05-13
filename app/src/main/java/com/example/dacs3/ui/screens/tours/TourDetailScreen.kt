@@ -34,6 +34,7 @@ import coil.request.ImageRequest
 import com.example.dacs3.R
 import com.example.dacs3.data.model.Review
 import com.example.dacs3.data.model.Tour
+import com.example.dacs3.ui.viewmodel.MainViewModel
 import com.example.dacs3.ui.viewmodel.ReviewViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -44,11 +45,14 @@ fun TourDetailScreen(
     tour: Tour,
     onBack: () -> Unit,
     onNavigateToBooking: (Int, Int, Int) -> Unit,
-    reviewViewModel: ReviewViewModel = viewModel()
+    reviewViewModel: ReviewViewModel = viewModel(),
+    mainViewModel: MainViewModel = viewModel()
 ) {
     var isFavorite by remember { mutableStateOf(false) }
     var showBookingSheet by remember { mutableStateOf(false) }
     var isMapVisible by remember { mutableStateOf(false) }
+    val allTours by mainViewModel.allTours.collectAsState()
+    val liveTour = allTours.find { it.id == tour.id } ?: tour
 
     Scaffold(
         topBar = {
@@ -150,12 +154,7 @@ fun TourDetailScreen(
                             fontSize = 13.sp,
                             color = Color(0xFF64748B)
                         )
-                        Text(
-                            text = tour.timeLeft.ifEmpty { "00:00:00" },
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFEF4444)
-                        )
+                        CountdownTimer(timeLeftStr = liveTour.timeLeft)
                     }
                 }
 
@@ -617,7 +616,42 @@ fun CustomerReviewsSection(tourId: String, reviewViewModel: ReviewViewModel) {
         }
     }
 }
+@Composable
+fun CountdownTimer(timeLeftStr: String) {
+    // Parse HH:mm:ss → ms
+    fun parseToMs(s: String): Long {
+        if (s.isBlank() || s == "00:00:00") return 0L
+        return try {
+            val parts = s.trim().split(":").map { it.toLong() }
+            when (parts.size) {
+                3 -> (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000L
+                else -> 0L
+            }
+        } catch (e: Exception) { 0L }
+    }
 
+    var remainingMs by remember(timeLeftStr) { mutableStateOf(parseToMs(timeLeftStr)) }
+    LaunchedEffect(timeLeftStr) {
+        remainingMs = parseToMs(timeLeftStr)
+    }
+
+    val display = when {
+        remainingMs <= 0L -> "Đã hết hạn"
+        else -> {
+            val h = remainingMs / 3_600_000
+            val m = (remainingMs % 3_600_000) / 60_000
+            val s = (remainingMs % 60_000) / 1_000
+            "%02d:%02d:%02d".format(h, m, s)
+        }
+    }
+
+    Text(
+        text = display,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Bold,
+        color = if (remainingMs <= 0L) Color(0xFF94A3B8) else Color(0xFFEF4444)
+    )
+}
 @Composable
 fun ReviewCard(review: Review) {
     val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())

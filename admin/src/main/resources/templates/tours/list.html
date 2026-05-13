@@ -72,6 +72,7 @@
                         <th style="width: 80px;">ID</th>
                         <th style="width: 100px;">HÌNH ẢNH</th>
                         <th>TÊN TOUR</th>
+
                         <th style="width: 120px;">QUY MÔ</th>
                         <th style="width: 120px;">KHÁCH</th>
                         <th style="width: 150px;">GIÁ</th>
@@ -89,6 +90,11 @@
                             <div>
                                 <span th:text="${tour.get('title')}"></span>
                                 <span th:if="${tour.get('isOffer') == true}" class="offer-badge">GIẢM GIÁ</span>
+                                <span th:if="${tour.get('isOffer') == true && tour.get('timeLeft') != null}"
+                                      class="countdown-badge ms-1"
+                                      th:attr="data-expiry=${tour.get('timeLeft')}">
+    ⏱ --:--:--
+</span>
                             </div>
                             <small class="text-muted" th:text="${tour.get('location')}"></small>
                         </td>
@@ -107,6 +113,12 @@
                             <span th:unless="${tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null}" class="badge badge-status status-cancelled">Đã ẩn</span>
                         </td>
                         <td class="text-end">
+                            <a th:href="@{/admin/tours/edit/{id}(id=${tour.get('id')}, promo=true)}"
+                               class="btn-action"
+                               th:classappend="${tour.get('isOffer') == true} ? ' text-warning border-warning'"
+                               title="Bật/tắt ưu đãi giảm giá">
+                                <i class="bi bi-tag-fill"></i>
+                            </a>
                             <a th:href="@{/admin/tours/toggle-status/{id}(id=${tour.get('id')})}" class="btn-action" th:title="${tour.get('trang_thai') == 'active' ? 'Ẩn tour' : 'Hiện tour'}">
                                 <i th:class="${(tour.get('trang_thai') == 'active' || tour.get('trang_thai') == null) ? 'bi bi-eye-slash' : 'bi bi-eye'}"></i>
                             </a>
@@ -127,5 +139,26 @@
             </ul></nav>
         </div>
     </div>
+    <script>
+        function updateCountdowns() {
+            document.querySelectorAll('.countdown-badge').forEach(el => {
+                const expiry = parseInt(el.dataset.expiry);
+                if (!expiry || expiry <= 0) { el.textContent = ''; return; }
+
+                const diff = expiry - Date.now();
+                if (diff <= 0) {
+                    el.textContent = '⏱ Hết hạn';
+                    el.style.color = '#ef4444';
+                    return;
+                }
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                el.textContent = `⏱ ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            });
+        }
+        setInterval(updateCountdowns, 1000);
+        updateCountdowns();
+    </script>
 </body>
 </html>

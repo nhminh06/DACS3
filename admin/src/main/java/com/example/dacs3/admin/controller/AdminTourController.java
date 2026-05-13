@@ -89,7 +89,7 @@ public class AdminTourController {
                 }
             }
 
-            int pageSize = 10; 
+            int pageSize = 6;
             int totalFiltered = tourList.size();
             int totalPages = (int) Math.ceil((double) totalFiltered / pageSize);
             page = Math.max(1, Math.min(page, totalPages > 0 ? totalPages : 1));
@@ -133,14 +133,32 @@ public class AdminTourController {
             var doc = firestore.collection("tours").document(id).get().get();
             if (doc.exists()) {
                 tourData = new HashMap<>(doc.getData());
-                if (Boolean.TRUE.equals(promo)) {
-                    tourData.put("isOffer", true);
-                }
+
+                Object rawOffer = tourData.get("isOffer");
+                boolean isOfferBool = rawOffer instanceof Boolean
+                        ? (Boolean) rawOffer
+                        : "true".equals(String.valueOf(rawOffer));
+                tourData.put("isOffer", isOfferBool);
+
+                if (Boolean.TRUE.equals(promo)) tourData.put("isOffer", true);
+
+                // Ép tất cả giá về Long để Thymeleaf không format lạ
+                tourData.put("price",              getPriceAsLong(tourData.get("price")));
+                tourData.put("giaTreEm",           getPriceAsLong(tourData.get("giaTreEm")));
+                tourData.put("giaTreNho",          getPriceAsLong(tourData.get("giaTreNho")));
+                tourData.put("originalPrice",      getPriceAsLong(tourData.get("originalPrice")));
+                tourData.put("originalPriceChild", getPriceAsLong(tourData.get("originalPriceChild")));
+                tourData.put("originalPriceInfant",getPriceAsLong(tourData.get("originalPriceInfant")));
+
                 tourId = id;
             }
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
+        Object rawOP = tourData.get("originalPrice");
+        System.out.println("DEBUG originalPrice raw type: "
+                + (rawOP != null ? rawOP.getClass().getName() : "null")
+                + " | value: " + rawOP);
         model.addAttribute("tour", tourData);
         model.addAttribute("tourId", tourId);
         return "tours/form";
@@ -210,13 +228,48 @@ public class AdminTourController {
         data.put("minGuests", minGuests);
         data.put("maxGuests", maxGuests);
         data.put("scale", tourScale);
-        
-        data.put("isOffer", isOffer != null && isOffer);
+
+        boolean isOfferBool = isOffer != null && isOffer;
+        data.put("isOffer", isOfferBool);
         data.put("originalPrice", parsePriceToLong(originalPrice));
         data.put("originalPriceChild", parsePriceToLong(originalPriceChild));
         data.put("originalPriceInfant", parsePriceToLong(originalPriceInfant));
+
+
+        if (!isOfferBool) {
+            // Ưu tiên đọc originalPrice từ Firestore (đã load vào data trước đó)
+            // thay vì tin vào form submit khi section bị hidden
+            Long origNL = getPriceAsLong(data.get("originalPrice"));
+            Long origTE = getPriceAsLong(data.get("originalPriceChild"));
+            Long origTN = getPriceAsLong(data.get("originalPriceInfant"));
+
+            // Fallback về form nếu Firestore chưa có
+            if (origNL <= 0) origNL = parsePriceToLong(originalPrice);
+            if (origTE <= 0) origTE = parsePriceToLong(originalPriceChild);
+            if (origTN <= 0) origTN = parsePriceToLong(originalPriceInfant);
+
+            if (origNL > 0) data.put("price",     origNL);
+            if (origTE > 0) data.put("giaTreEm",  origTE);
+            if (origTN > 0) data.put("giaTreNho", origTN);
+        }
+
         data.put("discountTag", discountTag);
-        data.put("timeLeft", (timeLeft == null || timeLeft.isEmpty()) ? "00:00:00" : timeLeft);
+        if (timeLeft != null && !timeLeft.isEmpty() && !timeLeft.equals("0")) {
+            try {
+                // Nếu là số (epoch ms mới nhập) → lưu thẳng
+                Long.parseLong(timeLeft);
+                data.put("timeLeft", timeLeft);
+            } catch (NumberFormatException e) {
+                // Là chuỗi HH:mm:ss cũ → giữ nguyên để tương thích
+                data.put("timeLeft", timeLeft);
+            }
+        } else if ("0".equals(timeLeft)) {
+            data.put("timeLeft", "0"); // tắt offer
+        } else {
+            // Không nhập gì → giữ timestamp cũ nếu có
+            Object existing = data.get("timeLeft");
+            data.put("timeLeft", existing != null ? existing : "0");
+        }
         data.put("offerImageUrl", finalOfferImageUrl);
         data.put("trang_thai", data.getOrDefault("trang_thai", "active"));
 
@@ -244,7 +297,72 @@ public class AdminTourController {
         }
         return "redirect:/admin/tours";
     }
+    @GetMapping("/toggle-offer/{id}")
+    public String toggleOffer(@PathVariable String id) throws ExecutionException, InterruptedException {
+        var docRef = firestore.collection("tours").document(id);
+        var snap = docRef.get().get();
+        if (snap.exists()) {
+            // Đọc an toàn cả Boolean lẫn String
+            Object rawOffer = snap.get("isOffer");
+            boolean current = rawOffer instanceof Boolean
+                    ? (Boolean) rawOffer
+                    : "true".equals(String.valueOf(rawOffer));
 
+            boolean newState = !current;
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("isOffer", newState); // lưu Boolean rõ ràng
+
+            if (!newState) {
+                Object origNL = snap.get("originalPrice");
+                Object origTE = snap.get("originalPriceChild");
+                Object origTN = snap.get("originalPriceInfant");
+                if (origNL != null && getPriceAsLong(origNL) > 0) updates.put("price", getPriceAsLong(origNL));
+                if (origTE != null && getPriceAsLong(origTE) > 0) updates.put("giaTreEm", getPriceAsLong(origTE));
+                if (origTN != null && getPriceAsLong(origTN) > 0) updates.put("giaTreNho", getPriceAsLong(origTN));
+            }
+
+            docRef.update(updates).get();
+        }
+        return "redirect:/admin/tours";
+    }
+    @GetMapping("/check-expired")
+    @ResponseBody
+    public String checkExpiredOffers() throws ExecutionException, InterruptedException {
+        ApiFuture<QuerySnapshot> future = firestore.collection("tours")
+                .whereEqualTo("isOffer", true).get();
+        List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+
+        long now = System.currentTimeMillis();
+        int count = 0;
+
+        for (QueryDocumentSnapshot doc : docs) {
+            String timeLeft = doc.getString("timeLeft");
+            if (timeLeft == null || timeLeft.isEmpty()) continue;
+
+            try {
+                long expiry = Long.parseLong(timeLeft);
+                if (expiry > 0 && now > expiry) {
+                    // Hết hạn → tắt offer, khôi phục giá gốc
+                    Map<String, Object> updates = new HashMap<>();
+                    updates.put("isOffer", false);
+
+                    Object origNL = doc.get("originalPrice");
+                    Object origTE = doc.get("originalPriceChild");
+                    Object origTN = doc.get("originalPriceInfant");
+                    if (origNL != null && getPriceAsLong(origNL) > 0)
+                        updates.put("price", getPriceAsLong(origNL));
+                    if (origTE != null && getPriceAsLong(origTE) > 0)
+                        updates.put("giaTreEm", getPriceAsLong(origTE));
+                    if (origTN != null && getPriceAsLong(origTN) > 0)
+                        updates.put("giaTreNho", getPriceAsLong(origTN));
+
+                    firestore.collection("tours").document(doc.getId()).update(updates).get();
+                    count++;
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+        return "Đã xử lý " + count + " tour hết hạn";
+    }
     @GetMapping("/delete/{id}")
     public String deleteTour(@PathVariable String id) throws ExecutionException, InterruptedException {
         firestore.collection("tours").document(id).delete().get();

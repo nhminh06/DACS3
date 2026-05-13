@@ -97,21 +97,24 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.Default) {
             while (true) {
                 delay(1000)
+                val now = System.currentTimeMillis()
                 val currentTours = _allTours.value
                 if (currentTours.any { it.isOffer }) {
                     val updatedTours = currentTours.map { tour ->
-                        if (tour.isOffer) {
-                            val newTime = decrementTime(tour.timeLeft)
-                            if (newTime == "00:00:00") {
-                                tour.copy(
-                                    isOffer = false,
-                                    price = if (tour.originalPrice > 0) tour.originalPrice else tour.price,
-                                    giaTreEm = if (tour.originalPriceChild > 0) tour.originalPriceChild else tour.giaTreEm,
-                                    giaTreNho = if (tour.originalPriceInfant > 0) tour.originalPriceInfant else tour.giaTreNho,
-                                    timeLeft = "00:00:00"
-                                )
-                            } else tour.copy(timeLeft = newTime)
-                        } else tour
+                        if (!tour.isOffer) return@map tour
+                        val timeLeftStr = formatTimeLeft(tour.timeLeft, now)
+                        val expired = timeLeftStr == "00:00:00"
+                        if (expired) {
+                            tour.copy(
+                                isOffer = false,
+                                price = if (tour.originalPrice > 0) tour.originalPrice else tour.price,
+                                giaTreEm = if (tour.originalPriceChild > 0) tour.originalPriceChild else tour.giaTreEm,
+                                giaTreNho = if (tour.originalPriceInfant > 0) tour.originalPriceInfant else tour.giaTreNho,
+                                timeLeft = "00:00:00"
+                            )
+                        } else {
+                            tour.copy(timeLeft = timeLeftStr)
+                        }
                     }
                     _allTours.value = updatedTours
                     applyFilters(resetPage = false)
@@ -119,27 +122,37 @@ class MainViewModel : ViewModel() {
             }
         }
     }
-
     private fun decrementTime(timeStr: String): String {
         if (timeStr.isBlank() || timeStr == "00:00:00") return "00:00:00"
         return try {
-            val cleanStr = timeStr.trim().lowercase()
-            var totalSecs: Long = 0
-            if (cleanStr.endsWith("h")) {
-                totalSecs = (cleanStr.removeSuffix("h").toLongOrNull() ?: 0) * 3600
-            } else {
-                val parts = cleanStr.split(":").mapNotNull { it.toLongOrNull() }
-                totalSecs = when (parts.size) {
-                    3 -> parts[0] * 3600 + parts[1] * 60 + parts[2]
-                    2 -> parts[0] * 3600 + parts[1] * 60
-                    1 -> parts[0]
-                    else -> 0
-                }
+            val parts = timeStr.trim().split(":").mapNotNull { it.toLongOrNull() }
+            var totalSecs = when (parts.size) {
+                3 -> parts[0] * 3600 + parts[1] * 60 + parts[2]
+                2 -> parts[0] * 3600 + parts[1] * 60
+                1 -> parts[0]
+                else -> 0
             }
             if (totalSecs <= 0) return "00:00:00"
             totalSecs--
             String.format(Locale.US, "%02d:%02d:%02d", totalSecs / 3600, (totalSecs % 3600) / 60, totalSecs % 60)
         } catch (e: Exception) { "00:00:00" }
+    }
+    // Hỗ trợ cả epoch ms (mới) lẫn HH:mm:ss (cũ)
+    private fun formatTimeLeft(raw: String, now: Long): String {
+        if (raw.isBlank() || raw == "0" || raw == "00:00:00") return "00:00:00"
+        return try {
+            val epoch = raw.trim().toLong()
+            // Là epoch ms
+            val diff = epoch - now
+            if (diff <= 0) return "00:00:00"
+            val h = diff / 3_600_000
+            val m = (diff % 3_600_000) / 60_000
+            val s = (diff % 60_000) / 1_000
+            String.format(Locale.US, "%02d:%02d:%02d", h, m, s)
+        } catch (e: NumberFormatException) {
+            // Là HH:mm:ss cũ → giảm 1 giây
+            decrementTime(raw)
+        }
     }
 
     fun loadTours() {
