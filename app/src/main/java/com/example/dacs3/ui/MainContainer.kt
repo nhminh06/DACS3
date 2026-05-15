@@ -5,6 +5,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dacs3.data.local.SessionManager
 import com.example.dacs3.data.model.Tour
+import com.example.dacs3.data.model.Guide
 import com.example.dacs3.data.remote.FirebaseService
 import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.data.repository.UserRepository
@@ -12,10 +13,12 @@ import com.example.dacs3.data.repository.ContactRepository
 import com.example.dacs3.data.repository.GuideRepository
 import com.example.dacs3.ui.screens.user.*
 import com.example.dacs3.ui.screens.articles.*
-import com.example.dacs3.ui.screens.home.*
+import com.example.dacs3.ui.screens.home.AppHomeScreen
 import com.example.dacs3.ui.screens.tours.*
 import com.example.dacs3.ui.screens.contact.*
 import com.example.dacs3.ui.screens.staff.*
+import com.example.dacs3.ui.components.guides.GuidesListScreen
+import com.example.dacs3.ui.components.guides.GuideDetailScreen
 import com.example.dacs3.ui.screens.chatbot.ChatBotScreen
 import com.example.dacs3.ui.viewmodel.*
 import com.example.dacs3.ui.viewmodel.factory.*
@@ -64,6 +67,7 @@ fun MainContainer() {
     // Mặc định vào App
     var currentScreen by remember { mutableStateOf("home") }
     var previousScreenForDetail by remember { mutableStateOf("explore") }
+    var previousScreenForGuideDetail by remember { mutableStateOf("home") }
     
     // Nếu là guide, chuyển thẳng sang màn hình staff personal profile
     LaunchedEffect(user?.role) {
@@ -74,6 +78,7 @@ fun MainContainer() {
 
     var selectedArticle by remember { mutableStateOf<ArticleEntity?>(null) }
     var selectedTour by remember { mutableStateOf<Tour?>(null) }
+    var selectedGuideForDetail by remember { mutableStateOf<Guide?>(null) }
     var selectedBookingId by remember { mutableStateOf<String?>(null) }
     var initialArticleCategory by remember { mutableStateOf(ArticleCategory.CULTURE) }
     
@@ -145,6 +150,26 @@ fun MainContainer() {
                 }
             )
         }
+        "guides_list" -> {
+            GuidesListScreen(
+                viewModel = mainViewModel,
+                onBack = { currentScreen = "home" },
+                onGuideClick = { guide: Guide ->
+                    selectedGuideForDetail = guide
+                    previousScreenForGuideDetail = "guides_list"
+                    currentScreen = "guide_detail"
+                }
+            )
+        }
+        "guide_detail" -> {
+            selectedGuideForDetail?.let { guide ->
+                GuideDetailScreen(
+                    guide = guide,
+                    viewModel = mainViewModel,
+                    onBack = { currentScreen = previousScreenForGuideDetail }
+                )
+            }
+        }
         "chatbot" -> {
             ChatBotScreen(
                 onBack = { currentScreen = "home" },
@@ -179,7 +204,9 @@ fun MainContainer() {
                         childCount = c
                         infantCount = i
                         currentScreen = "booking_form" 
-                    }
+                    },
+                    mainViewModel = mainViewModel,
+                    userViewModel = userViewModel
                 )
             }
         }
@@ -272,6 +299,29 @@ fun MainContainer() {
                     currentScreen = "login"
                 }
             }
+        }
+        "favorites_tours" -> {
+            FavoritesToursScreen(
+                userViewModel = userViewModel,
+                mainViewModel = mainViewModel,
+                onBack = { currentScreen = "profile" },
+                onTourClick = { tour ->
+                    selectedTour = tour
+                    currentScreen = "tour_detail"
+                }
+            )
+        }
+        "favorites_articles" -> {
+            FavoritesArticlesScreen(
+                userViewModel = userViewModel,
+                articleViewModel = articleViewModel,
+                onBack = { currentScreen = "profile" },
+                onArticleClick = { article ->
+                    selectedArticle = article
+                    previousScreenForDetail = "favorites_articles"
+                    currentScreen = "article_detail"
+                }
+            )
         }
         "my_articles" -> {
             MyArticlesScreen(

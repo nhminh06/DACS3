@@ -8,6 +8,7 @@ import com.example.dacs3.data.remote.RetrofitClient
 import com.example.dacs3.data.repository.storage.StorageRepository
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.FieldValue
 import kotlinx.coroutines.tasks.await
 
 class UserRepository(private val firebaseService: FirebaseService) {
@@ -58,7 +59,9 @@ class UserRepository(private val firebaseService: FirebaseService) {
                     "rank" to "Bronze",
                     "role" to "user",
                     "sdt" to "",
-                    "trang_thai" to "active"
+                    "trang_thai" to "active",
+                    "favoriteTours" to emptyList<String>(),
+                    "favoriteArticles" to emptyList<String>()
                 )
                 val docRef = usersCollection.add(newUserMap).await()
                 User(
@@ -102,10 +105,40 @@ class UserRepository(private val firebaseService: FirebaseService) {
                 "rank" to "Bronze",
                 "role" to "user",
                 "sdt" to user.sdt,
-                "trang_thai" to "active"
+                "trang_thai" to "active",
+                "favoriteTours" to emptyList<String>(),
+                "favoriteArticles" to emptyList<String>()
             )
 
             usersCollection.add(newUserMap).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun toggleFavoriteTour(userId: String, tourId: String, isFavorite: Boolean): Result<Unit> {
+        return try {
+            val update = if (isFavorite) {
+                FieldValue.arrayUnion(tourId)
+            } else {
+                FieldValue.arrayRemove(tourId)
+            }
+            usersCollection.document(userId).update("favoriteTours", update).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun toggleFavoriteArticle(userId: String, articleId: String, isFavorite: Boolean): Result<Unit> {
+        return try {
+            val update = if (isFavorite) {
+                FieldValue.arrayUnion(articleId)
+            } else {
+                FieldValue.arrayRemove(articleId)
+            }
+            usersCollection.document(userId).update("favoriteArticles", update).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

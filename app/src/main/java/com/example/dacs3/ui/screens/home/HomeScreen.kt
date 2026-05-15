@@ -237,7 +237,7 @@ fun AppHomeScreen(
                     }
                 }
 
-                // Featured Tours (Tour nổi bật - chỉ hiện tour KHÔNG giảm giá hoặc tour mặc định)
+                // Featured Tours (Tour nổi bật)
                 if (featuredTours.isNotEmpty()) {
                     item {
                         HomePaddingWrapper {
@@ -260,7 +260,14 @@ fun AppHomeScreen(
                     }
                 }
 
-                item { HomePaddingWrapper { GuidesSection(viewModel) } }
+                item { 
+                    HomePaddingWrapper { 
+                        GuidesSection(
+                            viewModel = viewModel,
+                            onSeeAllClick = { onNavigate("guides_list") }
+                        ) 
+                    } 
+                }
                 item { HomePaddingWrapper { ReviewsSection(viewModel) } }
                 item { Spacer(modifier = Modifier.height(24.dp)) }
             }

@@ -56,9 +56,11 @@ fun ArticleDetailScreen(
     
     val comments by articleViewModel.comments.collectAsState()
     val isCommenting by articleViewModel.isCommenting.collectAsState()
-    val currentUser by userViewModel.currentUser
+    val user by userViewModel.currentUser
     val isLoggedIn = userViewModel.isLoggedIn()
     val context = LocalContext.current
+    
+    val isFavorite = user?.favoriteArticles?.contains(article.id) ?: false
 
     LaunchedEffect(article.id) {
         articleViewModel.fetchComments(article.id)
@@ -74,6 +76,19 @@ fun ArticleDetailScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { 
+                        if (isLoggedIn) {
+                            userViewModel.toggleFavoriteArticle(article.id)
+                        } else {
+                            Toast.makeText(context, "Vui lòng đăng nhập để lưu yêu thích", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Favorite",
+                            tint = if (isFavorite) Color.Red else Color.DarkGray
+                        )
+                    }
                     IconButton(onClick = { /* Share */ }) {
                         Icon(Icons.Default.Share, contentDescription = "Share")
                     }
@@ -188,13 +203,13 @@ fun ArticleDetailScreen(
                             }
                         },
                         comments = comments,
-                        currentUserId = currentUser?.id ?: "",
+                        currentUserId = user?.id ?: "",
                         onPostComment = { content ->
                             val newComment = Comment(
                                 articleId = article.id,
-                                userId = currentUser?.id ?: "",
-                                userName = currentUser?.name ?: "Người dùng",
-                                userAvatar = currentUser?.avatar ?: "",
+                                userId = user?.id ?: "",
+                                userName = user?.name ?: "Người dùng",
+                                userAvatar = user?.avatar ?: "",
                                 content = content,
                                 createdAt = Timestamp.now()
                             )
@@ -211,7 +226,7 @@ fun ArticleDetailScreen(
                         },
                         onLikeComment = { comment, isLiked ->
                             if (isLoggedIn) {
-                                articleViewModel.toggleLikeComment(article.id, comment.id, currentUser?.id ?: "")
+                                articleViewModel.toggleLikeComment(article.id, comment.id, user?.id ?: "")
                             } else {
                                 Toast.makeText(context, "Bạn cần đăng nhập để thả tim", Toast.LENGTH_SHORT).show()
                             }
@@ -247,8 +262,8 @@ fun ArticleDetailScreen(
                             val report = if (reportTargetComment == null) {
                                 Report(
                                     type = ReportType.ARTICLE,
-                                    reporterId = currentUser?.id ?: "",
-                                    reporterName = currentUser?.name ?: "Ẩn danh",
+                                    reporterId = user?.id ?: "",
+                                    reporterName = user?.name ?: "Ẩn danh",
                                     articleId = article.id,
                                     articleTitle = article.tieu_de,
                                     reason = reportReason
@@ -256,8 +271,8 @@ fun ArticleDetailScreen(
                             } else {
                                 Report(
                                     type = ReportType.COMMENT,
-                                    reporterId = currentUser?.id ?: "",
-                                    reporterName = currentUser?.name ?: "Ẩn danh",
+                                    reporterId = user?.id ?: "",
+                                    reporterName = user?.name ?: "Ẩn danh",
                                     commentId = reportTargetComment?.id,
                                     reportedUserId = reportTargetComment?.userId,
                                     reportedUserName = reportTargetComment?.userName,

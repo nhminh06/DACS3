@@ -4,6 +4,7 @@ package com.example.dacs3.ui.screens.tours
 
 import android.annotation.SuppressLint
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -36,6 +37,7 @@ import com.example.dacs3.data.model.Review
 import com.example.dacs3.data.model.Tour
 import com.example.dacs3.ui.viewmodel.MainViewModel
 import com.example.dacs3.ui.viewmodel.ReviewViewModel
+import com.example.dacs3.ui.viewmodel.UserViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -46,9 +48,13 @@ fun TourDetailScreen(
     onBack: () -> Unit,
     onNavigateToBooking: (Int, Int, Int) -> Unit,
     reviewViewModel: ReviewViewModel = viewModel(),
-    mainViewModel: MainViewModel = viewModel()
+    mainViewModel: MainViewModel = viewModel(),
+    userViewModel: UserViewModel
 ) {
-    var isFavorite by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val user by userViewModel.currentUser
+    val isFavorite = user?.favoriteTours?.contains(tour.id) ?: false
+    
     var showBookingSheet by remember { mutableStateOf(false) }
     var isMapVisible by remember { mutableStateOf(false) }
     val allTours by mainViewModel.allTours.collectAsState()
@@ -77,7 +83,13 @@ fun TourDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { isFavorite = !isFavorite }) {
+                    IconButton(onClick = { 
+                        if (userViewModel.isLoggedIn()) {
+                            userViewModel.toggleFavoriteTour(tour.id)
+                        } else {
+                            Toast.makeText(context, "Vui lòng đăng nhập để lưu yêu thích", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
                         Icon(
                             if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "Favorite",

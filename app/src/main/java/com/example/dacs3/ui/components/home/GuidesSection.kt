@@ -12,15 +12,13 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -37,14 +35,18 @@ import java.util.*
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun GuidesSection(viewModel: MainViewModel) {
+fun GuidesSection(
+    viewModel: MainViewModel,
+    onSeeAllClick: () -> Unit = {}
+) {
     val guides by viewModel.guides.collectAsState()
-    
-    // Fallback data if DB is empty
+
     val displayGuides = guides.ifEmpty {
         listOf(
             Guide(name = "Nguyễn Văn An", bio = "Chuyên gia Văn hóa Hội An", imageRes = R.drawable.a8),
-            Guide(name = "Lê Thị Lan", bio = "Hướng dẫn viên bản địa Sapa", imageRes = R.drawable.a9)
+            Guide(name = "Lê Thị Lan", bio = "Hướng dẫn viên bản địa Sapa", imageRes = R.drawable.a9),
+            Guide(name = "Trần Minh", bio = "Thợ săn ảnh tại Đà Lạt", imageRes = R.drawable.a1),
+            Guide(name = "Hương Giang", bio = "Khám phá ẩm thực Huế", imageRes = R.drawable.a2)
         )
     }
 
@@ -53,13 +55,34 @@ fun GuidesSection(viewModel: MainViewModel) {
     var selectedGuide by remember { mutableStateOf<Guide?>(null) }
 
     Column {
-        Text(
-            text = "Người đồng hành cùng bạn",
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 17.sp,
-            color = Color(0xFF1E293B)
-        )
-        Spacer(modifier = Modifier.height(14.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Column {
+                Text(
+                    text = "Người đồng hành",
+                    fontSize = 13.sp,
+                    color = Color(0xFF64748B),
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "Đội ngũ chuyên nghiệp",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 19.sp,
+                    color = Color(0xFF1E293B)
+                )
+            }
+            Text(
+                text = "Xem thêm",
+                fontSize = 13.sp,
+                color = Color(0xFF2563EB),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable { onSeeAllClick() }
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
 
         HorizontalPager(
             state = pagerState,
@@ -68,7 +91,7 @@ fun GuidesSection(viewModel: MainViewModel) {
         ) { pageIndex ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 pages[pageIndex].forEach { guide ->
                     Box(modifier = Modifier.weight(1f)) {
@@ -77,6 +100,27 @@ fun GuidesSection(viewModel: MainViewModel) {
                 }
                 if (pages[pageIndex].size < 2) {
                     Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+
+        if (pages.size > 1) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                repeat(pages.size) { index ->
+                    val isSelected = pagerState.currentPage == index
+                    Surface(
+                        modifier = Modifier
+                            .padding(horizontal = 3.dp)
+                            .height(5.dp)
+                            .width(if (isSelected) 16.dp else 5.dp),
+                        shape = CircleShape,
+                        color = if (isSelected) Color(0xFF2563EB) else Color.LightGray.copy(alpha = 0.6f)
+                    ) {}
                 }
             }
         }
@@ -96,37 +140,49 @@ fun GuideCard(guide: Guide, onInfoClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(240.dp),
-        shape = RoundedCornerShape(24.dp),
+            .height(280.dp)
+            .clickable { onInfoClick() },
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            Box(modifier = Modifier.fillMaxWidth().height(140.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().height(160.dp)) {
                 if (guide.imageUrl.isNotEmpty()) {
                     AsyncImage(
                         model = guide.imageUrl,
                         contentDescription = guide.name,
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+                        modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
                 } else if (guide.imageRes != 0) {
                     Image(
                         painter = painterResource(id = guide.imageRes),
                         contentDescription = guide.name,
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+                        modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
                 } else {
                     AsyncImage(
                         model = "https://ui-avatars.com/api/?name=${guide.name}&background=random&size=200",
                         contentDescription = guide.name,
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+                        modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
                 }
+                
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f)),
+                                startY = 200f
+                            )
+                        )
+                )
             }
-            
+
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     text = guide.name,
@@ -139,32 +195,32 @@ fun GuideCard(guide: Guide, onInfoClick: () -> Unit) {
                 Text(
                     text = guide.bio.ifEmpty { "Chưa có giới thiệu" },
                     fontSize = 12.sp,
-                    color = Color.Gray,
+                    color = Color(0xFF64748B),
                     maxLines = 2,
                     lineHeight = 16.sp,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp)
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(Color(0xFF2563EB), CircleShape)
-                            .clickable { onInfoClick() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "Xem chi tiết",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    Text(
+                        text = "Xem hồ sơ",
+                        fontSize = 13.sp,
+                        color = Color(0xFF2563EB),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Xem chi tiết",
+                        tint = Color(0xFF2563EB),
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
         }
@@ -175,7 +231,7 @@ fun GuideCard(guide: Guide, onInfoClick: () -> Unit) {
 @Composable
 fun GuideExperienceDialog(guide: Guide, viewModel: MainViewModel, onDismiss: () -> Unit) {
     val reviews by viewModel.guideReviews.collectAsState()
-    
+
     LaunchedEffect(guide.userId) {
         viewModel.loadReviewsForGuide(guide.userId)
     }
@@ -216,7 +272,7 @@ fun GuideExperienceDialog(guide: Guide, viewModel: MainViewModel, onDismiss: () 
                         fontSize = 18.sp
                     )
                     Text("Hướng dẫn viên", fontSize = 12.sp, color = Color.Gray)
-                    
+
                     if (guide.sdt.isNotEmpty()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color.Gray)
@@ -224,29 +280,22 @@ fun GuideExperienceDialog(guide: Guide, viewModel: MainViewModel, onDismiss: () 
                             Text(guide.sdt, fontSize = 12.sp, color = Color.Gray)
                         }
                     }
-                    if (guide.email.isNotEmpty()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color.Gray)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(guide.email, fontSize = 12.sp, color = Color.Gray)
-                        }
-                    }
                 }
             }
         },
         text = {
-            Column(modifier = Modifier.fillMaxWidth().heightIn(max = 450.dp)) {
+            Column(modifier = Modifier.fillMaxWidth().heightIn(max = 550.dp)) {
                 var selectedTab by remember { mutableStateOf(0) }
-                
-                TabRow(selectedTabIndex = selectedTab, containerColor = Color.White) {
+
+                TabRow(selectedTabIndex = selectedTab, containerColor = Color.White, divider = {}) {
                     Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }) {
-                        Text("Thông tin", modifier = Modifier.padding(8.dp), fontSize = 14.sp)
+                        Text("Thông tin", modifier = Modifier.padding(12.dp), fontSize = 14.sp)
                     }
                     Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }) {
-                        Text("Đánh giá (${reviews.size})", modifier = Modifier.padding(8.dp), fontSize = 14.sp)
+                        Text("Đánh giá (${reviews.size})", modifier = Modifier.padding(12.dp), fontSize = 14.sp)
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (selectedTab == 0) {
@@ -278,7 +327,7 @@ fun GuideExperienceDialog(guide: Guide, viewModel: MainViewModel, onDismiss: () 
                             Text("Kinh nghiệm làm việc", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             Spacer(modifier = Modifier.height(8.dp))
                         }
-                        
+
                         if (guide.experiences.isEmpty()) {
                             item { Text("Chưa có thông tin kinh nghiệm.", color = Color.Gray, fontSize = 13.sp) }
                         } else {
@@ -315,13 +364,12 @@ fun GuideExperienceDialog(guide: Guide, viewModel: MainViewModel, onDismiss: () 
                         }
                     }
                 } else {
-                    // Reviews Tab
                     if (reviews.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text("Chưa có đánh giá nào từ các tour.", color = Color.Gray)
                         }
                     } else {
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             items(reviews) { reviewPair ->
                                 ReviewItem(reviewPair.first, reviewPair.second)
                             }
@@ -331,8 +379,12 @@ fun GuideExperienceDialog(guide: Guide, viewModel: MainViewModel, onDismiss: () 
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Đóng", fontWeight = FontWeight.Bold)
+            Button(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E293B))
+            ) {
+                Text("Đóng")
             }
         },
         shape = RoundedCornerShape(24.dp),
@@ -349,16 +401,16 @@ fun ReviewItem(review: com.example.dacs3.data.model.Review, tourTitle: String? =
         modifier = Modifier
             .fillMaxWidth()
             .background(Color(0xFFF8FAFC), RoundedCornerShape(16.dp))
-            .padding(12.dp)
+            .padding(16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AsyncImage(
                 model = review.userAvatar ?: "https://ui-avatars.com/api/?name=${review.userName}&background=random",
                 contentDescription = null,
-                modifier = Modifier.size(32.dp).clip(CircleShape),
+                modifier = Modifier.size(36.dp).clip(CircleShape),
                 contentScale = ContentScale.Crop
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(10.dp))
             Column {
                 Text(review.userName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -398,7 +450,7 @@ fun ReviewItem(review: com.example.dacs3.data.model.Review, tourTitle: String? =
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = review.comment,
-                fontSize = 13.sp, 
+                fontSize = 13.sp,
                 color = Color(0xFF475569),
                 lineHeight = 18.sp
             )

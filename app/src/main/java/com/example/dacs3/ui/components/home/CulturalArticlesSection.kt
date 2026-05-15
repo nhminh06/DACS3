@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -54,7 +55,7 @@ fun CulturalArticlesSection(
             )
         }
         
-        if (isLoading) {
+        if (articles.isEmpty() && isLoading) {
             Box(modifier = Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(modifier = Modifier.size(30.dp))
             }
@@ -64,6 +65,37 @@ fun CulturalArticlesSection(
                     article = article,
                     onClick = { onArticleClick(article) }
                 )
+            }
+            
+            if (articles.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                OutlinedButton(
+                    onClick = { articleViewModel.loadMoreHomeArticles() },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    enabled = !isLoading
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "Tải thêm bài viết",
+                                color = Color(0xFF475569),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = null,
+                                tint = Color(0xFF475569)
+                            )
+                        }
+                    }
+                }
             }
         }
     }

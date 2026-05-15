@@ -1,13 +1,16 @@
 package com.example.dacs3.ui.components.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -23,7 +26,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.dacs3.R
 import com.example.dacs3.data.model.Review
 import com.example.dacs3.ui.viewmodel.MainViewModel
 import java.text.SimpleDateFormat
@@ -40,25 +42,40 @@ fun ReviewsSection(viewModel: MainViewModel) {
             Review(
                 userName = "Trần Thị Minh",
                 rating = 5,
-                comment = "Chuyến đi vừa rồi thực sự rất ấn tượng. Ứng dụng này đã giúp mình có những trải nghiệm tuyệt vời.",
+                comment = "Chuyến đi tuyệt vời, mình rất hài lòng với sự hỗ trợ của đội ngũ.",
                 createdAt = System.currentTimeMillis() - 86400000 * 2
             ),
             Review(
                 userName = "Lê Văn Nam",
                 rating = 4,
-                comment = "Dịch vụ rất tốt, hướng dẫn viên nhiệt tình và am hiểu kiến thức. Mình rất hài lòng.",
+                comment = "Hướng dẫn viên rất nhiệt tình và am hiểu kiến thức địa phương.",
                 createdAt = System.currentTimeMillis() - 86400000 * 5
+            ),
+            Review(
+                userName = "Hoàng Anh",
+                rating = 5,
+                comment = "Dịch vụ đẳng cấp, sẽ quay lại lần sau cùng gia đình!",
+                createdAt = System.currentTimeMillis() - 86400000 * 3
+            ),
+            Review(
+                userName = "Phạm Lan",
+                rating = 5,
+                comment = "Dịch vụ rất chuyên nghiệp, mọi thứ đều đúng kế hoạch.",
+                createdAt = System.currentTimeMillis() - 86400000 * 1
             )
         )
     }
 
-    val pagerState = rememberPagerState(pageCount = { displayReviews.size })
+    // Chunk to display 2 reviews vertically per page
+    val pages = displayReviews.chunked(2)
+    val pagerState = rememberPagerState(pageCount = { pages.size })
 
     Column {
         Text(
             text = "Đánh giá",
-            fontSize = 14.sp,
-            color = Color.Gray
+            fontSize = 13.sp,
+            color = Color(0xFF64748B),
+            fontWeight = FontWeight.Medium
         )
         Text(
             text = "Trải nghiệm thực tế",
@@ -66,32 +83,45 @@ fun ReviewsSection(viewModel: MainViewModel) {
             fontSize = 19.sp,
             color = Color(0xFF1E293B)
         )
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         
         if (displayReviews.isNotEmpty()) {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxWidth(),
                 pageSpacing = 16.dp 
-            ) { page ->
-                ReviewCard(displayReviews[page])
+            ) { pageIndex ->
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    pages[pageIndex].forEach { review ->
+                        ReviewCard(review)
+                    }
+                    if (pages[pageIndex].size < 2) {
+                        Spacer(modifier = Modifier.height(160.dp))
+                    }
+                }
             }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                repeat(displayReviews.size) { index ->
-                    val isSelected = pagerState.currentPage == index
-                    Surface(
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .size(if (isSelected) 8.dp else 6.dp),
-                        shape = CircleShape,
-                        color = if (isSelected) Color(0xFF2563EB) else Color.LightGray
-                    ) {}
+            if (pages.size > 1) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    repeat(pages.size) { index ->
+                        val isSelected = pagerState.currentPage == index
+                        Surface(
+                            modifier = Modifier
+                                .padding(horizontal = 4.dp)
+                                .height(6.dp)
+                                .width(if (isSelected) 18.dp else 6.dp),
+                            shape = CircleShape,
+                            color = if (isSelected) Color(0xFF2563EB) else Color.LightGray.copy(alpha = 0.5f)
+                        ) {}
+                    }
                 }
             }
         }
@@ -106,53 +136,74 @@ fun ReviewCard(review: Review) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(160.dp),
-        shape = RoundedCornerShape(24.dp),
+            .height(165.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        elevation = CardDefaults.cardElevation(2.dp),
+        border = BorderStroke(1.dp, Color(0xFFF1F5F9))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 AsyncImage(
                     model = if (!review.userAvatar.isNullOrEmpty()) review.userAvatar else "https://ui-avatars.com/api/?name=${review.userName}&background=random",
                     contentDescription = null,
-                    modifier = Modifier.size(40.dp).clip(CircleShape),
+                    modifier = Modifier.size(44.dp).clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = review.userName,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                    Text(
+                        text = review.userName,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = Color(0xFF1E293B),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color(0xFF10B981),
+                            modifier = Modifier.size(13.dp)
                         )
-                        Text(text = dateStr, fontSize = 11.sp, color = Color.Gray)
-                    }
-                    Row {
-                        repeat(review.rating) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                tint = Color(0xFFFACC15),
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Trải nghiệm thực tế",
+                            fontSize = 11.sp,
+                            color = Color(0xFF10B981),
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(text = " • $dateStr", fontSize = 11.sp, color = Color.Gray)
                     }
                 }
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "${review.rating}",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 16.sp,
+                        color = Color(0xFFFFB800),
+                        modifier = Modifier.padding(bottom = 1.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFFFB800),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = review.comment,
-                fontSize = 13.sp,
+                fontSize = 14.sp,
                 color = Color(0xFF475569),
-                lineHeight = 18.sp,
+                lineHeight = 20.sp,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )

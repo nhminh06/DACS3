@@ -161,7 +161,7 @@ fun ProfileScreen(
                     iconTint = Color(0xFFEF4444),
                     title = "Tour yêu thích",
                     subtitle = "Danh sách tour đã lưu",
-                    onClick = { onNavigate("favorites") }
+                    onClick = { onNavigate("favorites_tours") }
                 )
             }
 
@@ -177,6 +177,15 @@ fun ProfileScreen(
                     title = "Bài viết của tôi",
                     subtitle = "Quản lý bài viết đã đăng",
                     onClick = { onNavigate("my_articles") }
+                )
+                RowDivider()
+                ActionRow(
+                    icon = Icons.Default.FavoriteBorder,
+                    iconBg = Color(0xFFF5F3FF),
+                    iconTint = Color(0xFF8B5CF6),
+                    title = "Bài viết yêu thích",
+                    subtitle = "Xem lại các bài viết đã lưu",
+                    onClick = { onNavigate("favorites_articles") }
                 )
                 RowDivider()
                 ActionRow(

@@ -15,5 +15,7 @@ data class User(
     val gioi_tinh: String = "",
     val ngay_sinh: String = "",
     val trang_thai: String = "active",
-    val created_at: Timestamp? = null
+    val created_at: Timestamp? = null,
+    val favoriteTours: List<String> = emptyList(),
+    val favoriteArticles: List<String> = emptyList()
 )

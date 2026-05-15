@@ -42,6 +42,8 @@ class ArticleViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
+    private var currentHomeLimit = 3L
+
     init {
         fetchHomeArticles()
         fetchAllArticles()
@@ -54,10 +56,15 @@ class ArticleViewModel(
     fun fetchHomeArticles() {
         viewModelScope.launch {
             _isLoading.value = true
-            val result = repository.getHomeArticles(3)
+            val result = repository.getHomeArticles(currentHomeLimit)
             _homeArticles.value = result
             _isLoading.value = false
         }
+    }
+
+    fun loadMoreHomeArticles() {
+        currentHomeLimit += 3
+        fetchHomeArticles()
     }
 
     fun fetchAllArticles() {

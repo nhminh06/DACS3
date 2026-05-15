@@ -63,6 +63,46 @@ class UserViewModel(
         }
     }
 
+    fun toggleFavoriteTour(tourId: String) {
+        val user = _currentUser.value ?: return
+        val isCurrentlyFavorite = user.favoriteTours.contains(tourId)
+        val newFavoriteStatus = !isCurrentlyFavorite
+        
+        viewModelScope.launch {
+            val result = repository.toggleFavoriteTour(user.id, tourId, newFavoriteStatus)
+            result.onSuccess {
+                val updatedTours = if (newFavoriteStatus) {
+                    user.favoriteTours + tourId
+                } else {
+                    user.favoriteTours - tourId
+                }
+                val updatedUser = user.copy(favoriteTours = updatedTours)
+                _currentUser.value = updatedUser
+                sessionManager.saveUser(updatedUser)
+            }
+        }
+    }
+
+    fun toggleFavoriteArticle(articleId: String) {
+        val user = _currentUser.value ?: return
+        val isCurrentlyFavorite = user.favoriteArticles.contains(articleId)
+        val newFavoriteStatus = !isCurrentlyFavorite
+        
+        viewModelScope.launch {
+            val result = repository.toggleFavoriteArticle(user.id, articleId, newFavoriteStatus)
+            result.onSuccess {
+                val updatedArticles = if (newFavoriteStatus) {
+                    user.favoriteArticles + articleId
+                } else {
+                    user.favoriteArticles - articleId
+                }
+                val updatedUser = user.copy(favoriteArticles = updatedArticles)
+                _currentUser.value = updatedUser
+                sessionManager.saveUser(updatedUser)
+            }
+        }
+    }
+
     fun sendRegistrationOtp(email: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true
