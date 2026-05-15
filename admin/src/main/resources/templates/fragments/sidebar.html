@@ -34,8 +34,11 @@
             <a class="nav-link" th:classappend="${activeMenu == 'reports' ? 'active' : ''}" href="/admin/reports">
                 <i class="bi bi-exclamation-octagon"></i> Quản lý khiếu nại
             </a>
+            <a class="nav-link" th:classappend="${activeMenu == 'support_chat' ? 'active' : ''}" href="/admin/support">
+                <i class="bi bi-chat-left-dots-fill"></i> Hỗ trợ trực tuyến
+            </a>
             <a class="nav-link" th:classappend="${activeMenu == 'contacts' ? 'active' : ''}" href="/admin/contacts">
-                <i class="bi bi-chat-dots"></i> Liên hệ & Hỗ trợ
+                <i class="bi bi-envelope"></i> Liên hệ & Góp ý
             </a>
             <div class="nav-divider" style="height: 1px; background: rgba(255,255,255,0.05); margin: 10px 20px;"></div>
             <a class="nav-link" href="/admin/logout" onclick="return confirm('Bạn có chắc chắn muốn đăng xuất?')">

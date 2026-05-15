@@ -53,10 +53,9 @@ fun ChatBotScreen(
     val isLoading by chatViewModel.isLoading.collectAsState()
     val suggestedTours by chatViewModel.suggestedTours.collectAsState()
     val suggestedArticles by chatViewModel.suggestedArticles.collectAsState()
-    
+
     val listState = rememberLazyListState()
 
-    // Tự động cuộn xuống khi có tin nhắn mới
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -66,7 +65,7 @@ fun ChatBotScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.AutoAwesome, null, tint = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(8.dp))
@@ -80,15 +79,16 @@ fun ChatBotScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
-        }
+        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(top = padding.calculateTopPadding())
+                .imePadding()  // ← FIX: chuyển imePadding lên đây thay vì dùng windowInsetsPadding trên Surface
                 .background(Color(0xFFF8FAFC))
         ) {
-            // Chat Messages
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -100,7 +100,7 @@ fun ChatBotScreen(
                 items(messages) { message ->
                     ChatBubble(message)
                 }
-                
+
                 if (isLoading) {
                     item {
                         Box(modifier = Modifier.padding(8.dp)) {
@@ -110,12 +110,11 @@ fun ChatBotScreen(
                 }
             }
 
-            // Suggestions Section (Tours/Articles)
             AnimatedVisibility(visible = suggestedTours.isNotEmpty() || suggestedArticles.isNotEmpty()) {
                 Column(modifier = Modifier.padding(bottom = 8.dp)) {
                     if (suggestedTours.isNotEmpty()) {
                         Text(
-                            "Tour gợi ý cho bạn:", 
+                            "Tour gợi ý cho bạn:",
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                             fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B)
                         )
@@ -128,11 +127,11 @@ fun ChatBotScreen(
                             }
                         }
                     }
-                    
+
                     if (suggestedArticles.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Bài viết liên quan:", 
+                            "Bài viết liên quan:",
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                             fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B)
                         )
@@ -148,17 +147,13 @@ fun ChatBotScreen(
                 }
             }
 
-            // Input area
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),  // ← FIX: bỏ windowInsetsPadding khỏi đây
                 color = Color.White,
                 shadowElevation = 16.dp
             ) {
                 Row(
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .navigationBarsPadding()
-                        .imePadding(),
+                    modifier = Modifier.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
@@ -225,7 +220,7 @@ fun ChatBubble(message: ChatMessage) {
                 }
                 Spacer(modifier = Modifier.width(8.dp))
             }
-            
+
             Surface(
                 color = bubbleColor,
                 shape = shape,
@@ -287,10 +282,10 @@ fun SuggestionArticleCard(article: ArticleEntity, onClick: () -> Unit) {
             Icon(Icons.AutoMirrored.Filled.ReadMore, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                article.tieu_de, 
-                fontSize = 12.sp, 
+                article.tieu_de,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
-                maxLines = 2, 
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
         }

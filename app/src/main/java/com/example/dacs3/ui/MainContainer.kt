@@ -11,6 +11,7 @@ import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.data.repository.ContactRepository
 import com.example.dacs3.data.repository.GuideRepository
+import com.example.dacs3.data.repository.SupportRepository
 import com.example.dacs3.ui.screens.user.*
 import com.example.dacs3.ui.screens.articles.*
 import com.example.dacs3.ui.screens.home.AppHomeScreen
@@ -44,6 +45,11 @@ fun MainContainer() {
     val guideRepository = GuideRepository(firebaseService)
     val staffViewModel: StaffViewModel = viewModel(
         factory = StaffViewModelFactory(guideRepository)
+    )
+
+    val supportRepository = SupportRepository(firebaseService)
+    val supportViewModel: SupportViewModel = viewModel(
+        factory = SupportViewModelFactory(supportRepository)
     )
 
     val mainViewModel: MainViewModel = viewModel()
@@ -277,6 +283,13 @@ fun MainContainer() {
                 userViewModel = userViewModel,
                 contactViewModel = contactViewModel,
                 onNavigate = { screen -> currentScreen = screen }
+            )
+        }
+        "support_chat" -> {
+            SupportChatScreen(
+                onBack = { currentScreen = "home" },
+                userViewModel = userViewModel,
+                supportViewModel = supportViewModel
             )
         }
         "profile" -> {

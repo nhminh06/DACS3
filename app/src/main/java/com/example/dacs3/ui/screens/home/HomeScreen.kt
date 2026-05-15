@@ -46,7 +46,7 @@ fun AppHomeScreen(
     val backgroundColor = Color(0xFFF1F5F9)
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    
+
     val allTours by viewModel.allTours.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -60,7 +60,7 @@ fun AppHomeScreen(
     val offerTours = remember(allTours) {
         allTours.filter { it.isOffer }
     }
-    
+
     // Chỉ lấy những tour thường (không phải ưu đãi) để hiện ở mục Nổi bật
     val featuredTours = remember(allTours) {
         allTours.filter { !it.isOffer }
@@ -71,7 +71,7 @@ fun AppHomeScreen(
     if (showNotifDialog) {
         AlertDialog(
             onDismissRequest = { showNotifDialog = false },
-            title = { 
+            title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Notifications, null, tint = Color(0xFF2563EB))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -129,7 +129,7 @@ fun AppHomeScreen(
             },
             confirmButton = {
                 Button(
-                    onClick = { 
+                    onClick = {
                         showNotifDialog = false
                         onNavigate("notifications")
                     },
@@ -151,11 +151,11 @@ fun AppHomeScreen(
 
     Scaffold(
         containerColor = backgroundColor,
-        bottomBar = { 
+        bottomBar = {
             AppBottomBar(
                 currentScreen = "home",
                 onNavigate = onNavigate
-            ) 
+            )
         }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -166,16 +166,16 @@ fun AppHomeScreen(
                     .padding(bottom = paddingValues.calculateBottomPadding()),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                item { 
+                item {
                     TopHeader(
                         userViewModel = userViewModel,
                         unreadCount = unreadCount,
                         onProfileClick = { onNavigate("profile") },
                         onNotificationClick = { showNotifDialog = true }
-                    ) 
+                    )
                 }
-                item { 
-                    HomePaddingWrapper { 
+                item {
+                    HomePaddingWrapper {
                         SearchBar(
                             query = searchQuery,
                             onQueryChange = {
@@ -197,12 +197,12 @@ fun AppHomeScreen(
                                     }
                                 }
                             }
-                        ) 
-                    } 
+                        )
+                    }
                 }
-                
-                item { 
-                    HomePaddingWrapper { 
+
+                item {
+                    HomePaddingWrapper {
                         QuickNavSection(
                             onScrollTo = { index ->
                                 coroutineScope.launch {
@@ -211,12 +211,12 @@ fun AppHomeScreen(
                             },
                             onNavigate = onNavigate
                         )
-                    } 
+                    }
                 }
-                item { 
-                    HomePaddingWrapper { 
+                item {
+                    HomePaddingWrapper {
                         CategorySection(onCategoryClick = onCategoryClick)
-                    } 
+                    }
                 }
 
                 // Promo Banners
@@ -260,18 +260,23 @@ fun AppHomeScreen(
                     }
                 }
 
-                item { 
-                    HomePaddingWrapper { 
+                item {
+                    HomePaddingWrapper {
                         GuidesSection(
                             viewModel = viewModel,
                             onSeeAllClick = { onNavigate("guides_list") }
-                        ) 
-                    } 
+                        )
+                    }
                 }
                 item { HomePaddingWrapper { ReviewsSection(viewModel) } }
                 item { Spacer(modifier = Modifier.height(24.dp)) }
             }
-            
+            SupportSlidePanel(
+                onChatClick = { onNavigate("support_chat") },   // thay route phù hợp
+                onCallClick = { /* Intent gọi điện */ },
+                modifier    = Modifier.align(Alignment.CenterEnd).offset(y = 200.dp)
+            )
+
             if (isLoading && allTours.isEmpty()) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
@@ -308,12 +313,12 @@ fun NotificationCategoryItem(
                 Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
             }
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = title, 
-                    fontWeight = if (isNew) FontWeight.ExtraBold else FontWeight.SemiBold, 
-                    fontSize = 15.sp, 
+                    text = title,
+                    fontWeight = if (isNew) FontWeight.ExtraBold else FontWeight.SemiBold,
+                    fontSize = 15.sp,
                     color = if (isNew) Color.Black else Color(0xFF475569)
                 )
                 if (isNew) {
@@ -325,7 +330,7 @@ fun NotificationCategoryItem(
                     )
                 }
             }
-            
+
             if (isNew) {
                 Surface(
                     color = Color.Red,
@@ -333,9 +338,9 @@ fun NotificationCategoryItem(
                     shadowElevation = 2.dp
                 ) {
                     Text(
-                        "MỚI", 
-                        color = Color.White, 
-                        fontSize = 9.sp, 
+                        "MỚI",
+                        color = Color.White,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Black,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )

@@ -117,11 +117,15 @@
                             <div class="mb-0">
                                 <label class="form-label d-flex justify-content-between">
                                     <span>Hình ảnh minh họa</span>
-                                    <button type="button" class="btn btn-sm btn-link p-0 text-info" th:onclick="'openAiGallery(' + ${iter.index + 1} + ')'">
+                                    <button type="button" class="btn btn-sm btn-link p-0 text-info"
+                                            th:data-muc="${iter.index + 1}"
+                                            onclick="openAiGallery(this.getAttribute('data-muc'))">
                                         <i class="bi bi-magic"></i> Chọn từ Thư viện AI
                                     </button>
                                 </label>
-                                <input type="file" name="hinh_anh_muc[]" class="form-control mb-2" accept="image/*" th:onchange="'previewImage(this, ' + ${iter.index + 1} + ')'">
+                                <input type="file" name="hinh_anh_muc[]" class="form-control mb-2" accept="image/*"
+                                       th:data-muc="${iter.index + 1}"
+                                       onchange="previewImage(this, this.getAttribute('data-muc'))">
                                 <input type="hidden" name="hinh_anh_cu[]" th:id="'hinh_anh_cu_' + ${iter.index + 1}" th:value="${muc['hinh_anh']}">
                                 <div th:id="'preview-container-' + ${iter.index + 1}">
                                     <img th:if="${muc['hinh_anh'] != null}" th:src="${muc['hinh_anh']}" class="img-preview">
