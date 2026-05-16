@@ -6,6 +6,7 @@ import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,9 @@ public class AdminAuthController {
 
     @Autowired
     private Firestore firestore;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping("/login")
     public String loginPage(HttpSession session) {
@@ -49,13 +53,37 @@ public class AdminAuthController {
             QueryDocumentSnapshot userDoc = documents.get(0);
             String dbPassword = userDoc.getString("password");
             
-            if (password.equals(dbPassword)) {
+            boolean isPasswordCorrect = false;
+            boolean isLegacyPassword = false;
+
+            // Kiểm tra mật khẩu đã mã hóa
+            try {
+                if (passwordEncoder.matches(password, dbPassword)) {
+                    isPasswordCorrect = true;
+                }
+            } catch (Exception e) {
+                // Có thể dbPassword không phải là hash BCrypt hợp lệ
+            }
+
+            // Nếu không khớp với hash, kiểm tra mật khẩu chưa mã hóa (tài khoản cũ)
+            if (!isPasswordCorrect && password.equals(dbPassword)) {
+                isPasswordCorrect = true;
+                isLegacyPassword = true;
+            }
+            
+            if (isPasswordCorrect) {
+                // Nếu là mật khẩu cũ, có thể tự động cập nhật lên mật khẩu đã mã hóa
+                if (isLegacyPassword) {
+                    String encodedPassword = passwordEncoder.encode(password);
+                    firestore.collection("users").document(userDoc.getId())
+                            .update("password", encodedPassword);
+                }
+
                 Map<String, Object> userData = userDoc.getData();
                 userData.put("docId", userDoc.getId());
                 
-                // Đảm bảo admin_level luôn có giá trị trong session
                 if (!userData.containsKey("admin_level") || userData.get("admin_level") == null) {
-                    userData.put("admin_level", 2); // Mặc định là cấp thấp nếu chưa có
+                    userData.put("admin_level", 2);
                 }
 
                 session.setAttribute("adminUser", userData);

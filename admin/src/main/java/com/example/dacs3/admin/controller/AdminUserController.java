@@ -6,6 +6,7 @@ import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.QuerySnapshot;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,9 @@ public class AdminUserController {
 
     @Autowired
     private Firestore firestore;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     private int getAdminLevel(HttpSession session) {
         Map<String, Object> admin = (Map<String, Object>) session.getAttribute("adminUser");
@@ -119,7 +123,8 @@ public class AdminUserController {
         userData.put("name", ho_ten);
         userData.put("email", email);
         userData.put("sdt", sdt);
-        userData.put("password", password);
+        // Mã hóa mật khẩu trước khi lưu
+        userData.put("password", passwordEncoder.encode(password));
         userData.put("role", role);
         userData.put("gioi_tinh", gioi_tinh);
         userData.put("ngay_sinh", ngay_sinh);

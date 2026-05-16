@@ -5,6 +5,7 @@ import com.cloudinary.utils.ObjectUtils;
 import com.google.cloud.firestore.Firestore;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +29,9 @@ public class AdminProfileController {
 
     @Autowired
     private Cloudinary cloudinary;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping
     @SuppressWarnings("unchecked")
@@ -149,18 +153,35 @@ public class AdminProfileController {
             }
 
             String docId = (String) adminUser.get("docId");
-            String dbPassword = (String) adminUser.get("password").toString();
+            
+            // Lấy mật khẩu từ DB để đảm bảo dữ liệu mới nhất
+            String dbPassword = firestore.collection("users").document(docId).get().get().getString("password");
 
-            if (!currentPassword.equals(dbPassword)) {
+            boolean isPasswordCorrect = false;
+            try {
+                if (passwordEncoder.matches(currentPassword, dbPassword)) {
+                    isPasswordCorrect = true;
+                }
+            } catch (Exception e) {}
+
+            // Hỗ trợ mật khẩu cũ chưa mã hóa
+            if (!isPasswordCorrect && currentPassword.equals(dbPassword)) {
+                isPasswordCorrect = true;
+            }
+
+            if (!isPasswordCorrect) {
                 redirectAttributes.addFlashAttribute("error", "Mật khẩu hiện tại không chính xác!");
                 return "redirect:/admin/profile";
             }
 
+            // Mã hóa mật khẩu mới
+            String encodedNewPassword = passwordEncoder.encode(newPassword);
+
             // Update Firestore
-            firestore.collection("users").document(docId).update("password", newPassword).get();
+            firestore.collection("users").document(docId).update("password", encodedNewPassword).get();
             
             // Update Session
-            adminUser.put("password", newPassword);
+            adminUser.put("password", encodedNewPassword);
             session.setAttribute("adminUser", adminUser);
 
             redirectAttributes.addFlashAttribute("success", "Đổi mật khẩu thành công!");

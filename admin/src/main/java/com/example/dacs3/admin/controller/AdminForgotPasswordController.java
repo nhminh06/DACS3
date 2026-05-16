@@ -9,6 +9,7 @@ import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -25,6 +26,9 @@ public class AdminForgotPasswordController {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     // Bước 1: Gửi mã OTP
     @PostMapping("/send-otp")
@@ -88,9 +92,10 @@ public class AdminForgotPasswordController {
             String savedOtp = doc.getString("reset_otp");
 
             if (savedOtp != null && savedOtp.equals(otp)) {
-                // OTP đúng -> Cập nhật mật khẩu mới và xóa OTP
+                // OTP đúng -> Cập nhật mật khẩu mới (đã mã hóa) và xóa OTP
+                String encodedPassword = passwordEncoder.encode(newPassword);
                 Map<String, Object> updates = new HashMap<>();
-                updates.put("password", newPassword);
+                updates.put("password", encodedPassword);
                 updates.put("reset_otp", null); // Xóa mã sau khi dùng
                 firestore.collection("users").document(doc.getId()).update(updates).get();
 

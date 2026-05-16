@@ -75,7 +75,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
 
-    // Google Auth - Updated to 21.2.0 (Check for latest if issues persist)
+    // Google Auth
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     // Cloudinary
@@ -89,6 +89,9 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation(libs.okhttp.logging)
+
+    // BCrypt for Password Hashing
+    implementation("org.mindrot:jbcrypt:0.4")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -10,6 +10,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FieldValue
 import kotlinx.coroutines.tasks.await
+import org.mindrot.jbcrypt.BCrypt
 
 class UserRepository(private val firebaseService: FirebaseService) {
     private val firestore = firebaseService.getFirestore()
@@ -25,9 +26,32 @@ class UserRepository(private val firebaseService: FirebaseService) {
         if (querySnapshot.isEmpty) return null
 
         val document = querySnapshot.documents[0]
-        val dbPassword = document.getString("password")
+        val dbPassword = document.getString("password") ?: ""
         
-        return if (dbPassword == password) {
+        var isPasswordCorrect = false
+        var isLegacyPassword = false
+
+        // Kiểm tra mật khẩu đã mã hóa (BCrypt)
+        try {
+            if (BCrypt.checkpw(password, dbPassword)) {
+                isPasswordCorrect = true
+            }
+        } catch (e: Exception) {
+            // dbPassword không phải là hash BCrypt hợp lệ
+        }
+
+        // Nếu không khớp với hash, kiểm tra mật khẩu chưa mã hóa (tài khoản cũ)
+        if (!isPasswordCorrect && dbPassword == password) {
+            isPasswordCorrect = true
+            isLegacyPassword = true
+        }
+
+        return if (isPasswordCorrect) {
+            // Nếu là mật khẩu cũ, tự động cập nhật lên mật khẩu đã mã hóa
+            if (isLegacyPassword) {
+                val hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt())
+                usersCollection.document(document.id).update("password", hashedPassword)
+            }
             document.toObject(User::class.java)?.copy(id = document.id)
         } else {
             null
@@ -93,10 +117,13 @@ class UserRepository(private val firebaseService: FirebaseService) {
                 return Result.failure(Exception("Tên đăng nhập đã tồn tại"))
             }
 
+            // Mã hóa mật khẩu trước khi lưu
+            val hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt())
+
             val newUserMap = hashMapOf(
                 "name" to user.name,
                 "email" to user.email,
-                "password" to user.password,
+                "password" to hashedPassword,
                 "avatar" to "",
                 "created_at" to Timestamp.now(),
                 "dia_chi" to user.dia_chi,
@@ -194,12 +221,25 @@ class UserRepository(private val firebaseService: FirebaseService) {
             val doc = usersCollection.document(userId).get().await()
             if (!doc.exists()) return Result.failure(Exception("Người dùng không tồn tại"))
             
-            val dbPassword = doc.getString("password")
-            if (dbPassword != currentPass) {
+            val dbPassword = doc.getString("password") ?: ""
+            
+            var isPasswordCorrect = false
+            try {
+                if (BCrypt.checkpw(currentPass, dbPassword)) {
+                    isPasswordCorrect = true
+                }
+            } catch (e: Exception) {}
+
+            if (!isPasswordCorrect && dbPassword == currentPass) {
+                isPasswordCorrect = true
+            }
+
+            if (!isPasswordCorrect) {
                 return Result.failure(Exception("Mật khẩu hiện tại không chính xác"))
             }
             
-            usersCollection.document(userId).update("password", newPass).await()
+            val hashedNewPassword = BCrypt.hashpw(newPass, BCrypt.gensalt())
+            usersCollection.document(userId).update("password", hashedNewPassword).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -238,7 +278,8 @@ class UserRepository(private val firebaseService: FirebaseService) {
 
     suspend fun resetPasswordWithOtp(email: String, otp: String, newPass: String): Result<Unit> {
         return try {
-            val response = RetrofitClient.authService.resetPasswordWithOtp(email, otp, newPass)
+            val hashedNewPassword = BCrypt.hashpw(newPass, BCrypt.gensalt())
+            val response = RetrofitClient.authService.resetPasswordWithOtp(email, otp, hashedNewPassword)
             if (response.isSuccessful && response.body()?.success == true) {
                 Result.success(Unit)
             } else {
