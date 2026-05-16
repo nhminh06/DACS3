@@ -92,7 +92,7 @@ public class AdminRegisterController {
             helper.setText(htmlMsg, true);
             helper.setTo(to);
             helper.setSubject("[WIMD Travel] Mã xác thực đăng ký tài khoản");
-            helper.setFrom("minhminh778894@gmail.com");
+            helper.setFrom("thantrieuchidia@gmail.com");
 
             mailSender.send(mimeMessage);
         } catch (Exception e) {
