@@ -38,7 +38,6 @@ fun FeaturedToursSection(
     onTourClick: (Tour) -> Unit,
     onSeeAllClick: () -> Unit = {}
 ) {
-    // Chia danh sách thành các trang, mỗi trang có 2 tour
     val pages = tours.chunked(2)
     val pagerState = rememberPagerState(pageCount = { pages.size })
 
@@ -52,12 +51,13 @@ fun FeaturedToursSection(
                 "Tour du lịch nổi bật",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 17.sp,
-                color = Color(0xFF1E293B)
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 "Xem tất cả",
-                color = Color(0xFF2563EB),
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable { onSeeAllClick() }
             )
         }
@@ -99,7 +99,7 @@ fun FeaturedToursSection(
                             .padding(horizontal = 4.dp)
                             .size(if (isSelected) 8.dp else 6.dp),
                         shape = CircleShape,
-                        color = if (isSelected) Color(0xFF2563EB) else Color.LightGray
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
                     ) {}
                 }
             }
@@ -110,7 +110,7 @@ fun FeaturedToursSection(
 @Composable
 fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
     val currencyFormatter = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
-    val mainColor = Color(0xFF2563EB) // Màu xanh biển chính của app
+    val mainColor = MaterialTheme.colorScheme.primary
     
     Card(
         modifier = Modifier
@@ -118,11 +118,10 @@ fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
             .height(260.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column {
-            // 1. Ảnh chiếm 1/2 khung
             Box(modifier = Modifier.height(130.dp).fillMaxWidth()) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -134,7 +133,6 @@ fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
                     contentScale = ContentScale.Crop
                 )
 
-                // Tag ưu đãi góc phải nếu có
                 if (tour.isOffer && tour.discountTag.isNotEmpty()) {
                     Surface(
                         modifier = Modifier
@@ -153,7 +151,6 @@ fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
                     }
                 }
 
-                // Rating overlay
                 if (tour.rating > 0 && tour.reviewCount > 0) {
                     Surface(
                         modifier = Modifier
@@ -191,44 +188,40 @@ fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
             }
 
             Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)) {
-                // 2. Tên tour
                 Text(
                     text = tour.title,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
-                    color = Color(0xFF1E293B),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
-                // 3. Du khách & Địa điểm
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Groups, null, tint = mainColor, modifier = Modifier.size(11.dp))
                         Spacer(modifier = Modifier.width(3.dp))
-                        Text(text = "${tour.minGuests}-${tour.maxGuests}", color = Color(0xFF64748B), fontSize = 9.sp)
+                        Text(text = "${tour.minGuests}-${tour.maxGuests}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp)
                     }
                     Row(modifier = Modifier.weight(1.2f), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.LocationOn, null, tint = mainColor, modifier = Modifier.size(11.dp))
                         Spacer(modifier = Modifier.width(3.dp))
-                        Text(text = tour.location, color = Color(0xFF64748B), fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(text = tour.location, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(2.dp))
 
-                // 4. Thời gian
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.AccessTime, null, tint = mainColor, modifier = Modifier.size(11.dp))
                     Spacer(modifier = Modifier.width(3.dp))
-                    Text(text = tour.duration, color = Color(0xFF64748B), fontSize = 9.sp)
+                    Text(text = tour.duration, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp)
                 }
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // 5. Giá
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = currencyFormatter.format(tour.price ?: 0),
@@ -240,7 +233,7 @@ fun HomeTourCard(tour: Tour, onClick: () -> Unit) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = currencyFormatter.format(tour.originalPrice),
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                             fontSize = 9.sp,
                             textDecoration = TextDecoration.LineThrough
                         )

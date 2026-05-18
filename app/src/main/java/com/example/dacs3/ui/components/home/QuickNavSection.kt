@@ -3,11 +3,11 @@ package com.example.dacs3.ui.components.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,11 +32,16 @@ fun QuickNavSection(
     onScrollTo: (Int) -> Unit,
     onNavigate: (String) -> Unit
 ) {
+    // Cập nhật Index để khớp với cấu trúc LazyColumn trong HomeScreen
+    // Index 5: SpecialOffersSection
+    // Index 7: CulturalArticlesSection
+    // Index 8: GuidesSection
+    // Index 9: ReviewsSection
     val row1 = listOf(
-        NavItem("Địa điểm", Icons.Default.LocationOn, Color(0xFFEF4444)) { onScrollTo(4) },
-        NavItem("Văn hóa", Icons.Default.AutoStories, Color(0xFF3B82F6)) { onScrollTo(5) },
-        NavItem("Hướng dẫn", Icons.Default.Explore, Color(0xFF10B981)) { onScrollTo(6) },
-        NavItem("Đánh giá", Icons.Default.Stars, Color(0xFFF59E0B)) { onScrollTo(7) },
+        NavItem("Địa điểm", Icons.Default.LocationOn, Color(0xFFEF4444)) { onScrollTo(5) },
+        NavItem("Văn hóa", Icons.Default.AutoStories, Color(0xFF3B82F6)) { onScrollTo(7) },
+        NavItem("Hướng dẫn", Icons.Default.Explore, Color(0xFF10B981)) { onScrollTo(8) },
+        NavItem("Đánh giá", Icons.Default.Stars, Color(0xFFF59E0B)) { onScrollTo(9) },
     )
 
     val row2 = listOf(
@@ -54,10 +59,10 @@ fun QuickNavSection(
             text = "Khám phá nhanh",
             fontWeight = FontWeight.ExtraBold,
             fontSize = 17.sp,
-            color = Color(0xFF1E293B)
+            color = MaterialTheme.colorScheme.onBackground
         )
         
-        // Hàng 1
+        // Hàng 1: Cuộn trang tại chỗ
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -67,7 +72,7 @@ fun QuickNavSection(
             }
         }
 
-        // Hàng 2
+        // Hàng 2: Chuyển màn hình
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -105,7 +110,7 @@ fun QuickNavCard(item: NavItem, modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = item.title,
-            color = Color(0xFF475569),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,

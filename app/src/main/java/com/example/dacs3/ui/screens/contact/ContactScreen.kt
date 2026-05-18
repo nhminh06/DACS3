@@ -35,7 +35,7 @@ fun ContactScreen(
     contactViewModel: ContactViewModel,
     onNavigate: (String) -> Unit
 ) {
-    val backgroundColor = Color(0xFFF8FAFC)
+    val backgroundColor = MaterialTheme.colorScheme.background
     
     val currentUser by userViewModel.currentUser
     val isLoading by contactViewModel.isLoading
@@ -59,9 +59,14 @@ fun ContactScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { 
-                    Text("Liên Hệ & Hỗ Trợ", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF0F172A)) 
+                    Text(
+                        "Liên Hệ & Hỗ Trợ", 
+                        fontWeight = FontWeight.ExtraBold, 
+                        fontSize = 20.sp, 
+                        color = MaterialTheme.colorScheme.onSurface
+                    ) 
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White),
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             )
         },
@@ -82,7 +87,7 @@ fun ContactScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .background(Color.White, RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
                     .padding(4.dp)
             ) {
                 TabButton(
@@ -150,10 +155,10 @@ fun ContactScreen(
                     contactViewModel.resetSuccess()
                 }) { Text("Đóng", fontWeight = FontWeight.Bold) }
             },
-            title = { Text("Gửi thành công!", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A)) },
-            text = { Text("Cảm ơn bạn đã gửi $contactType. Chúng tôi sẽ phản hồi sớm nhất.", color = Color(0xFF334155)) },
+            title = { Text("Gửi thành công!", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("Cảm ơn bạn đã gửi $contactType. Chúng tôi sẽ phản hồi sớm nhất.", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             shape = RoundedCornerShape(24.dp),
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
@@ -163,10 +168,10 @@ fun ContactScreen(
             confirmButton = {
                 TextButton(onClick = { errorMessage = null }) { Text("Đóng", fontWeight = FontWeight.Bold) }
             },
-            title = { Text("Lỗi", fontWeight = FontWeight.Bold, color = Color.Red) },
-            text = { Text(errorMessage!!, color = Color(0xFF334155)) },
+            title = { Text("Lỗi", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) },
+            text = { Text(errorMessage!!, color = MaterialTheme.colorScheme.onSurfaceVariant) },
             shape = RoundedCornerShape(24.dp),
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 }
@@ -176,9 +181,14 @@ fun ContactHistory(contacts: List<Contact>) {
     if (contacts.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Default.History, null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
+                Icon(
+                    Icons.Default.History, 
+                    null, 
+                    modifier = Modifier.size(64.dp), 
+                    tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Chưa có lịch sử gửi yêu cầu", color = Color.Gray)
+                Text("Chưa có lịch sử gửi yêu cầu", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     } else {
@@ -200,7 +210,7 @@ fun ContactHistoryItem(contact: Contact) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -218,14 +228,18 @@ fun ContactHistoryItem(contact: Contact) {
                         fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )
                 }
-                Text(sdf.format(contact.timestamp.toDate()), fontSize = 10.sp, color = Color(0xFF64748B))
+                Text(
+                    sdf.format(contact.timestamp.toDate()), 
+                    fontSize = 10.sp, 
+                    color = MaterialTheme.colorScheme.outline
+                )
             }
             
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 contact.content, 
                 fontSize = 14.sp, 
-                color = Color(0xFF0F172A), 
+                color = MaterialTheme.colorScheme.onSurface, 
                 lineHeight = 20.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -235,23 +249,39 @@ fun ContactHistoryItem(contact: Contact) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFF1F5F9), RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
                         .padding(12.dp)
                 ) {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.AutoMirrored.Filled.Reply, null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
+                            Icon(
+                                Icons.AutoMirrored.Filled.Reply, 
+                                null, 
+                                tint = Color(0xFF10B981), 
+                                modifier = Modifier.size(16.dp)
+                            )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Phản hồi từ hệ thống:", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF10B981))
+                            Text(
+                                "Phản hồi từ hệ thống:", 
+                                fontWeight = FontWeight.Bold, 
+                                fontSize = 12.sp, 
+                                color = Color(0xFF10B981)
+                            )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text(contact.reply!!, fontSize = 13.sp, color = Color(0xFF1E293B), lineHeight = 18.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            contact.reply!!, 
+                            fontSize = 13.sp, 
+                            color = MaterialTheme.colorScheme.onSurface, 
+                            lineHeight = 18.sp, 
+                            fontWeight = FontWeight.Medium
+                        )
                         
                         if (contact.replyAt != null) {
                             Text(
                                 sdf.format(contact.replyAt.toDate()), 
                                 fontSize = 9.sp, 
-                                color = Color(0xFF64748B), 
+                                color = MaterialTheme.colorScheme.outline, 
                                 modifier = Modifier.align(Alignment.End).padding(top = 4.dp)
                             )
                         }
@@ -287,8 +317,8 @@ fun TabButton(text: String, isSelected: Boolean, onClick: () -> Unit, modifier: 
         onClick = onClick,
         modifier = modifier,
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) Color(0xFF2563EB) else Color.Transparent,
-            contentColor = if (isSelected) Color.White else Color(0xFF475569)
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
         ),
         elevation = null,
         shape = RoundedCornerShape(8.dp),
@@ -307,7 +337,7 @@ fun ContactForm(
     isLoading: Boolean,
     onSubmit: () -> Unit
 ) {
-    val primaryColor = Color(0xFF2563EB)
+    val primaryColor = MaterialTheme.colorScheme.primary
     
     Column(
         modifier = Modifier
@@ -327,11 +357,16 @@ fun ContactForm(
         }
         
         Spacer(modifier = Modifier.height(12.dp))
-        Text("Chúng tôi luôn lắng nghe bạn", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color(0xFF0F172A))
+        Text(
+            "Chúng tôi luôn lắng nghe bạn", 
+            fontWeight = FontWeight.ExtraBold, 
+            fontSize = 18.sp, 
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Text(
             "Mọi ý kiến đóng góp giúp chúng tôi hoàn thiện hơn.",
             textAlign = TextAlign.Center,
-            fontSize = 13.sp, color = Color(0xFF475569),
+            fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 20.dp)
         )
 
@@ -340,7 +375,7 @@ fun ContactForm(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -367,9 +402,9 @@ fun ContactForm(
                     onClick = onSubmit, enabled = !isLoading,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor, contentColor = Color.White)
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor, contentColor = MaterialTheme.colorScheme.onPrimary)
                 ) {
-                    if (isLoading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    if (isLoading) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                     else Text("Gửi thông tin", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                 }
             }
@@ -382,11 +417,16 @@ fun ContactForm(
 fun ContactTypeChip(label: String, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier) {
     Surface(
         modifier = modifier.height(38.dp).clickable { onClick() },
-        color = if (isSelected) Color(0xFF2563EB) else Color(0xFFF1F5F9),
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(8.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if (isSelected) Color.White else Color(0xFF475569))
+            Text(
+                label, 
+                fontWeight = FontWeight.Bold, 
+                fontSize = 12.sp, 
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -399,20 +439,20 @@ fun ContactTextField(
     icon: androidx.compose.ui.graphics.vector.ImageVector, 
     isMultiline: Boolean = false
 ) {
-    val primaryColor = Color(0xFF2563EB)
+    val primaryColor = MaterialTheme.colorScheme.primary
     OutlinedTextField(
         value = value, onValueChange = onValueChange, label = { Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium) },
         leadingIcon = { Icon(icon, null, tint = primaryColor, modifier = Modifier.size(18.dp)) },
         modifier = Modifier.fillMaxWidth().then(if (isMultiline) Modifier.height(130.dp) else Modifier),
         shape = RoundedCornerShape(12.dp),
-        textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium, fontSize = 15.sp),
+        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium, fontSize = 15.sp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = Color.Black,
-            unfocusedTextColor = Color.Black,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
             focusedBorderColor = primaryColor,
-            unfocusedBorderColor = Color(0xFFCBD5E1),
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
             focusedLabelColor = primaryColor,
-            unfocusedLabelColor = Color(0xFF475569),
+            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
             cursorColor = primaryColor
         )
     )

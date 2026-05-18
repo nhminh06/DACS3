@@ -35,7 +35,7 @@ import coil.request.ImageRequest
 import com.example.dacs3.R
 import com.example.dacs3.data.model.Review
 import com.example.dacs3.data.model.Tour
-import com.example.dacs3.ui.viewmodel.MainViewModel
+import com.example.dacs3.ui.viewmodel.TourViewModel
 import com.example.dacs3.ui.viewmodel.ReviewViewModel
 import com.example.dacs3.ui.viewmodel.UserViewModel
 import java.text.NumberFormat
@@ -49,7 +49,7 @@ fun TourDetailScreen(
     onNavigateToBooking: (Int, Int, Int) -> Unit,
     onRequireLogin: () -> Unit = {},
     reviewViewModel: ReviewViewModel = viewModel(),
-    mainViewModel: MainViewModel = viewModel(),
+    tourViewModel: TourViewModel = viewModel(),
     userViewModel: UserViewModel
 ) {
     val context = LocalContext.current
@@ -58,7 +58,7 @@ fun TourDetailScreen(
     
     var showBookingSheet by remember { mutableStateOf(false) }
     var isMapVisible by remember { mutableStateOf(false) }
-    val allTours by mainViewModel.allTours.collectAsState()
+    val allTours by tourViewModel.allTours.collectAsState()
     val liveTour = allTours.find { it.id == tour.id } ?: tour
 
     Scaffold(
@@ -71,7 +71,7 @@ fun TourDetailScreen(
                         overflow = TextOverflow.Ellipsis,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 navigationIcon = {
@@ -79,7 +79,7 @@ fun TourDetailScreen(
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color(0xFF0F172A)
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -94,18 +94,18 @@ fun TourDetailScreen(
                         Icon(
                             if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "Favorite",
-                            tint = if (isFavorite) Color.Red else Color(0xFF0F172A)
+                            tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     IconButton(onClick = { /* Share */ }) {
                         Icon(
                             Icons.Default.Share,
                             contentDescription = "Share",
-                            tint = Color(0xFF0F172A)
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
         bottomBar = {
@@ -126,7 +126,7 @@ fun TourDetailScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             ImageCarousel(tour)
 
@@ -160,7 +160,7 @@ fun TourDetailScreen(
                     tour.title,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF0F172A)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 if (tour.isOffer) {
@@ -171,7 +171,7 @@ fun TourDetailScreen(
                         Text(
                             text = "Ưu đãi kết thúc sau: ",
                             fontSize = 13.sp,
-                            color = Color(0xFF64748B)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         CountdownTimer(timeLeftStr = liveTour.timeLeft)
                     }
@@ -188,8 +188,8 @@ fun TourDetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isMapVisible) Color(0xFFE2E8F0) else Color(0xFFF1F5F9),
-                            contentColor = Color(0xFF2563EB)
+                            containerColor = if (isMapVisible) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.primary
                         ),
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
                     ) {
@@ -213,7 +213,7 @@ fun TourDetailScreen(
                                 .fillMaxWidth()
                                 .height(320.dp),
                             shape = RoundedCornerShape(16.dp),
-                            border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                         ) {
                             MapWebView(location = tour.location, title = tour.title)
                         }
@@ -241,13 +241,13 @@ fun TourDetailScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                     ) {
                         Text(
                             tour.loTrinh,
                             modifier = Modifier.padding(16.dp),
                             fontSize = 14.sp,
-                            color = Color(0xFF334155),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 22.sp
                         )
                     }
@@ -311,7 +311,7 @@ fun MapWebView(location: String, title: String) {
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         if (isLoading) {
-            CircularProgressIndicator(color = Color(0xFF2563EB), strokeWidth = 2.dp)
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp)
         } else if (latLng != null) {
             val staticMapUrl =
                 "https://static-maps.yandex.ru/1.x/?lang=vi_VN&ll=${latLng!!.second},${latLng!!.first}&z=17&l=sat,skl&size=600,450&pt=${latLng!!.second},${latLng!!.first},pm2rdm"
@@ -369,14 +369,14 @@ fun MapWebView(location: String, title: String) {
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(8.dp)
-                    .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f), CircleShape)
                     .size(36.dp)
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.OpenInNew,
                     null,
                     modifier = Modifier.size(18.dp),
-                    tint = Color(0xFF2563EB)
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
         } else {
@@ -387,14 +387,14 @@ fun MapWebView(location: String, title: String) {
                 Icon(
                     Icons.Default.LocationOff,
                     null,
-                    tint = Color.LightGray,
+                    tint = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.size(32.dp)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     "Không tìm thấy: $title",
                     fontSize = 11.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
                 TextButton(onClick = {
@@ -473,11 +473,11 @@ fun SectionTitleWithIcon(icon: ImageVector, title: String) {
         Icon(
             icon,
             contentDescription = null,
-            tint = Color(0xFF2563EB),
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(22.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
-        Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+        Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -505,7 +505,12 @@ fun TickItem(text: String) {
                 .padding(top = 2.dp)
         )
         Spacer(modifier = Modifier.width(10.dp))
-        Text(text = text, fontSize = 14.sp, color = Color(0xFF334155), lineHeight = 20.sp)
+        Text(
+            text = text, 
+            fontSize = 14.sp, 
+            color = MaterialTheme.colorScheme.onSurfaceVariant, 
+            lineHeight = 20.sp
+        )
     }
 }
 
@@ -513,10 +518,10 @@ fun TickItem(text: String) {
 fun RatingSection(rating: Double, reviews: Int) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         if (reviews > 0) {
-            Surface(color = Color(0xFF2563EB), shape = RoundedCornerShape(8.dp)) {
+            Surface(color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(8.dp)) {
                 Text(
                     text = String.format("%.1f", rating),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
@@ -528,22 +533,26 @@ fun RatingSection(rating: Double, reviews: Int) {
                     "Đánh giá",
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    color = Color(0xFF2563EB)
+                    color = MaterialTheme.colorScheme.primary
                 )
-                Text("($reviews đánh giá)", fontSize = 12.sp, color = Color(0xFF475569))
+                Text(
+                    "($reviews đánh giá)", 
+                    fontSize = 12.sp, 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         } else {
-            Surface(color = Color(0xFF2563EB), shape = RoundedCornerShape(8.dp)) {
+            Surface(color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(8.dp)) {
                 Text(
                     text = "Mới",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp
                 )
             }
             Spacer(modifier = Modifier.width(10.dp))
-            Text("Chưa có đánh giá", fontSize = 13.sp, color = Color(0xFF64748B))
+            Text("Chưa có đánh giá", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -587,15 +596,15 @@ fun InfoItem(icon: ImageVector, label: String, value: String) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.width(160.dp)
     ) {
-        Icon(icon, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
         Spacer(modifier = Modifier.width(8.dp))
         Column {
-            Text(label, fontSize = 11.sp, color = Color(0xFF64748B))
+            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 value,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A),
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -616,7 +625,7 @@ fun CustomerReviewsSection(tourId: String, reviewViewModel: ReviewViewModel) {
             "Đánh giá khách hàng",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF0F172A)
+            color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -624,7 +633,7 @@ fun CustomerReviewsSection(tourId: String, reviewViewModel: ReviewViewModel) {
             Text(
                 "Chưa có đánh giá nào cho tour này.",
                 fontSize = 14.sp,
-                color = Color(0xFF64748B),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         } else {
@@ -637,7 +646,6 @@ fun CustomerReviewsSection(tourId: String, reviewViewModel: ReviewViewModel) {
 }
 @Composable
 fun CountdownTimer(timeLeftStr: String) {
-    // Parse HH:mm:ss → ms
     fun parseToMs(s: String): Long {
         if (s.isBlank() || s == "00:00:00") return 0L
         return try {
@@ -668,7 +676,7 @@ fun CountdownTimer(timeLeftStr: String) {
         text = display,
         fontSize = 14.sp,
         fontWeight = FontWeight.Bold,
-        color = if (remainingMs <= 0L) Color(0xFF94A3B8) else Color(0xFFEF4444)
+        color = if (remainingMs <= 0L) MaterialTheme.colorScheme.outline else Color(0xFFEF4444)
     )
 }
 @Composable
@@ -679,8 +687,8 @@ fun ReviewCard(review: Review) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFF1F5F9))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
             AsyncImage(
@@ -701,7 +709,7 @@ fun ReviewCard(review: Review) {
                         review.userName,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
-                        color = Color(0xFF0F172A)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         repeat(review.rating) {
@@ -714,9 +722,13 @@ fun ReviewCard(review: Review) {
                         }
                     }
                 }
-                Text(dateStr, fontSize = 11.sp, color = Color(0xFF64748B))
+                Text(dateStr, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(review.comment, fontSize = 13.sp, color = Color(0xFF334155))
+                Text(
+                    review.comment, 
+                    fontSize = 13.sp, 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -728,7 +740,7 @@ fun BookingBottomBar(price: Long, originalPrice: Long = 0, onBook: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shadowElevation = 16.dp,
-        color = Color.White
+        color = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier
@@ -738,20 +750,20 @@ fun BookingBottomBar(price: Long, originalPrice: Long = 0, onBook: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text("Giá từ", fontSize = 12.sp, color = Color(0xFF64748B))
+                Text("Giá từ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         formatter.format(price),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF2563EB)
+                        color = MaterialTheme.colorScheme.primary
                     )
                     if (originalPrice > 0) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             formatter.format(originalPrice),
                             fontSize = 12.sp,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textDecoration = TextDecoration.LineThrough
                         )
                     }
@@ -763,9 +775,14 @@ fun BookingBottomBar(price: Long, originalPrice: Long = 0, onBook: () -> Unit) {
                     .height(50.dp)
                     .width(160.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("Đặt ngay", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(
+                    "Đặt ngay", 
+                    fontSize = 16.sp, 
+                    fontWeight = FontWeight.Bold, 
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
     }
@@ -793,7 +810,7 @@ fun BookingBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
@@ -807,7 +824,7 @@ fun BookingBottomSheet(
                 "Chọn số lượng khách",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -838,7 +855,7 @@ fun BookingBottomSheet(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            HorizontalDivider(color = Color(0xFFF1F5F9))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
             Row(
                 modifier = Modifier
@@ -850,13 +867,13 @@ fun BookingBottomSheet(
                 Text(
                     "Tổng tạm tính",
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     formatter.format(totalPrice),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF2563EB)
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -866,13 +883,13 @@ fun BookingBottomSheet(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text(
                     "Xác nhận đặt tour",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
@@ -893,15 +910,15 @@ fun CounterItem(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0F172A))
+            Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(subtitle, fontSize = 12.sp, color = Color(0xFF64748B))
+                Text(subtitle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (originalPrice > 0) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         formatter.format(originalPrice),
                         fontSize = 10.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         textDecoration = TextDecoration.LineThrough
                     )
                 }
@@ -915,7 +932,7 @@ fun CounterItem(
                 Icon(
                     Icons.Default.RemoveCircleOutline,
                     null,
-                    tint = if (count > 0) Color(0xFF2563EB) else Color(0xFFCBD5E1)
+                    tint = if (count > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                 )
             }
             Text(
@@ -923,10 +940,10 @@ fun CounterItem(
                 modifier = Modifier.padding(horizontal = 12.dp),
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
-                color = Color(0xFF0F172A)
+                color = MaterialTheme.colorScheme.onSurface
             )
             IconButton(onClick = { onCountChange(count + 1) }) {
-                Icon(Icons.Default.AddCircleOutline, null, tint = Color(0xFF2563EB))
+                Icon(Icons.Default.AddCircleOutline, null, tint = MaterialTheme.colorScheme.primary)
             }
         }
     }

@@ -45,12 +45,13 @@ fun CulturalArticlesSection(
                 "Bài viết văn hóa", 
                 fontWeight = FontWeight.ExtraBold, 
                 fontSize = 17.sp, 
-                color = Color(0xFF1E293B)
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 "Xem tất cả",
-                color = Color(0xFF2563EB),
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable { onSeeAllClick() }
             )
         }
@@ -74,7 +75,7 @@ fun CulturalArticlesSection(
                     onClick = { articleViewModel.loadMoreHomeArticles() },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     enabled = !isLoading
                 ) {
                     if (isLoading) {
@@ -83,7 +84,7 @@ fun CulturalArticlesSection(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 "Tải thêm bài viết",
-                                color = Color(0xFF475569),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp
                             )
@@ -91,7 +92,7 @@ fun CulturalArticlesSection(
                             Icon(
                                 Icons.Default.KeyboardArrowDown,
                                 contentDescription = null,
-                                tint = Color(0xFF475569)
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -115,7 +116,7 @@ fun ArticleCard(article: ArticleEntity, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(3.dp)
     ) {
         Row(
@@ -143,7 +144,7 @@ fun ArticleCard(article: ArticleEntity, onClick: () -> Unit) {
                     article.tieu_de, 
                     fontWeight = FontWeight.Bold, 
                     fontSize = 15.sp, 
-                    color = Color(0xFF0F172A),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -151,7 +152,7 @@ fun ArticleCard(article: ArticleEntity, onClick: () -> Unit) {
                 val firstContent = article.sections.firstOrNull()?.get("noi_dung") ?: ""
                 Text(
                     firstContent,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -167,12 +168,12 @@ fun ArticleCard(article: ArticleEntity, onClick: () -> Unit) {
                     // Category and Date info
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
-                            color = Color(0xFFCFDDEE),
+                            color = MaterialTheme.colorScheme.primaryContainer,
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
                                 text = categoryName,
-                                color = Color(0xFF597EB4),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
@@ -184,12 +185,12 @@ fun ArticleCard(article: ArticleEntity, onClick: () -> Unit) {
                         Icon(
                             imageVector = Icons.Default.AccessTime,
                             contentDescription = null,
-                            tint = Color.DarkGray,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(12.dp)
                         )
                         Text(
                             text = if (article.ngay_tao.isNotEmpty()) article.ngay_tao else "Mới",
-                            color = Color.DarkGray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 10.sp,
                             modifier = Modifier.padding(start = 2.dp)
                         )
@@ -197,12 +198,12 @@ fun ArticleCard(article: ArticleEntity, onClick: () -> Unit) {
 
                     Button(
                         onClick = onClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         contentPadding = PaddingValues(horizontal = 12.dp),
                         modifier = Modifier.height(28.dp),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("Xem thêm", fontSize = 9.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("Xem thêm", fontSize = 9.sp, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                     }
                 }
             }

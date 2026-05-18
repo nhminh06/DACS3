@@ -26,16 +26,14 @@ import com.example.dacs3.data.model.Tour
 import com.example.dacs3.data.repository.ArticleEntity
 import com.example.dacs3.ui.components.AppBottomBar
 import com.example.dacs3.ui.components.home.*
-import com.example.dacs3.ui.viewmodel.ArticleViewModel
-import com.example.dacs3.ui.viewmodel.MainViewModel
-import com.example.dacs3.ui.viewmodel.NotificationViewModel
-import com.example.dacs3.ui.viewmodel.UserViewModel
+import com.example.dacs3.ui.viewmodel.*
 import kotlinx.coroutines.launch
 
 @Composable
 fun AppHomeScreen(
     onNavigate: (String) -> Unit,
     viewModel: MainViewModel,
+    tourViewModel: TourViewModel,
     articleViewModel: ArticleViewModel,
     userViewModel: UserViewModel,
     notificationViewModel: NotificationViewModel,
@@ -43,28 +41,21 @@ fun AppHomeScreen(
     onArticleClick: (ArticleEntity) -> Unit,
     onCategoryClick: (String) -> Unit = {}
 ) {
-    val backgroundColor = Color(0xFFF1F5F9)
+    val backgroundColor = MaterialTheme.colorScheme.background
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    val allTours by viewModel.allTours.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
+    val allTours by tourViewModel.allTours.collectAsState()
+    val isLoading by tourViewModel.isLoading.collectAsState()
+    val searchQuery by tourViewModel.searchQuery.collectAsState()
     val banners by viewModel.banners.collectAsState()
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
     val systemMeta by notificationViewModel.systemMeta.collectAsState()
     val reportMeta by notificationViewModel.reportMeta.collectAsState()
     val contactMeta by notificationViewModel.contactMeta.collectAsState()
 
-    // Chỉ lấy những tour đang có ưu đãi
-    val offerTours = remember(allTours) {
-        allTours.filter { it.isOffer }
-    }
-
-    // Chỉ lấy những tour thường (không phải ưu đãi) để hiện ở mục Nổi bật
-    val featuredTours = remember(allTours) {
-        allTours.filter { !it.isOffer }
-    }
+    val offerTours = remember(allTours) { allTours.filter { it.isOffer } }
+    val featuredTours = remember(allTours) { allTours.filter { !it.isOffer } }
 
     var showNotifDialog by remember { mutableStateOf(false) }
 
@@ -73,9 +64,9 @@ fun AppHomeScreen(
             onDismissRequest = { showNotifDialog = false },
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Notifications, null, tint = Color(0xFF2563EB))
+                    Icon(Icons.Default.Notifications, null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Thông báo", fontWeight = FontWeight.ExtraBold)
+                    Text("Thông báo", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
                 }
             },
             text = {
@@ -116,7 +107,7 @@ fun AppHomeScreen(
                             "contact" -> NotificationCategoryItem(
                                 icon = Icons.Default.Chat,
                                 title = "Tin nhắn hỗ trợ",
-                                color = Color(0xFF2563EB),
+                                color = MaterialTheme.colorScheme.primary,
                                 count = count,
                                 onClick = {
                                     showNotifDialog = false
@@ -133,7 +124,7 @@ fun AppHomeScreen(
                         showNotifDialog = false
                         onNavigate("notifications")
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Xem tất cả", fontWeight = FontWeight.Bold)
@@ -141,11 +132,11 @@ fun AppHomeScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showNotifDialog = false }) {
-                    Text("Đóng", color = Color.Gray)
+                    Text("Đóng", color = MaterialTheme.colorScheme.outline)
                 }
             },
             shape = RoundedCornerShape(24.dp),
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
@@ -166,30 +157,20 @@ fun AppHomeScreen(
                     .padding(bottom = paddingValues.calculateBottomPadding()),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                item {
-                    TopHeader(
-                        userViewModel = userViewModel,
-                        unreadCount = unreadCount,
-                        onProfileClick = { onNavigate("profile") },
-                        onNotificationClick = { showNotifDialog = true }
-                    )
-                }
+                // Index 0: Header
+                item { TopHeader(userViewModel, unreadCount, { onNavigate("profile") }, { showNotifDialog = true }) }
+
+                // Index 1: Search
                 item {
                     HomePaddingWrapper {
                         SearchBar(
                             query = searchQuery,
-                            onQueryChange = {
-                                viewModel.setSearchQuery(it)
-                            },
+                            onQueryChange = { tourViewModel.setSearchQuery(it) },
                             onSearchClick = {
                                 val query = searchQuery.trim().lowercase()
                                 if (query.isNotEmpty()) {
                                     val articles = articleViewModel.explorerArticles.value
-                                    val hasMatchingArticle = articles.any {
-                                        it.tieu_de.lowercase().contains(query)
-                                    }
-
-                                    if (hasMatchingArticle) {
+                                    if (articles.any { it.tieu_de.lowercase().contains(query) }) {
                                         articleViewModel.setSearchQuery(searchQuery)
                                         onNavigate("explore")
                                     } else {
@@ -201,84 +182,76 @@ fun AppHomeScreen(
                     }
                 }
 
+                // Index 2: Quick Nav
                 item {
                     HomePaddingWrapper {
                         QuickNavSection(
                             onScrollTo = { index ->
                                 coroutineScope.launch {
-                                    listState.animateScrollToItem(index)
+                                    val viewportHeight = listState.layoutInfo.viewportSize.height
+                                    // Cuộn để section xuất hiện ở giữa màn hình
+                                    // Sử dụng offset khoảng 1/3 viewport để phần đầu section nằm ở vị trí dễ nhìn
+                                    listState.animateScrollToItem(index, scrollOffset = -(viewportHeight / 3))
                                 }
                             },
                             onNavigate = onNavigate
                         )
                     }
                 }
+
+                // Index 3: Categories
+                item { HomePaddingWrapper { CategorySection(onCategoryClick = onCategoryClick) } }
+
+                // Index 4: Banners
+                item { HomePaddingWrapper { PromoBannersSection(banners = banners) } }
+
+                // Index 5: Special Offers
                 item {
                     HomePaddingWrapper {
-                        CategorySection(onCategoryClick = onCategoryClick)
+                        SpecialOffersSection(offerTours, onTourClick, { onNavigate("tours") })
                     }
                 }
 
-                // Promo Banners
+                // Index 6: Featured Tours (Giữ cố định Index bằng cách bao quanh bởi item)
                 item {
-                    HomePaddingWrapper {
-                        PromoBannersSection(banners = banners)
-                    }
-                }
-
-                // Special Offers (Flash Sale)
-                item {
-                    HomePaddingWrapper {
-                        SpecialOffersSection(
-                            tours = offerTours,
-                            onTourClick = onTourClick,
-                            onSeeAllClick = { onNavigate("tours") }
-                        )
-                    }
-                }
-
-                // Featured Tours (Tour nổi bật)
-                if (featuredTours.isNotEmpty()) {
-                    item {
+                    if (featuredTours.isNotEmpty()) {
                         HomePaddingWrapper {
-                            FeaturedToursSection(
-                                tours = featuredTours,
-                                onTourClick = onTourClick,
-                                onSeeAllClick = { onNavigate("tours") }
-                            )
+                            FeaturedToursSection(featuredTours, onTourClick, { onNavigate("tours") })
                         }
                     }
                 }
 
+                // Index 7: Cultural Articles
                 item {
                     HomePaddingWrapper {
-                        CulturalArticlesSection(
-                            articleViewModel = articleViewModel,
-                            onSeeAllClick = { onNavigate("explore") },
-                            onArticleClick = onArticleClick
-                        )
+                        CulturalArticlesSection(articleViewModel, { onNavigate("explore") }, onArticleClick)
                     }
                 }
 
+                // Index 8: Guides
                 item {
                     HomePaddingWrapper {
-                        GuidesSection(
-                            viewModel = viewModel,
-                            onSeeAllClick = { onNavigate("guides_list") }
-                        )
+                        GuidesSection(viewModel, { onNavigate("guides_list") })
                     }
                 }
+
+                // Index 9: Reviews
                 item { HomePaddingWrapper { ReviewsSection(viewModel) } }
+
                 item { Spacer(modifier = Modifier.height(24.dp)) }
             }
+
             SupportSlidePanel(
-                onChatClick = { onNavigate("support_chat") },   // thay route phù hợp
+                onChatClick = { onNavigate("support_chat") },
                 onCallClick = { /* Intent gọi điện */ },
-                modifier    = Modifier.align(Alignment.CenterEnd).offset(y = 200.dp)
+                modifier = Modifier.align(Alignment.CenterEnd).offset(y = 200.dp)
             )
 
             if (isLoading && allTours.isEmpty()) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
@@ -286,11 +259,7 @@ fun AppHomeScreen(
 
 @Composable
 fun NotificationCategoryItem(
-    icon: ImageVector,
-    title: String,
-    color: Color,
-    count: Int = 0,
-    onClick: () -> Unit
+    icon: ImageVector, title: String, color: Color, count: Int = 0, onClick: () -> Unit
 ) {
     val isNew = count > 0
     Surface(
@@ -300,50 +269,19 @@ fun NotificationCategoryItem(
         border = if (isNew) BorderStroke(1.5.dp, color.copy(alpha = 0.4f)) else BorderStroke(1.dp, Color.Transparent),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .background(color.copy(alpha = if (isNew) 0.25f else 0.15f), CircleShape),
+                modifier = Modifier.size(42.dp).background(color.copy(alpha = if (isNew) 0.25f else 0.15f), CircleShape),
                 contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, null, tint = color, modifier = Modifier.size(22.dp))
-            }
+            ) { Icon(icon, null, tint = color, modifier = Modifier.size(22.dp)) }
             Spacer(modifier = Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    fontWeight = if (isNew) FontWeight.ExtraBold else FontWeight.SemiBold,
-                    fontSize = 15.sp,
-                    color = if (isNew) Color.Black else Color(0xFF475569)
-                )
-                if (isNew) {
-                    Text(
-                        text = "Bạn có $count thông báo mới",
-                        fontSize = 12.sp,
-                        color = color.copy(alpha = 0.8f),
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+                Text(title, fontWeight = if (isNew) FontWeight.ExtraBold else FontWeight.SemiBold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
+                if (isNew) Text("Bạn có $count thông báo mới", fontSize = 12.sp, color = color.copy(alpha = 0.8f), fontWeight = FontWeight.Medium)
             }
-
             if (isNew) {
-                Surface(
-                    color = Color.Red,
-                    shape = RoundedCornerShape(6.dp),
-                    shadowElevation = 2.dp
-                ) {
-                    Text(
-                        "MỚI",
-                        color = Color.White,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
+                Surface(color = Color.Red, shape = RoundedCornerShape(6.dp), shadowElevation = 2.dp) {
+                    Text("MỚI", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                 }
             }
         }
@@ -352,7 +290,5 @@ fun NotificationCategoryItem(
 
 @Composable
 fun HomePaddingWrapper(content: @Composable () -> Unit) {
-    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-        content()
-    }
+    Column(modifier = Modifier.padding(horizontal = 20.dp)) { content() }
 }

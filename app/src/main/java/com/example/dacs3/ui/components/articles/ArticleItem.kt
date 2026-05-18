@@ -41,7 +41,7 @@ fun ArticleItem(article: Article, onClick: () -> Unit = {}) {
             .fillMaxWidth()
             .padding(vertical = 12.dp),
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         onClick = onClick
     ) {
@@ -75,7 +75,7 @@ fun ArticleItem(article: Article, onClick: () -> Unit = {}) {
 
                 // Refined Floating Category Badge
                 Surface(
-                    color = Color.White.copy(alpha = 0.9f),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .align(Alignment.TopStart)
@@ -88,7 +88,7 @@ fun ArticleItem(article: Article, onClick: () -> Unit = {}) {
                         Icon(
                             imageVector = categoryIcon,
                             contentDescription = null,
-                            tint = Color(0xFF2563EB),
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -96,7 +96,7 @@ fun ArticleItem(article: Article, onClick: () -> Unit = {}) {
                             text = categoryLabel,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF1E293B)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -107,13 +107,13 @@ fun ArticleItem(article: Article, onClick: () -> Unit = {}) {
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(16.dp)
-                        .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f), CircleShape)
                         .size(38.dp)
                 ) {
                     Icon(
                         Icons.Default.BookmarkBorder,
                         contentDescription = "Save",
-                        tint = Color(0xFF1E293B),
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -128,14 +128,14 @@ fun ArticleItem(article: Article, onClick: () -> Unit = {}) {
                     Icon(
                         Icons.Default.CalendarToday,
                         contentDescription = null,
-                        tint = Color(0xFF3B82F6),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = article.date,
                         fontSize = 12.sp,
-                        color = Color(0xFF64748B),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -144,7 +144,7 @@ fun ArticleItem(article: Article, onClick: () -> Unit = {}) {
                     text = article.title,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 20.sp,
-                    color = Color(0xFF0F172A),
+                    color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 28.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -155,7 +155,7 @@ fun ArticleItem(article: Article, onClick: () -> Unit = {}) {
                 Text(
                     text = article.desc,
                     fontSize = 14.sp,
-                    color = Color(0xFF475569),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     lineHeight = 22.sp
@@ -168,7 +168,7 @@ fun ArticleItem(article: Article, onClick: () -> Unit = {}) {
                     onClick = onClick,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(vertical = 14.dp)
                 ) {
                     Row(
@@ -179,14 +179,14 @@ fun ArticleItem(article: Article, onClick: () -> Unit = {}) {
                             "Khám phá chi tiết",
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 15.sp,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }

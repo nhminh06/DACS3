@@ -39,11 +39,9 @@ fun FeaturedDestinationsSection() {
         Destination("Đảo Lý Sơn", "Quảng Ngãi", R.drawable.a8)
     )
 
-    // Chia dữ liệu thành 2 hàng riêng biệt
     val row1Destinations = destinations.take(4)
     val row2Destinations = destinations.drop(4)
 
-    // Mỗi hàng sẽ hiển thị 2 item mỗi trang
     val pagesRow1 = row1Destinations.chunked(2)
     val pagesRow2 = row2Destinations.chunked(2)
 
@@ -51,10 +49,14 @@ fun FeaturedDestinationsSection() {
     val pagerState2 = rememberPagerState(pageCount = { pagesRow2.size })
 
     Column {
-        Text("Địa điểm nổi bật", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color(0xFF1E293B))
+        Text(
+            text = "Địa điểm nổi bật", 
+            fontWeight = FontWeight.ExtraBold, 
+            fontSize = 17.sp, 
+            color = MaterialTheme.colorScheme.onBackground
+        )
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Hàng thứ nhất
         HorizontalPager(
             state = pagerState1,
             modifier = Modifier.fillMaxWidth(),
@@ -75,7 +77,6 @@ fun FeaturedDestinationsSection() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Hàng thứ hai - Hoạt động độc lập
         HorizontalPager(
             state = pagerState2,
             modifier = Modifier.fillMaxWidth(),
@@ -103,7 +104,7 @@ fun DestinationCard(dest: Destination) {
             .fillMaxWidth()
             .height(210.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
@@ -118,10 +119,10 @@ fun DestinationCard(dest: Destination) {
             )
             Column(modifier = Modifier.padding(10.dp)) {
                 Text(
-                    dest.name,
+                    text = dest.name,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
-                    color = Color(0xFF0F172A),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -130,18 +131,22 @@ fun DestinationCard(dest: Destination) {
                     Box(
                         modifier = Modifier
                             .size(18.dp)
-                            .background(Color(0xFF2563EB), CircleShape),
+                            .background(MaterialTheme.colorScheme.primary, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            Icons.Default.LocationOn, 
+                            imageVector = Icons.Default.LocationOn, 
                             contentDescription = null, 
-                            tint = Color.White, 
+                            tint = MaterialTheme.colorScheme.onPrimary, 
                             modifier = Modifier.size(10.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(dest.location, color = Color.Gray, fontSize = 11.sp)
+                    Text(
+                        text = dest.location, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, 
+                        fontSize = 11.sp
+                    )
                 }
             }
         }

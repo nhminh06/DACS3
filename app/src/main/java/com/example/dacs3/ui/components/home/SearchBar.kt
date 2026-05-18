@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -36,7 +37,7 @@ fun SearchBar(
             .height(52.dp)
             .shadow(6.dp, RoundedCornerShape(26.dp)),
         shape = RoundedCornerShape(26.dp),
-        color = Color.White
+        color = MaterialTheme.colorScheme.surface
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -48,7 +49,7 @@ fun SearchBar(
                 if (query.isEmpty()) {
                     Text(
                         text = "Tìm kiếm tour, bài viết...",
-                        color = Color.Gray.copy(alpha = 0.6f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         fontSize = 14.sp
                     )
                 }
@@ -56,9 +57,10 @@ fun SearchBar(
                     value = query,
                     onValueChange = onQueryChange,
                     textStyle = TextStyle(
-                        color = Color(0xFF1E293B),
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 14.sp
                     ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -72,7 +74,7 @@ fun SearchBar(
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .background(Color(0xFF2563EB), CircleShape)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
                     .clickable { 
                         focusManager.clearFocus()
                         onSearchClick() 
@@ -82,7 +84,7 @@ fun SearchBar(
                 Icon(
                     imageVector = Icons.Default.Search, 
                     contentDescription = null, 
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(20.dp)
                 )
             }

@@ -33,7 +33,7 @@ import com.example.dacs3.ui.viewmodel.*
 import com.example.dacs3.ui.viewmodel.factory.*
 
 @Composable
-fun MainContainer() {
+fun MainContainer(themeViewModel: ThemeViewModel = viewModel()) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     
@@ -60,6 +60,7 @@ fun MainContainer() {
     )
 
     val mainViewModel: MainViewModel = viewModel()
+    val tourViewModel: TourViewModel = viewModel()
     val articleViewModel: ArticleViewModel = viewModel()
     val bookingViewModel: BookingViewModel = viewModel()
     val notificationViewModel: NotificationViewModel = viewModel()
@@ -182,6 +183,7 @@ fun MainContainer() {
             AppHomeScreen(
                 onNavigate = navigateTo,
                 viewModel = mainViewModel,
+                tourViewModel = tourViewModel,
                 articleViewModel = articleViewModel,
                 userViewModel = userViewModel,
                 notificationViewModel = notificationViewModel,
@@ -254,7 +256,7 @@ fun MainContainer() {
                     selectedTour = tour
                     currentScreen = "tour_detail"
                 },
-                viewModel = mainViewModel
+                viewModel = tourViewModel
             )
         }
         "tour_detail" -> {
@@ -273,7 +275,7 @@ fun MainContainer() {
                         }
                     },
                     onRequireLogin = onRequireLoginAction,
-                    mainViewModel = mainViewModel,
+                    tourViewModel = tourViewModel,
                     userViewModel = userViewModel
                 )
             }
@@ -359,6 +361,7 @@ fun MainContainer() {
             ProfileScreen(
                 userViewModel = userViewModel,
                 articleViewModel = articleViewModel,
+                themeViewModel = themeViewModel,
                 onNavigate = { screen ->
                     if (screen == "login") {
                         userViewModel.logout {
@@ -373,7 +376,7 @@ fun MainContainer() {
         "favorites_tours" -> {
             FavoritesToursScreen(
                 userViewModel = userViewModel,
-                mainViewModel = mainViewModel,
+                tourViewModel = tourViewModel,
                 onBack = { currentScreen = "profile" },
                 onTourClick = { tour ->
                     selectedTour = tour
@@ -485,6 +488,7 @@ fun MainContainer() {
             StaffPersonalScreen(
                 userViewModel = userViewModel,
                 staffViewModel = staffViewModel,
+                themeViewModel = themeViewModel,
                 onNavigate = { screen -> 
                     if (screen == "login") {
                         userViewModel.logout { currentScreen = "login" }

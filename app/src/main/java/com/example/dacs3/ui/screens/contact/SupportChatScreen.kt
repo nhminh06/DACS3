@@ -1,6 +1,7 @@
 package com.example.dacs3.ui.screens.contact
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -54,37 +55,51 @@ fun SupportChatScreen(
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
-                                .background(Color(0xFF2563EB).copy(0.1f), RoundedCornerShape(10.dp)),
+                                .background(MaterialTheme.colorScheme.primary.copy(0.1f), RoundedCornerShape(10.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.SupportAgent, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
+                            Icon(
+                                Icons.Default.SupportAgent, 
+                                null, 
+                                tint = MaterialTheme.colorScheme.primary, 
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("Hỗ trợ trực tuyến", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text("Admin thường phản hồi sau vài phút", fontSize = 11.sp, color = Color.Gray)
+                            Text(
+                                "Hỗ trợ trực tuyến", 
+                                fontWeight = FontWeight.Bold, 
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                "Admin thường phản hồi sau vài phút", 
+                                fontSize = 11.sp, 
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
-        // Tắt insets mặc định của Scaffold, tự xử lý thủ công
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF8FAFC))
+                .background(MaterialTheme.colorScheme.background)
                 .padding(top = padding.calculateTopPadding())
-                // ✅ KEY FIX: imePadding() đặt ở Column ngoài cùng
-                // → toàn bộ Column (list + input) co lên khi bàn phím hiện
-                // → không còn khoảng trắng giữa input và bàn phím
                 .imePadding()
         ) {
             LazyColumn(
@@ -102,14 +117,12 @@ fun SupportChatScreen(
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 8.dp
             ) {
                 Row(
                     modifier = Modifier
                         .padding(12.dp)
-                        // ✅ Chỉ padding navigation bar ở đây (gesture bar),
-                        // không dùng windowInsetsPadding(ime) vì đã có imePadding() ở Column
                         .navigationBarsPadding(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -121,10 +134,12 @@ fun SupportChatScreen(
                         shape = RoundedCornerShape(24.dp),
                         maxLines = 4,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF2563EB),
-                            unfocusedBorderColor = Color(0xFFE2E8F0),
-                            focusedContainerColor = Color(0xFFF8FAFC),
-                            unfocusedContainerColor = Color(0xFFF8FAFC)
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                         )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -139,9 +154,9 @@ fun SupportChatScreen(
                         },
                         enabled = inputText.isNotBlank(),
                         colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = Color(0xFF2563EB),
-                            contentColor = Color.White,
-                            disabledContainerColor = Color(0xFFCBD5E1)
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            disabledContainerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                         )
                     ) {
                         Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
@@ -155,8 +170,8 @@ fun SupportChatScreen(
 @Composable
 fun SupportMessageBubble(message: SupportMessage) {
     val isUser = message.senderRole == "user"
-    val bubbleColor = if (isUser) Color(0xFF2563EB) else Color.White
-    val textColor = if (isUser) Color.White else Color(0xFF1E293B)
+    val bubbleColor = if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    val textColor = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
     val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
     val shape = if (isUser) {
         RoundedCornerShape(16.dp, 16.dp, 2.dp, 16.dp)
@@ -186,7 +201,7 @@ fun SupportMessageBubble(message: SupportMessage) {
                 Text(
                     text = sdf.format(message.timestamp.toDate()),
                     fontSize = 10.sp,
-                    color = if (isUser) Color.White.copy(0.7f) else Color.Gray,
+                    color = if (isUser) textColor.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline,
                     modifier = Modifier.align(Alignment.End)
                 )
             }

@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +36,7 @@ import coil.compose.AsyncImage
 import com.example.dacs3.R
 import com.example.dacs3.data.model.Experience
 import com.example.dacs3.ui.viewmodel.StaffViewModel
+import com.example.dacs3.ui.viewmodel.ThemeViewModel
 import com.example.dacs3.ui.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -44,6 +44,7 @@ import com.example.dacs3.ui.viewmodel.UserViewModel
 fun StaffPersonalScreen(
     userViewModel: UserViewModel,
     staffViewModel: StaffViewModel,
+    themeViewModel: ThemeViewModel,
     onNavigate: (String) -> Unit,
     onBack: () -> Unit
 ) {
@@ -51,7 +52,8 @@ fun StaffPersonalScreen(
     val guideProfile by staffViewModel.guideProfile
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val primaryColor = Color(0xFF2563EB)
+    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
+    val primaryColor = MaterialTheme.colorScheme.primary
 
     LaunchedEffect(user?.id) {
         user?.id?.let { staffViewModel.loadGuideProfile(it) }
@@ -95,7 +97,7 @@ fun StaffPersonalScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -103,25 +105,41 @@ fun StaffPersonalScreen(
                 .padding(padding)
                 .verticalScroll(scrollState)
         ) {
-            // --- PHẦN 1: HEADER (AVATAR TRÊN CÙNG) ---
+            // --- PHẦN 1: HEADER ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(240.dp)
                     .background(
                         brush = Brush.verticalGradient(
-                            colors = listOf(primaryColor, Color(0xFF3B82F6))
+                            colors = listOf(primaryColor, primaryColor.copy(alpha = 0.7f))
                         )
                     )
             ) {
-                IconButton(onClick = onBack, modifier = Modifier.padding(16.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+                // Nút chuyển chế độ sáng tối ở góc trên bên trái thay cho bánh răng
+                IconButton(
+                    onClick = { themeViewModel.toggleTheme() },
+                    modifier = Modifier.padding(16.dp).align(Alignment.TopStart)
+                ) {
+                    Icon(
+                        imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
+                        contentDescription = "Toggle Dark Mode",
+                        tint = Color.White
+                    )
+                }
+
+                // Nút quay lại (nếu cần thì để bên phải hoặc bỏ qua nếu nút theme chiếm chỗ)
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.padding(16.dp).align(Alignment.TopEnd)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Logout, null, tint = Color.White)
                 }
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 32.dp),
+                        .padding(top = 40.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(contentAlignment = Alignment.BottomEnd) {
@@ -135,7 +153,7 @@ fun StaffPersonalScreen(
                                 .clickable { imagePicker.launch("image/*") },
                             contentScale = ContentScale.Crop
                         )
-                        Surface(modifier = Modifier.size(28.dp), shape = CircleShape, color = Color.White, shadowElevation = 4.dp) {
+                        Surface(modifier = Modifier.size(28.dp), shape = CircleShape, color = Color.White) {
                             Icon(Icons.Default.CameraAlt, null, modifier = Modifier.padding(6.dp), tint = primaryColor)
                         }
                     }
@@ -162,35 +180,29 @@ fun StaffPersonalScreen(
                     .offset(y = (-30).dp)
                     .padding(horizontal = 20.dp)
             ) {
-                // --- 2.1 CÔNG CỤ TÁC VỤ (4 DÒNG) ---
                 Text(
                     "CÔNG CỤ TÁC VỤ", 
                     fontWeight = FontWeight.ExtraBold, 
-                    color = Color(0xFFFFFFFF),
+                    color = if (isDarkMode) Color.White else Color(0xFF64748B),
                     fontSize = 14.sp, 
                     modifier = Modifier.padding(bottom = 12.dp, start = 8.dp)
                 )
                 
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    // Dòng 1: Lịch & Thông báo
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         StaffToolButton("Lịch Tour", Icons.Default.CalendarMonth, Modifier.weight(1f)) { onNavigate("staff_schedule") }
                         StaffToolButton("Thông báo", Icons.Default.Notifications, Modifier.weight(1f)) { onNavigate("notifications") }
                     }
-                    // Dòng 2: Viết bài & Bài viết
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         StaffToolButton("Viết bài", Icons.Default.EditNote, Modifier.weight(1f)) { onNavigate("create_article") }
                         StaffToolButton("Bài viết", Icons.AutoMirrored.Filled.Article, Modifier.weight(1f)) { onNavigate("my_articles") }
                     }
-                    // Dòng 3: Ghi chú
                     StaffToolButton("Ghi chú chuyến đi", Icons.AutoMirrored.Filled.NoteAdd, Modifier.fillMaxWidth()) { onNavigate("staff_notes") }
-                    // Dòng 4: Mật khẩu
                     StaffToolButton("Đổi mật khẩu tài khoản", Icons.Default.LockPerson, Modifier.fillMaxWidth()) { onNavigate("change_password") }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // 2.2 Thông tin cơ bản
                 StaffCard(
                     title = "THÔNG TIN CƠ BẢN",
                     action = {
@@ -212,7 +224,6 @@ fun StaffPersonalScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 2.3 Kỹ năng
                 StaffCard("KỸ NĂNG") {
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
@@ -236,29 +247,27 @@ fun StaffPersonalScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 2.4 Giới thiệu
                 StaffCard("GIỚI THIỆU") {
                     if (guideProfile?.bio.isNullOrEmpty()) {
                         Button(onClick = { tempBio = ""; showBioDialog = true }, colors = ButtonDefaults.buttonColors(containerColor = primaryColor.copy(0.1f))) { Text("+ Thêm giới thiệu", color = primaryColor) }
                     } else {
-                        Text(guideProfile?.bio ?: "", fontSize = 14.sp, color = Color(0xFF334155))
+                        Text(guideProfile?.bio ?: "", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                         TextButton(onClick = { tempBio = guideProfile?.bio ?: ""; showBioDialog = true }, modifier = Modifier.align(Alignment.End)) { Text("Chỉnh sửa", color = primaryColor) }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 2.5 Kinh nghiệm
                 StaffCard("KINH NGHIỆM") {
                     if (guideProfile?.experiences.isNullOrEmpty()) {
                         Text("Chưa có dữ liệu kinh nghiệm", color = Color.Gray, fontSize = 13.sp)
                     } else {
                         guideProfile?.experiences?.forEach { exp ->
                             Column {
-                                Text(exp.title, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text(exp.title, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
                                 Text("${exp.startTime} - ${exp.endTime}", color = primaryColor, fontSize = 12.sp)
                                 Text(exp.description, fontSize = 13.sp, color = Color.Gray)
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color(0xFFF1F5F9))
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
                             }
                         }
                     }
@@ -267,7 +276,6 @@ fun StaffPersonalScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // --- NÚT ĐĂNG XUẤT ---
                 Button(
                     onClick = { onNavigate("login") },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -284,7 +292,6 @@ fun StaffPersonalScreen(
         }
     }
 
-    // Dialogs...
     if (showBioDialog) {
         AlertDialog(
             onDismissRequest = { showBioDialog = false },
@@ -324,26 +331,32 @@ fun StaffToolButton(title: String, icon: ImageVector, modifier: Modifier = Modif
     Surface(
         modifier = modifier.height(56.dp).clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp,
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp)) {
-            Icon(icon, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(12.dp))
-            Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
-            Spacer(modifier = Modifier.weight(1f))
-            Icon(Icons.Default.ChevronRight, null, tint = Color.LightGray, modifier = Modifier.size(16.dp))
+            Text(title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
 
 @Composable
 fun StaffCard(title: String, action: @Composable (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(title, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), fontSize = 13.sp)
+                Text(title, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 13.sp)
                 action?.invoke()
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -359,8 +372,8 @@ fun StaffInfoField(label: String, value: String, onValueChange: (String) -> Unit
         if (isEditing) {
             TextField(value = value, onValueChange = onValueChange, modifier = Modifier.fillMaxWidth(), singleLine = true)
         } else {
-            Text(value.ifEmpty { "N/A" }, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = Color(0xFF1E293B))
-            HorizontalDivider(modifier = Modifier.padding(top = 4.dp), color = Color(0xFFF1F5F9))
+            Text(value.ifEmpty { "N/A" }, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+            HorizontalDivider(modifier = Modifier.padding(top = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
         }
     }
 }

@@ -54,7 +54,7 @@ fun BookingDetailScreen(
                         "Chi tiết đặt tour",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
-                        color = Color.Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 navigationIcon = {
@@ -62,16 +62,16 @@ fun BookingDetailScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Quay lại",
-                            tint = Color.DarkGray
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
                 actions = {
                     IconButton(onClick = { /* More actions */ }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Thêm")
+                        Icon(Icons.Default.MoreVert, contentDescription = "Thêm", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
         bottomBar = {
@@ -86,12 +86,12 @@ fun BookingDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF8FAFC))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             if (isLoading && booking == null) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = Color(0xFF2563EB)
+                    color = MaterialTheme.colorScheme.primary
                 )
             } else if (booking != null) {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -112,10 +112,10 @@ fun BookingDetailScreen(
                         Icons.Default.SearchOff,
                         null,
                         modifier = Modifier.size(64.dp),
-                        tint = Color.Gray
+                        tint = MaterialTheme.colorScheme.outline
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Không tìm thấy thông tin đặt chỗ", color = Color.Gray)
+                    Text("Không tìm thấy thông tin đặt chỗ", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Button(onClick = onNavigateBack, modifier = Modifier.padding(16.dp)) {
                         Text("Quay lại")
                     }
@@ -127,9 +127,12 @@ fun BookingDetailScreen(
     if (showCancelDialog && booking != null) {
         AlertDialog(
             onDismissRequest = { showCancelDialog = false },
-            title = { Text("Hủy đặt tour", fontWeight = FontWeight.Bold) },
+            title = { Text("Hủy đặt tour", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
             text = {
-                Text("Bạn có chắc chắn muốn hủy tour '${booking?.tour?.title}' không? Hành động này không thể hoàn tác.")
+                Text(
+                    "Bạn có chắc chắn muốn hủy tour '${booking?.tour?.title}' không? Hành động này không thể hoàn tác.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             },
             confirmButton = {
                 Button(
@@ -137,18 +140,18 @@ fun BookingDetailScreen(
                         bookingViewModel.cancelBooking(booking!!.id, booking!!.email)
                         showCancelDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Xác nhận hủy")
+                    Text("Xác nhận hủy", color = MaterialTheme.colorScheme.onError)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCancelDialog = false }) {
-                    Text("Quay lại")
+                    Text("Quay lại", color = MaterialTheme.colorScheme.primary)
                 }
             },
             shape = RoundedCornerShape(16.dp),
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 }
@@ -160,7 +163,7 @@ fun TourHeader(booking: Booking) {
             .fillMaxWidth()
             .padding(16.dp),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
@@ -176,8 +179,8 @@ fun TourHeader(booking: Booking) {
                 )
 
                 val statusColor = when {
-                    booking.status == BookingStatus.CANCELLED -> Color(0xFFEF4444)
-                    booking.tripStatus == "completed" -> Color(0xFF10B981)
+                    booking.status == BookingStatus.CANCELLED -> MaterialTheme.colorScheme.error
+                    booking.tripStatus == "completed" -> Color(0xFF10B981) // Vẫn có thể giữ xanh lá đặc trưng
                     booking.status == BookingStatus.CONFIRMED -> Color(0xFF22C55E)
                     else -> Color(0xFFF59E0B)
                 }
@@ -209,7 +212,7 @@ fun TourHeader(booking: Booking) {
                     text = booking.tour.title,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF0F172A),
+                    color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 28.sp
                 )
 
@@ -219,16 +222,20 @@ fun TourHeader(booking: Booking) {
                     Icon(
                         Icons.Default.LocationOn,
                         null,
-                        tint = Color(0xFF64748B),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(booking.tour.location, color = Color(0xFF64748B), fontSize = 15.sp)
+                    Text(
+                        booking.tour.location, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, 
+                        fontSize = 15.sp
+                    )
 
                     Spacer(modifier = Modifier.weight(1f))
 
                     Surface(
-                        color = Color(0xFF2563EB).copy(alpha = 0.1f),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
@@ -237,7 +244,7 @@ fun TourHeader(booking: Booking) {
                                     .uppercase() else booking.id.uppercase()
                             }",
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            color = Color(0xFF2563EB),
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -255,7 +262,7 @@ fun TourQuickInfo(booking: Booking) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
@@ -277,10 +284,10 @@ fun TourQuickInfo(booking: Booking) {
 @Composable
 fun QuickInfoItem(icon: ImageVector, value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, null, tint = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
         Spacer(modifier = Modifier.height(4.dp))
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF1E293B))
-        Text(label, fontSize = 11.sp, color = Color.Gray)
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -293,7 +300,7 @@ fun BookingTimeline(booking: Booking) {
             "Tiến trình chuyến đi",
             fontWeight = FontWeight.ExtraBold,
             fontSize = 18.sp,
-            color = Color(0xFF0F172A)
+            color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -312,7 +319,7 @@ fun BookingTimeline(booking: Booking) {
             else "Chờ Admin xác nhận",
             isCompleted = booking.status == BookingStatus.CONFIRMED,
             isLast = false,
-            color = if (booking.status == BookingStatus.CANCELLED) Color.Red else Color(0xFF2563EB)
+            color = if (booking.status == BookingStatus.CANCELLED) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
         )
         TimelineItem(
             title = "Ngày khởi hành",
@@ -340,7 +347,7 @@ fun TimelineItem(
                 modifier = Modifier
                     .size(16.dp)
                     .background(
-                        if (isCompleted) color else Color(0xFFE2E8F0),
+                        if (isCompleted) color else MaterialTheme.colorScheme.outlineVariant,
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -359,7 +366,7 @@ fun TimelineItem(
                     modifier = Modifier
                         .width(2.dp)
                         .fillMaxHeight()
-                        .background(if (isCompleted) color.copy(alpha = 0.3f) else Color(0xFFE2E8F0))
+                        .background(if (isCompleted) color.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outlineVariant)
                 )
             }
         }
@@ -369,9 +376,9 @@ fun TimelineItem(
                 title,
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
-                color = if (isCompleted) Color(0xFF1E293B) else Color.Gray
+                color = if (isCompleted) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Text(date, fontSize = 13.sp, color = Color.Gray)
+            Text(date, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -385,14 +392,14 @@ fun BookingCustomerInfo(booking: Booking) {
             .fillMaxWidth()
             .padding(16.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
                 "Chi tiết khách hàng",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 17.sp,
-                color = Color(0xFF0F172A)
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -409,7 +416,7 @@ fun BookingCustomerInfo(booking: Booking) {
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 16.dp),
-                color = Color(0xFFF1F5F9)
+                color = MaterialTheme.colorScheme.outlineVariant
             )
 
             DetailInfoRow(Icons.Default.Person, "Hành khách", booking.customerName)
@@ -418,7 +425,7 @@ fun BookingCustomerInfo(booking: Booking) {
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 16.dp),
-                color = Color(0xFFF1F5F9)
+                color = MaterialTheme.colorScheme.outlineVariant
             )
 
             Row(
@@ -428,17 +435,17 @@ fun BookingCustomerInfo(booking: Booking) {
                 Icon(
                     Icons.Default.Groups,
                     null,
-                    tint = Color(0xFF64748B),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Text("Tổng khách:", color = Color(0xFF64748B), fontSize = 14.sp)
+                Text("Tổng khách:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
                     "${booking.totalPeople} người",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 15.sp,
-                    color = Color(0xFF1E293B)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -450,7 +457,7 @@ fun BookingCustomerInfo(booking: Booking) {
             Text(
                 "(${details.joinToString(", ")})",
                 fontSize = 12.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 32.dp)
             )
         }
@@ -465,11 +472,11 @@ fun DetailInfoRow(icon: ImageVector, label: String, value: String) {
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
+        Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
         Spacer(modifier = Modifier.width(12.dp))
-        Text(label, color = Color(0xFF64748B), fontSize = 14.sp)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         Spacer(modifier = Modifier.weight(1f))
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1E293B))
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -482,14 +489,14 @@ fun PaymentSummary(booking: Booking) {
             .fillMaxWidth()
             .padding(16.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
                 "Thanh toán",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 17.sp,
-                color = Color(0xFF0F172A)
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -514,7 +521,7 @@ fun PaymentSummary(booking: Booking) {
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 16.dp),
                 thickness = 1.dp,
-                color = Color(0xFFF1F5F9)
+                color = MaterialTheme.colorScheme.outlineVariant
             )
 
             Row(
@@ -526,13 +533,13 @@ fun PaymentSummary(booking: Booking) {
                     "Tổng thanh toán",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color(0xFF0F172A)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     currencyFormatter.format(booking.totalPrice),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 20.sp,
-                    color = Color(0xFF2563EB)
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -547,8 +554,8 @@ fun PaymentRow(label: String, value: String) {
             .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, color = Color(0xFF64748B), fontSize = 14.sp)
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1E293B))
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -557,7 +564,7 @@ fun ActionButtons(booking: Booking, onCancelClick: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shadowElevation = 16.dp,
-        color = Color.White
+        color = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier
@@ -573,8 +580,8 @@ fun ActionButtons(booking: Booking, onCancelClick: () -> Unit) {
                         .height(54.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFEE2E2),
-                        contentColor = Color(0xFFEF4444)
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
                     Text("HỦY ĐẶT TOUR", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)

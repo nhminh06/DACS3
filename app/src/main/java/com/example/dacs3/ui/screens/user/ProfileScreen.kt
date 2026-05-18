@@ -15,9 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -26,17 +27,25 @@ import com.example.dacs3.R
 import com.example.dacs3.ui.components.AppBottomBar
 import com.example.dacs3.ui.components.profile.*
 import com.example.dacs3.ui.viewmodel.ArticleViewModel
+import com.example.dacs3.ui.viewmodel.ThemeViewModel
 import com.example.dacs3.ui.viewmodel.UserViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     userViewModel: UserViewModel,
     articleViewModel: ArticleViewModel,
+    themeViewModel: ThemeViewModel,
     onNavigate: (String) -> Unit
 ) {
     val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
     val user by userViewModel.currentUser
+    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
+
+    // Lưu vị trí của phần Tài khoản & Bảo mật
+    var securitySectionY by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(user?.id) {
         user?.id?.let { articleViewModel.fetchUserArticles(it) }
@@ -50,27 +59,42 @@ fun ProfileScreen(
                         "Hồ sơ",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
-                actions = {
-                    IconButton(onClick = { onNavigate("settings") }) {
+                navigationIcon = {
+                    // Chuyển icon bánh răng sang bên trái và thêm chức năng cuộn
+                    IconButton(onClick = {
+                        coroutineScope.launch {
+                            scrollState.animateScrollTo(securitySectionY.toInt())
+                        }
+                    }) {
                         Icon(
-                            Icons.Default.Settings,
-                            contentDescription = "Settings",
-                            tint = Color(0xFF64748B)
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Scroll to Security Settings",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                actions = {
+                    // Chuyển nút đổi giao diện sang bên phải
+                    IconButton(onClick = { themeViewModel.toggleTheme() }) {
+                        Icon(
+                            imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
+                            contentDescription = "Toggle Dark Mode",
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         },
         bottomBar = {
             AppBottomBar(currentScreen = "profile", onNavigate = onNavigate)
         },
-        containerColor = Color(0xFFF1F5F9)
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -87,7 +111,6 @@ fun ProfileScreen(
                 contentAlignment = Alignment.TopCenter
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // Avatar
                     ProfileHeader(
                         name = user?.name ?: "Người dùng",
                         email = user?.email ?: "Chưa có email",
@@ -100,14 +123,14 @@ fun ProfileScreen(
                 }
             }
 
-            // Card thông tin nổi lên đè vào hero
+            // Card thông tin
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
                     .offset(y = (-20).dp),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
@@ -148,19 +171,21 @@ fun ProfileScreen(
             ActionCard {
                 ActionRow(
                     icon = Icons.Default.BookOnline,
-                    iconBg = Color(0xFFEFF6FF),
-                    iconTint = Color(0xFF2563EB),
+                    iconBg = if (isDarkMode) Color(0xFF1E293B) else Color(0xFFEFF6FF),
+                    iconTint = Color(0xFF3B82F6),
                     title = "Đặt chỗ của tôi",
                     subtitle = "Xem lịch sử & trạng thái booking",
+                    isDarkMode = isDarkMode,
                     onClick = { onNavigate("my_bookings") }
                 )
                 RowDivider()
                 ActionRow(
                     icon = Icons.Default.Favorite,
-                    iconBg = Color(0xFFFFF1F2),
+                    iconBg = if (isDarkMode) Color(0xFF451A1C) else Color(0xFFFFF1F2),
                     iconTint = Color(0xFFEF4444),
                     title = "Tour yêu thích",
                     subtitle = "Danh sách tour đã lưu",
+                    isDarkMode = isDarkMode,
                     onClick = { onNavigate("favorites_tours") }
                 )
             }
@@ -172,28 +197,31 @@ fun ProfileScreen(
             ActionCard {
                 ActionRow(
                     icon = Icons.Default.Article,
-                    iconBg = Color(0xFFF0FDF4),
-                    iconTint = Color(0xFF16A34A),
+                    iconBg = if (isDarkMode) Color(0xFF064E3B) else Color(0xFFF0FDF4),
+                    iconTint = Color(0xFF10B981),
                     title = "Bài viết của tôi",
                     subtitle = "Quản lý bài viết đã đăng",
+                    isDarkMode = isDarkMode,
                     onClick = { onNavigate("my_articles") }
                 )
                 RowDivider()
                 ActionRow(
                     icon = Icons.Default.FavoriteBorder,
-                    iconBg = Color(0xFFF5F3FF),
+                    iconBg = if (isDarkMode) Color(0xFF2E1065) else Color(0xFFF5F3FF),
                     iconTint = Color(0xFF8B5CF6),
                     title = "Bài viết yêu thích",
                     subtitle = "Xem lại các bài viết đã lưu",
+                    isDarkMode = isDarkMode,
                     onClick = { onNavigate("favorites_articles") }
                 )
                 RowDivider()
                 ActionRow(
                     icon = Icons.Default.PostAdd,
-                    iconBg = Color(0xFFFFFBEB),
-                    iconTint = Color(0xFFD97706),
+                    iconBg = if (isDarkMode) Color(0xFF451A03) else Color(0xFFFFFBEB),
+                    iconTint = Color(0xFFF59E0B),
                     title = "Đóng góp bài viết",
                     subtitle = "Chia sẻ trải nghiệm của bạn",
+                    isDarkMode = isDarkMode,
                     onClick = { onNavigate("create_article") }
                 )
             }
@@ -201,34 +229,43 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             // ── NHÓM 3: Tài khoản & Bảo mật ────────────────────────────────
-            GroupLabel("TÀI KHOẢN & BẢO MẬT")
-            ActionCard {
-                ActionRow(
-                    icon = Icons.Default.Notifications,
-                    iconBg = Color(0xFFF5F3FF),
-                    iconTint = Color(0xFF7C3AED),
-                    title = "Thông báo",
-                    subtitle = "Cài đặt thông báo đẩy",
-                    onClick = { onNavigate("notifications") }
-                )
-                RowDivider()
-                ActionRow(
-                    icon = Icons.Default.Lock,
-                    iconBg = Color(0xFFEFF6FF),
-                    iconTint = Color(0xFF0369A1),
-                    title = "Mật khẩu & Bảo mật",
-                    subtitle = "Đổi mật khẩu, xác thực 2 bước",
-                    onClick = { onNavigate("change_password") }
-                )
-                RowDivider()
-                ActionRow(
-                    icon = Icons.Default.Edit,
-                    iconBg = Color(0xFFF0FDF4),
-                    iconTint = Color(0xFF059669),
-                    title = "Chỉnh sửa hồ sơ",
-                    subtitle = "Cập nhật thông tin cá nhân",
-                    onClick = { onNavigate("edit_profile") }
-                )
+            Column(
+                modifier = Modifier.onGloballyPositioned { coordinates ->
+                    securitySectionY = coordinates.positionInParent().y
+                }
+            ) {
+                GroupLabel("TÀI KHOẢN & BẢO MẬT")
+                ActionCard {
+                    ActionRow(
+                        icon = Icons.Default.Notifications,
+                        iconBg = if (isDarkMode) Color(0xFF2E1065) else Color(0xFFF5F3FF),
+                        iconTint = Color(0xFF7C3AED),
+                        title = "Thông báo",
+                        subtitle = "Cài đặt thông báo đẩy",
+                        isDarkMode = isDarkMode,
+                        onClick = { onNavigate("notifications") }
+                    )
+                    RowDivider()
+                    ActionRow(
+                        icon = Icons.Default.Lock,
+                        iconBg = if (isDarkMode) Color(0xFF0C4A6E) else Color(0xFFEFF6FF),
+                        iconTint = Color(0xFF0284C7),
+                        title = "Mật khẩu & Bảo mật",
+                        subtitle = "Đổi mật khẩu, xác thực 2 bước",
+                        isDarkMode = isDarkMode,
+                        onClick = { onNavigate("change_password") }
+                    )
+                    RowDivider()
+                    ActionRow(
+                        icon = Icons.Default.Edit,
+                        iconBg = if (isDarkMode) Color(0xFF064E3B) else Color(0xFFF0FDF4),
+                        iconTint = Color(0xFF059669),
+                        title = "Chỉnh sửa hồ sơ",
+                        subtitle = "Cập nhật thông tin cá nhân",
+                        isDarkMode = isDarkMode,
+                        onClick = { onNavigate("edit_profile") }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -240,7 +277,10 @@ fun ProfileScreen(
                     .padding(horizontal = 20.dp)
                     .clickable { onNavigate("login") },
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1F2)),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isDarkMode) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f) 
+                                    else Color(0xFFFFF1F2)
+                ),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Row(
@@ -253,7 +293,7 @@ fun ProfileScreen(
                     Icon(
                         Icons.AutoMirrored.Filled.Logout,
                         contentDescription = null,
-                        tint = Color(0xFFEF4444),
+                        tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
@@ -261,7 +301,7 @@ fun ProfileScreen(
                         "Đăng xuất",
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
-                        color = Color(0xFFEF4444)
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }
@@ -271,15 +311,13 @@ fun ProfileScreen(
     }
 }
 
-// ── Helper Composables ────────────────────────────────────────────────────────
-
 @Composable
 private fun GroupLabel(text: String) {
     Text(
         text = text,
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
-        color = Color(0xFF94A3B8),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
         letterSpacing = 1.2.sp,
         modifier = Modifier.padding(start = 28.dp, bottom = 6.dp, top = 4.dp)
     )
@@ -292,7 +330,7 @@ private fun ActionCard(content: @Composable ColumnScope.() -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(vertical = 4.dp), content = content)
@@ -306,6 +344,7 @@ private fun ActionRow(
     iconTint: Color,
     title: String,
     subtitle: String,
+    isDarkMode: Boolean = false,
     onClick: () -> Unit
 ) {
     Row(
@@ -330,12 +369,12 @@ private fun ActionRow(
                 title,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF1E293B)
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 subtitle,
                 fontSize = 12.sp,
-                color = Color(0xFF94A3B8),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -343,7 +382,7 @@ private fun ActionRow(
         Icon(
             Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = Color(0xFFCBD5E1),
+            tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
             modifier = Modifier.size(20.dp)
         )
     }
@@ -366,23 +405,23 @@ private fun InfoRow(
         Icon(
             icon,
             contentDescription = null,
-            tint = Color(0xFF2563EB),
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(18.dp)
         )
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(label, fontSize = 11.sp, color = Color(0xFF94A3B8))
+            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
             Text(
                 value,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                color = if (value == "Chưa cập nhật") Color(0xFFCBD5E1) else Color(0xFF1E293B)
+                color = if (value == "Chưa cập nhật") MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
             )
         }
         Icon(
             Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = Color(0xFFE2E8F0),
+            tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
             modifier = Modifier.size(16.dp)
         )
     }
@@ -392,7 +431,7 @@ private fun InfoRow(
 private fun Divider16() {
     HorizontalDivider(
         modifier = Modifier.padding(horizontal = 18.dp),
-        color = Color(0xFFF1F5F9),
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         thickness = 1.dp
     )
 }
@@ -401,7 +440,7 @@ private fun Divider16() {
 private fun RowDivider() {
     HorizontalDivider(
         modifier = Modifier.padding(start = 74.dp, end = 18.dp),
-        color = Color(0xFFF1F5F9),
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         thickness = 1.dp
     )
 }

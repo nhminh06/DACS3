@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Museum
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,7 +42,7 @@ fun CategorySection(onCategoryClick: (String) -> Unit = {}) {
             text = "Danh mục",
             fontWeight = FontWeight.ExtraBold, 
             fontSize = 17.sp, 
-            color = Color(0xFF1E293B)
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(12.dp))
         LazyRow(
@@ -51,7 +52,7 @@ fun CategorySection(onCategoryClick: (String) -> Unit = {}) {
             items(categories) { category ->
                 Surface(
                     shape = RoundedCornerShape(24.dp),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier
                         .shadow(2.dp, RoundedCornerShape(24.dp))
                         .clickable { onCategoryClick(category.name) }
@@ -60,17 +61,17 @@ fun CategorySection(onCategoryClick: (String) -> Unit = {}) {
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                     ) {
-                        // Blue circle with white icon
+                        // Blue circle with white icon - keep primary for brand identity or use primary color
                         Box(
                             modifier = Modifier
                                 .size(32.dp)
-                                .background(Color(0xFF2563EB), CircleShape),
+                                .background(MaterialTheme.colorScheme.primary, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = category.icon,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -80,7 +81,7 @@ fun CategorySection(onCategoryClick: (String) -> Unit = {}) {
                             modifier = Modifier.padding(horizontal = 12.dp),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF334155)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }

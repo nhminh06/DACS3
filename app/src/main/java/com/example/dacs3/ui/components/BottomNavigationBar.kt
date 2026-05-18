@@ -20,19 +20,19 @@ fun AppBottomBar(
     onNavigate: (String) -> Unit = {}
 ) {
     val commonColors = NavigationBarItemDefaults.colors(
-        selectedIconColor = Color(0xFF2563EB),
-        selectedTextColor = Color(0xFF2563EB),
-        unselectedIconColor = Color.Gray.copy(alpha = 0.5f),
-        unselectedTextColor = Color.Gray.copy(alpha = 0.5f),
-        indicatorColor = Color(0xFF2563EB).copy(alpha = 0.1f)
+        selectedIconColor = MaterialTheme.colorScheme.primary,
+        selectedTextColor = MaterialTheme.colorScheme.primary,
+        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+        indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
     )
 
     Surface(
         modifier = Modifier.shadow(12.dp),
-        color = Color.White
+        color = MaterialTheme.colorScheme.surface
     ) {
         NavigationBar(
-            containerColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp,
             modifier = Modifier.navigationBarsPadding().height(65.dp)
         ) {

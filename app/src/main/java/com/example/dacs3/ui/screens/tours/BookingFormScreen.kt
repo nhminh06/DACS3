@@ -155,17 +155,17 @@ fun BookingFormScreen(
                 Text(
                     "Đặt Tour Thành Công!",
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             },
             text = {
                 Text(
                     "Yêu cầu đặt tour của bạn đã được gửi đi. Vui lòng chờ nhân viên xác nhận để hoàn tất.",
-                    color = Color(0xFF334155)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             shape = RoundedCornerShape(24.dp),
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
@@ -177,7 +177,7 @@ fun BookingFormScreen(
                         "Xác nhận đặt tour",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
-                        color = Color(0xFF0F172A)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 navigationIcon = {
@@ -185,18 +185,18 @@ fun BookingFormScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color(0xFF0F172A)
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
         bottomBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shadowElevation = 16.dp,
-                color = Color.White
+                color = MaterialTheme.colorScheme.surface
             ) {
                 Column(
                     modifier = Modifier
@@ -212,7 +212,7 @@ fun BookingFormScreen(
                     ) {
                         Text(
                             "Tổng thanh toán:",
-                            color = Color(0xFF475569),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -220,7 +220,7 @@ fun BookingFormScreen(
                             currencyFormatter.format(totalPrice),
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 22.sp,
-                            color = Color(0xFF2563EB)
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                     Button(
@@ -279,13 +279,13 @@ fun BookingFormScreen(
                             .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (canBook) Color(0xFF2563EB) else Color.Gray
+                            containerColor = if (canBook) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                         ),
                         enabled = !isLoading && name.isNotBlank() && email.isNotBlank() && phone.isNotBlank() && canBook
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(24.dp)
                             )
                         } else {
@@ -293,7 +293,7 @@ fun BookingFormScreen(
                                 if (canBook) "XÁC NHẬN ĐẶT TOUR" else "HẾT CHỖ TRỐNG",
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 16.sp,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
@@ -305,7 +305,7 @@ fun BookingFormScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color(0xFFF8FAFC))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             item { BookingTourCard(tour, selectedDate) }
 
@@ -348,18 +348,18 @@ fun BookingFormScreen(
                 if (shouldHidePaymentSection) {
                     Card(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)),
-                        border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f))
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
                     ) {
                         Row(
                             modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Error, null, tint = Color(0xFFDC2626))
+                            Icon(Icons.Default.Error, null, tint = MaterialTheme.colorScheme.error)
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 "❌ Chuyến đi đã quá tải nghiêm trọng. Vui lòng giảm số lượng khách hoặc chọn ngày khác.",
-                                color = Color(0xFFDC2626),
+                                color = MaterialTheme.colorScheme.error,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -369,7 +369,7 @@ fun BookingFormScreen(
                     if (isOverLimit) {
                         Card(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED)),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7ED)), // Cam nhạt cảnh báo
                             border = BorderStroke(1.dp, Color(0xFFD97706).copy(alpha = 0.5f))
                         ) {
                             Text(
@@ -405,7 +405,7 @@ fun SectionTitle(title: String) {
         modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 12.dp),
         fontSize = 13.sp,
         fontWeight = FontWeight.ExtraBold,
-        color = Color(0xFF1E293B)
+        color = MaterialTheme.colorScheme.onSurface
     )
 }
 
@@ -416,7 +416,7 @@ fun BookingTourCard(tour: Tour, date: String) {
             .padding(16.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(modifier = Modifier.padding(12.dp)) {
@@ -434,20 +434,20 @@ fun BookingTourCard(tour: Tour, date: String) {
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     maxLines = 2,
-                    color = Color(0xFF0F172A)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.LocationOn,
                         null,
-                        tint = Color(0xFF64748B),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         tour.location,
-                        color = Color(0xFF334155),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -457,13 +457,13 @@ fun BookingTourCard(tour: Tour, date: String) {
                     Icon(
                         Icons.Default.CalendarMonth,
                         null,
-                        tint = Color(0xFF2563EB),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         "Khởi hành: $date",
-                        color = Color(0xFF2563EB),
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.ExtraBold
                     )
@@ -483,7 +483,7 @@ fun CustomerFormSection(
 ) {
     Card(
         modifier = Modifier.padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -493,15 +493,15 @@ fun CustomerFormSection(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 textStyle = TextStyle(
-                    color = Color(0xFF0F172A),
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2563EB),
-                    unfocusedBorderColor = Color(0xFFCBD5E1)
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 ),
-                leadingIcon = { Icon(Icons.Default.Person, null, tint = Color(0xFF2563EB)) }
+                leadingIcon = { Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary) }
             )
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
@@ -510,15 +510,15 @@ fun CustomerFormSection(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 textStyle = TextStyle(
-                    color = Color(0xFF0F172A),
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2563EB),
-                    unfocusedBorderColor = Color(0xFFCBD5E1)
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 ),
-                leadingIcon = { Icon(Icons.Default.Email, null, tint = Color(0xFF2563EB)) }
+                leadingIcon = { Icon(Icons.Default.Email, null, tint = MaterialTheme.colorScheme.primary) }
             )
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
@@ -527,15 +527,15 @@ fun CustomerFormSection(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 textStyle = TextStyle(
-                    color = Color(0xFF0F172A),
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2563EB),
-                    unfocusedBorderColor = Color(0xFFCBD5E1)
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 ),
-                leadingIcon = { Icon(Icons.Default.Phone, null, tint = Color(0xFF2563EB)) }
+                leadingIcon = { Icon(Icons.Default.Phone, null, tint = MaterialTheme.colorScheme.primary) }
             )
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
@@ -544,16 +544,16 @@ fun CustomerFormSection(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 textStyle = TextStyle(
-                    color = Color(0xFF0F172A),
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2563EB),
-                    unfocusedBorderColor = Color(0xFFCBD5E1)
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 ),
                 minLines = 2,
-                leadingIcon = { Icon(Icons.Default.Home, null, tint = Color(0xFF2563EB)) }
+                leadingIcon = { Icon(Icons.Default.Home, null, tint = MaterialTheme.colorScheme.primary) }
             )
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
@@ -562,20 +562,20 @@ fun CustomerFormSection(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 textStyle = TextStyle(
-                    color = Color(0xFF0F172A),
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF2563EB),
-                    unfocusedBorderColor = Color(0xFFCBD5E1)
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 ),
                 minLines = 3,
                 leadingIcon = {
                     Icon(
                         Icons.AutoMirrored.Filled.Note,
                         null,
-                        tint = Color(0xFF2563EB)
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             )
@@ -602,20 +602,20 @@ fun AvailableDatesSection(
             .padding(horizontal = 16.dp)
             .fillMaxWidth()
             .clickable { if (availableDates.size > 1) showSheet = true },
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Event, null, tint = Color(0xFF2563EB))
+            Icon(Icons.Default.Event, null, tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
                     "Chọn ngày khởi hành",
                     fontSize = 12.sp,
-                    color = Color(0xFF64748B),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Medium
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -623,7 +623,7 @@ fun AvailableDatesSection(
                         selectedDate,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 15.sp,
-                        color = Color(0xFF0F172A)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Surface(
                         modifier = Modifier.padding(start = 8.dp),
@@ -646,7 +646,7 @@ fun AvailableDatesSection(
             if (availableDates.size > 1) Icon(
                 Icons.Default.ExpandMore,
                 null,
-                tint = Color(0xFF64748B)
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -654,7 +654,7 @@ fun AvailableDatesSection(
     if (showSheet) {
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier
@@ -665,7 +665,8 @@ fun AvailableDatesSection(
                     "Danh sách ngày khởi hành",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
-                    modifier = Modifier.padding(vertical = 16.dp)
+                    modifier = Modifier.padding(vertical = 16.dp),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 availableDates.forEach { date ->
                     val isSelected = date == selectedDate
@@ -677,8 +678,8 @@ fun AvailableDatesSection(
                             .padding(vertical = 4.dp)
                             .clickable { onDateSelected(date); showSheet = false },
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) Color(0xFFF0F7FF) else Color.Transparent,
-                        border = if (isSelected) BorderStroke(1.dp, Color(0xFF2563EB)) else null
+                        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
+                        border = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -688,7 +689,7 @@ fun AvailableDatesSection(
                                 Text(
                                     date,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) Color(0xFF2563EB) else Color(0xFF0F172A)
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     if (remaining > 0) "Còn $remaining chỗ trống ($count khách đã đặt)" else "Đã hết chỗ ($count khách)",
@@ -699,7 +700,7 @@ fun AvailableDatesSection(
                             if (isSelected) Icon(
                                 Icons.Default.Check,
                                 null,
-                                tint = Color(0xFF2563EB)
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -717,19 +718,19 @@ fun PassengerSection(
 ) {
     Card(
         modifier = Modifier.padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             PassengerStepper("Người lớn", "Trên 12 tuổi", adults, onAdultsChange)
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 12.dp),
-                color = Color(0xFFF1F5F9)
+                color = MaterialTheme.colorScheme.outlineVariant
             )
             PassengerStepper("Trẻ em", "Dưới 12 tuổi", children, onChildrenChange)
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 12.dp),
-                color = Color(0xFFF1F5F9)
+                color = MaterialTheme.colorScheme.outlineVariant
             )
             PassengerStepper("Trẻ nhỏ", "Dưới 2 tuổi", infants, onInfantsChange)
         }
@@ -749,12 +750,12 @@ fun PassengerStepper(
                 label,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 15.sp,
-                color = Color(0xFF0F172A)
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 subLabel,
                 fontSize = 12.sp,
-                color = Color(0xFF64748B),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium
             )
         }
@@ -763,13 +764,13 @@ fun PassengerStepper(
                 onClick = { onValueChange(count - 1) },
                 modifier = Modifier
                     .size(32.dp)
-                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(10.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
             ) {
                 Icon(
                     Icons.Default.Remove,
                     null,
                     modifier = Modifier.size(16.dp),
-                    tint = Color(0xFF0F172A)
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
             Text(
@@ -777,18 +778,18 @@ fun PassengerStepper(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 16.sp,
-                color = Color(0xFF0F172A)
+                color = MaterialTheme.colorScheme.onSurface
             )
             IconButton(
                 onClick = { onValueChange(count + 1) },
                 modifier = Modifier
                     .size(32.dp)
-                    .background(Color(0xFF2563EB), RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
             ) {
                 Icon(
                     Icons.Default.Add,
                     null,
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -811,7 +812,7 @@ fun PriceSummarySection(
 
     Card(
         modifier = Modifier.padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -830,7 +831,7 @@ fun PriceSummarySection(
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 12.dp),
                 thickness = 1.dp,
-                color = Color(0xFFF1F5F9)
+                color = MaterialTheme.colorScheme.outlineVariant
             )
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -840,13 +841,13 @@ fun PriceSummarySection(
                     "TỔNG TIỀN",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 16.sp,
-                    color = Color(0xFF0F172A)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     formatter.format(total),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 20.sp,
-                    color = Color(0xFF2563EB)
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -861,8 +862,8 @@ fun PriceRow(label: String, value: String) {
             .fillMaxWidth()
             .padding(vertical = 4.dp)
     ) {
-        Text(label, fontSize = 14.sp, color = Color(0xFF475569), fontWeight = FontWeight.Medium)
-        Text(value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+        Text(label, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+        Text(value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -895,9 +896,9 @@ fun PaymentMethodSection(
         AnimatedContent(targetState = selected, label = "") { target ->
             if (target == "QR") {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
                     shape = RoundedCornerShape(20.dp),
-                    border = BorderStroke(1.dp, Color(0xFFBFDBFE))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
                 ) {
                     Column(
                         modifier = Modifier.padding(20.dp),
@@ -907,12 +908,12 @@ fun PaymentMethodSection(
                             "QUÉT MÃ THANH TOÁN VIETQR",
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 14.sp,
-                            color = Color(0xFF1E40AF)
+                            color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Box(
                             modifier = Modifier
-                                .background(Color.White, RoundedCornerShape(16.dp))
+                                .background(Color.White, RoundedCornerShape(16.dp)) // QR code background should stay white for readability
                                 .padding(12.dp)
                         ) {
                             val shortName =
@@ -935,27 +936,27 @@ fun PaymentMethodSection(
                                 Text(
                                     "Ngân hàng",
                                     fontSize = 11.sp,
-                                    color = Color(0xFF475569)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     "Vietcombank",
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 14.sp,
-                                    color = Color(0xFF0F172A)
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
                                     "Nội dung chuyển",
                                     fontSize = 11.sp,
-                                    color = Color(0xFF475569)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     "DATTOUR ${
                                         name.split(" ").lastOrNull()?.uppercase() ?: "KHACH"
                                     }",
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = Color(0xFF2563EB)
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
@@ -994,10 +995,10 @@ fun PaymentMethodSection(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.White,
-                                contentColor = Color(0xFF2563EB)
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.primary
                             ),
-                            border = BorderStroke(1.dp, Color(0xFF2563EB))
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
                         ) {
                             Icon(Icons.Default.CloudUpload, null)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -1010,7 +1011,7 @@ fun PaymentMethodSection(
                 }
             } else {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                     shape = RoundedCornerShape(20.dp)
                 ) {
                     Row(
@@ -1020,14 +1021,14 @@ fun PaymentMethodSection(
                         Icon(
                             Icons.Default.Info,
                             null,
-                            tint = Color(0xFF2563EB),
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             "Bạn sẽ thanh toán trực tiếp cho Hướng dẫn viên khi bắt đầu chuyến đi.",
                             fontSize = 14.sp,
-                            color = Color(0xFF1E293B),
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -1046,15 +1047,15 @@ fun PaymentTab(
 ) {
     Surface(
         modifier = modifier.clickable { onClick() },
-        color = if (isSelected) Color(0xFF2563EB) else Color.White,
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(12.dp),
-        border = if (isSelected) null else BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = if (isSelected) 4.dp else 0.dp
     ) {
         Box(modifier = Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
             Text(
                 label,
-                color = if (isSelected) Color.White else Color(0xFF334155),
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 13.sp
             )

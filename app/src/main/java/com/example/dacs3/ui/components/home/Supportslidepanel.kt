@@ -30,17 +30,6 @@ import androidx.compose.ui.zIndex
 
 /**
  * Nút hỗ trợ trực tiếp dạng slide-in từ cạnh phải màn hình.
- *
- * Cách dùng — đặt bên trong Box(modifier = Modifier.fillMaxSize()) ở AppHomeScreen:
- *
- *   Box(modifier = Modifier.fillMaxSize()) {
- *       LazyColumn(...) { ... }
- *       SupportSlidePanel(
- *           onChatClick   = { onNavigate("support_chat") },
- *           onCallClick   = { /* gọi điện */ },
- *           modifier      = Modifier.align(Alignment.CenterEnd)
- *       )
- *   }
  */
 @Composable
 fun SupportSlidePanel(
@@ -79,7 +68,7 @@ fun SupportSlidePanel(
                 .alpha(if (expanded) 0.6f else arrowAlpha)
                 .size(width = 20.dp, height = 40.dp)
                 .clip(RoundedCornerShape(topStart = 40.dp, bottomStart = 40.dp))
-                .background(Color(0xFF94A3B8).copy(alpha = 0.45f))
+                .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication        = null
@@ -89,7 +78,7 @@ fun SupportSlidePanel(
             Icon(
                 imageVector        = if (expanded) Icons.Default.ChevronRight else Icons.Default.ChevronLeft,
                 contentDescription = if (expanded) "Thu gọn" else "Hỗ trợ",
-                tint               = Color.White.copy(alpha = 0.85f),
+                tint               = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier           = Modifier.size(14.dp)
             )
         }
@@ -101,7 +90,7 @@ fun SupportSlidePanel(
                 .shadow(12.dp, RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp))
                 .background(
                     Brush.verticalGradient(
-                        listOf(Color(0xFF1E40AF), Color(0xFF2563EB))
+                        listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)
                     ),
                     RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)
                 )
@@ -114,13 +103,13 @@ fun SupportSlidePanel(
                 Icon(
                     Icons.Default.Headset,
                     contentDescription = null,
-                    tint     = Color(0xFFBAE6FD),
+                    tint     = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
                     text       = "Hỗ trợ",
-                    color      = Color.White,
+                    color      = MaterialTheme.colorScheme.onPrimary,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize   = 13.sp,
                     letterSpacing = 0.3.sp
@@ -128,7 +117,7 @@ fun SupportSlidePanel(
             }
 
             HorizontalDivider(
-                color     = Color.White.copy(alpha = 0.2f),
+                color     = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f),
                 thickness = 0.8.dp
             )
 
@@ -136,7 +125,8 @@ fun SupportSlidePanel(
             SupportButton(
                 icon    = Icons.Default.Chat,
                 label   = "Chat ngay",
-                bgColor = Color(0xFF3B82F6),
+                bgColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary,
                 onClick = {
                     expanded = false
                     onChatClick()
@@ -147,7 +137,8 @@ fun SupportSlidePanel(
             SupportButton(
                 icon    = Icons.Default.Phone,
                 label   = "Gọi điện",
-                bgColor = Color(0xFF10B981),
+                bgColor = Color(0xFF10B981), // Giữ màu xanh lá cho nút gọi
+                contentColor = Color.White,
                 onClick = {
                     expanded = false
                     onCallClick()
@@ -162,6 +153,7 @@ private fun SupportButton(
     icon: ImageVector,
     label: String,
     bgColor: Color,
+    contentColor: Color = Color.White,
     onClick: () -> Unit
 ) {
     Row(
@@ -183,14 +175,14 @@ private fun SupportButton(
             Icon(
                 imageVector        = icon,
                 contentDescription = label,
-                tint               = Color.White,
+                tint               = contentColor,
                 modifier           = Modifier.size(16.dp)
             )
         }
         Spacer(Modifier.width(8.dp))
         Text(
             text       = label,
-            color      = Color.White,
+            color      = Color.White, // Giữ text trắng vì nền panel thường đậm
             fontWeight = FontWeight.SemiBold,
             fontSize   = 13.sp
         )

@@ -47,24 +47,31 @@ fun MyArticlesScreen(
                         "Bài viết của tôi",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         },
-        containerColor = Color(0xFFF8FAFC)
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (isLoading && userArticles.isEmpty()) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary
+                )
             } else if (userArticles.isEmpty()) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
@@ -73,7 +80,7 @@ fun MyArticlesScreen(
                 ) {
                     Text(
                         "Bạn chưa có bài viết nào.",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 16.sp
                     )
                 }
@@ -89,7 +96,7 @@ fun MyArticlesScreen(
                                 .fillMaxWidth()
                                 .clickable { onNavigateToDetail(article) },
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
@@ -103,7 +110,7 @@ fun MyArticlesScreen(
                                             text = article.tieu_de,
                                             fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF1E293B),
+                                            color = MaterialTheme.colorScheme.onSurface,
                                             maxLines = 2,
                                             overflow = TextOverflow.Ellipsis
                                         )
@@ -112,13 +119,13 @@ fun MyArticlesScreen(
                                             Text(
                                                 text = article.ngay_tao,
                                                 fontSize = 12.sp,
-                                                color = Color.Gray
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                             if (article.is_edited) {
                                                 Text(
                                                     text = " • Đã chỉnh sửa",
                                                     fontSize = 11.sp,
-                                                    color = Color.Gray,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                                                 )
                                             }
@@ -132,7 +139,7 @@ fun MyArticlesScreen(
                                         Icon(
                                             Icons.Default.Edit,
                                             contentDescription = "Edit",
-                                            tint = Color(0xFF2563EB),
+                                            tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(20.dp)
                                         )
                                     }
@@ -150,16 +157,16 @@ fun MyArticlesScreen(
                                         0 -> "Đang duyệt" to Color(0xFFF59E0B)
                                         1 -> "Đã duyệt" to Color(0xFF10B981)
                                         2 -> "Từ chối" to Color(0xFFEF4444)
-                                        else -> "N/A" to Color.Gray
+                                        else -> Color.Gray to Color.Gray
                                     }
                                     
                                     Surface(
-                                        color = statusColor.copy(alpha = 0.1f),
+                                        color = (statusColor as Color).copy(alpha = 0.1f),
                                         shape = RoundedCornerShape(8.dp)
                                     ) {
                                         Text(
-                                            text = statusText,
-                                            color = statusColor,
+                                            text = statusText as String,
+                                            color = statusColor as Color,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -169,7 +176,7 @@ fun MyArticlesScreen(
                                     Text(
                                         "Xem chi tiết",
                                         fontSize = 12.sp,
-                                        color = Color(0xFF2563EB),
+                                        color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Medium
                                     )
                                 }

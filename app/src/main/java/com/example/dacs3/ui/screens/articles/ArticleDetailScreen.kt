@@ -46,7 +46,7 @@ fun ArticleDetailScreen(
     articleViewModel: ArticleViewModel
 ) {
     val scrollState = rememberScrollState()
-    val primaryColor = Color(0xFF2563EB)
+    val primaryColor = MaterialTheme.colorScheme.primary
     
     // Report States
     var showReportDialog by remember { mutableStateOf(false) }
@@ -68,12 +68,26 @@ fun ArticleDetailScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(article.tieu_de, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black) },
+                title = { 
+                    Text(
+                        article.tieu_de, 
+                        maxLines = 1, 
+                        overflow = TextOverflow.Ellipsis, 
+                        fontSize = 18.sp, 
+                        fontWeight = FontWeight.Bold, 
+                        color = MaterialTheme.colorScheme.onSurface
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.DarkGray)
+                        Icon(
+                            Icons.Default.ArrowBack, 
+                            contentDescription = "Back", 
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
                 actions = {
@@ -87,11 +101,15 @@ fun ArticleDetailScreen(
                         Icon(
                             imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "Favorite",
-                            tint = if (isFavorite) Color.Red else Color.DarkGray
+                            tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     IconButton(onClick = { /* Share */ }) {
-                        Icon(Icons.Default.Share, contentDescription = "Share")
+                        Icon(
+                            Icons.Default.Share, 
+                            contentDescription = "Share",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                     IconButton(onClick = { 
                         if (isLoggedIn) {
@@ -102,17 +120,21 @@ fun ArticleDetailScreen(
                             onRequireLogin()
                         }
                     }) {
-                        Icon(Icons.Outlined.Flag, contentDescription = "Report Article")
+                        Icon(
+                            Icons.Outlined.Flag, 
+                            contentDescription = "Report Article",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
         bottomBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shadowElevation = 8.dp,
-                color = Color.White
+                color = MaterialTheme.colorScheme.surface
             ) {
                 Button(
                     onClick = onNavigateToTour,
@@ -123,16 +145,25 @@ fun ArticleDetailScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
                 ) {
-                    Text("Xem chuyến đi", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(
+                        "Xem chuyến đi", 
+                        fontSize = 18.sp, 
+                        fontWeight = FontWeight.Bold, 
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Color.White)
+                    Icon(
+                        Icons.Default.ArrowForward, 
+                        contentDescription = null, 
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
             }
         }
     ) { paddingValues ->
         Box(modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
             .padding(paddingValues)
         ) {
             Column(
@@ -244,16 +275,30 @@ fun ArticleDetailScreen(
     if (showReportDialog) {
         AlertDialog(
             onDismissRequest = { showReportDialog = false },
-            title = { Text(if (reportTargetComment == null) "Báo cáo bài viết" else "Báo cáo bình luận") },
+            title = { 
+                Text(
+                    if (reportTargetComment == null) "Báo cáo bài viết" else "Báo cáo bình luận",
+                    color = MaterialTheme.colorScheme.onSurface
+                ) 
+            },
             text = {
                 Column {
-                    Text("Lý do báo cáo:", fontWeight = FontWeight.Bold)
+                    Text(
+                        "Lý do báo cáo:", 
+                        fontWeight = FontWeight.Bold, 
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = reportReason,
                         onValueChange = { reportReason = it },
                         placeholder = { Text("Nhập lý do tại đây...") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryColor,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                        )
                     )
                 }
             },
@@ -295,25 +340,26 @@ fun ArticleDetailScreen(
                             Toast.makeText(context, "Vui lòng nhập lý do", Toast.LENGTH_SHORT).show()
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Gửi báo cáo", color = Color.White)
+                    Text("Gửi báo cáo", color = MaterialTheme.colorScheme.onError)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showReportDialog = false }) {
-                    Text("Hủy")
+                    Text("Hủy", color = MaterialTheme.colorScheme.primary)
                 }
             },
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(20.dp),
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
     if (commentToDelete != null) {
         AlertDialog(
             onDismissRequest = { commentToDelete = null },
-            title = { Text("Xóa bình luận") },
-            text = { Text("Bạn có chắc chắn muốn xóa bình luận này không?") },
+            title = { Text("Xóa bình luận", color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("Bạn có chắc chắn muốn xóa bình luận này không?", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             confirmButton = {
                 TextButton(onClick = {
                     commentToDelete?.let {
@@ -327,15 +373,16 @@ fun ArticleDetailScreen(
                     }
                     commentToDelete = null
                 }) {
-                    Text("Xóa", color = Color.Red)
+                    Text("Xóa", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { commentToDelete = null }) {
-                    Text("Hủy")
+                    Text("Hủy", color = MaterialTheme.colorScheme.primary)
                 }
             },
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(20.dp),
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 }
@@ -352,7 +399,7 @@ fun ContentSection(title: String, description: String, imageUrl: String?) {
                 text = title,
                 fontSize = 19.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1E293B)
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -361,7 +408,7 @@ fun ContentSection(title: String, description: String, imageUrl: String?) {
             Text(
                 text = description,
                 fontSize = 15.sp,
-                color = Color(0xFF475569),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 24.sp
             )
         }
@@ -382,7 +429,7 @@ fun ContentSection(title: String, description: String, imageUrl: String?) {
             )
         }
         Spacer(modifier = Modifier.height(24.dp))
-        HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), thickness = 0.5.dp)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
     }
 }
 
@@ -403,11 +450,16 @@ fun CommentSection(
 
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Bình luận", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1E293B))
+            Text(
+                "Bình luận", 
+                fontSize = 20.sp, 
+                fontWeight = FontWeight.ExtraBold, 
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 "(${comments.size})",
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 16.sp
             )
         }
@@ -419,15 +471,24 @@ fun CommentSection(
             onValueChange = { commentText = it },
             enabled = !isCommenting,
             readOnly = !isLoggedIn,
-            placeholder = { Text(if (isLoggedIn) "Chia sẻ cảm nghĩ của bạn..." else "Bạn cần đăng nhập để bình luận", fontSize = 14.sp) },
-            modifier = Modifier.fillMaxWidth().height(120.dp).clickable { if(!isLoggedIn) onLoginClick() },
+            placeholder = { 
+                Text(
+                    if (isLoggedIn) "Chia sẻ cảm nghĩ của bạn..." else "Bạn cần đăng nhập để bình luận", 
+                    fontSize = 14.sp
+                ) 
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+                .clickable { if(!isLoggedIn) onLoginClick() },
             shape = RoundedCornerShape(16.dp),
-            textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
+            textStyle = TextStyle(
+                color = MaterialTheme.colorScheme.onSurface, 
+                fontWeight = FontWeight.Medium
+            ),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
                 focusedBorderColor = primaryColor,
-                unfocusedBorderColor = Color.Gray,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                 cursorColor = primaryColor
             )
         )
@@ -449,9 +510,17 @@ fun CommentSection(
             colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
         ) {
             if (isCommenting) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp), 
+                    color = MaterialTheme.colorScheme.onPrimary, 
+                    strokeWidth = 2.dp
+                )
             } else {
-                Text(if (isLoggedIn) "Gửi bình luận" else "Đăng nhập để bình luận", fontWeight = FontWeight.Bold, color = Color.White)
+                Text(
+                    if (isLoggedIn) "Gửi bình luận" else "Đăng nhập để bình luận", 
+                    fontWeight = FontWeight.Bold, 
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
 
@@ -462,7 +531,7 @@ fun CommentSection(
                 "Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ cảm nghĩ!",
                 modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                 textAlign = TextAlign.Center,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp
             )
         } else {
@@ -477,7 +546,7 @@ fun CommentSection(
                 if (index < comments.size - 1) {
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 16.dp),
-                        color = Color.LightGray.copy(alpha = 0.2f)
+                        color = MaterialTheme.colorScheme.outlineVariant
                     )
                 }
             }
@@ -502,7 +571,12 @@ fun CommentItem(
 
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFF1F5F9))) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
                 if (comment.userAvatar.isNotEmpty()) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
@@ -514,42 +588,63 @@ fun CommentItem(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.padding(8.dp).fillMaxSize(), tint = Color.Gray)
+                    Icon(
+                        Icons.Default.Person, 
+                        contentDescription = null, 
+                        modifier = Modifier.padding(8.dp).fillMaxSize(), 
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
-                Text(comment.userName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF1E293B))
-                Text(dateStr, fontSize = 12.sp, color = Color.Gray)
+                Text(
+                    comment.userName, 
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 15.sp, 
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(dateStr, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(modifier = Modifier.weight(1f))
             
             var showMenu by remember { mutableStateOf(false) }
             Box {
                 IconButton(onClick = { showMenu = true }) { 
-                    Icon(Icons.Default.MoreVert, null, tint = Color.Gray) 
+                    Icon(
+                        Icons.Default.MoreVert, 
+                        null, 
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    ) 
                 }
                 DropdownMenu(
                     expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
+                    onDismissRequest = { showMenu = false },
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                 ) {
                     if (isOwnComment) {
                         DropdownMenuItem(
-                            text = { Text("Xóa bình luận", color = Color.Red) },
+                            text = { Text("Xóa bình luận", color = MaterialTheme.colorScheme.error) },
                             onClick = {
                                 showMenu = false
                                 onDeleteClick()
                             },
-                            leadingIcon = { Icon(Icons.Default.Delete, null, tint = Color.Red) }
+                            leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) }
                         )
                     } else {
                         DropdownMenuItem(
-                            text = { Text("Báo cáo") },
+                            text = { Text("Báo cáo", color = MaterialTheme.colorScheme.onSurface) },
                             onClick = {
                                 showMenu = false
                                 onReportClick()
                             },
-                            leadingIcon = { Icon(Icons.Default.Report, null) }
+                            leadingIcon = { 
+                                Icon(
+                                    Icons.Default.Report, 
+                                    null, 
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                ) 
+                            }
                         )
                     }
                 }
@@ -559,7 +654,7 @@ fun CommentItem(
         Text(
             text = comment.content,
             fontSize = 14.sp,
-            color = Color(0xFF475569),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             lineHeight = 22.sp
         )
         
@@ -571,7 +666,7 @@ fun CommentItem(
                 Icon(
                     imageVector = if (isLikedByMe) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = null,
-                    tint = if (isLikedByMe) Color.Red else Color.Gray,
+                    tint = if (isLikedByMe) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -579,10 +674,15 @@ fun CommentItem(
             Text(
                 text = comment.likes.toString(),
                 fontSize = 12.sp, 
-                color = if (isLikedByMe) Color.Red else Color.Gray
+                color = if (isLikedByMe) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.width(20.dp))
-            Text("Trả lời", fontSize = 13.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
+            Text(
+                "Trả lời", 
+                fontSize = 13.sp, 
+                color = MaterialTheme.colorScheme.primary, 
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

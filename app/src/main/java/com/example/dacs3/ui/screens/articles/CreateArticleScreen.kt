@@ -44,7 +44,7 @@ fun CreateArticleScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val primaryColor = Color(0xFF2563EB)
+    val primaryColor = MaterialTheme.colorScheme.primary
     
     var title by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf(ArticleCategory.CULTURE) }
@@ -53,15 +53,26 @@ fun CreateArticleScreen(
     var isSubmitting by remember { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Đóng góp bài viết", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A)) },
+                title = { 
+                    Text(
+                        "Đóng góp bài viết", 
+                        fontWeight = FontWeight.Bold, 
+                        color = MaterialTheme.colorScheme.onSurface
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color(0xFF0F172A))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "Back", 
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { padding ->
@@ -69,7 +80,7 @@ fun CreateArticleScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF8FAFC))
+                .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 20.dp)
                 .verticalScroll(rememberScrollState())
         ) {
@@ -82,12 +93,14 @@ fun CreateArticleScreen(
                 label = { Text("Tiêu đề bài viết *") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                textStyle = TextStyle(
+                    color = MaterialTheme.colorScheme.onSurface, 
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 16.sp
+                ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
                     focusedBorderColor = primaryColor,
-                    unfocusedBorderColor = Color.Gray,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                     cursorColor = primaryColor
                 )
             )
@@ -95,7 +108,12 @@ fun CreateArticleScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Chọn danh mục
-            Text("Chủ đề bài viết", fontWeight = FontWeight.Bold, color = Color(0xFF334155), fontSize = 14.sp)
+            Text(
+                "Chủ đề bài viết", 
+                fontWeight = FontWeight.Bold, 
+                color = MaterialTheme.colorScheme.onSurface, 
+                fontSize = 14.sp
+            )
             Row(modifier = Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CategoryChipItem("Văn hóa", selectedCategory == ArticleCategory.CULTURE) { selectedCategory = ArticleCategory.CULTURE }
                 CategoryChipItem("Ẩm thực", selectedCategory == ArticleCategory.CUISINE) { selectedCategory = ArticleCategory.CUISINE }
@@ -105,7 +123,12 @@ fun CreateArticleScreen(
             Spacer(modifier = Modifier.height(24.dp))
             
             // Các mục nội dung
-            Text("Nội dung bài viết", fontWeight = FontWeight.Bold, color = Color(0xFF334155), fontSize = 14.sp)
+            Text(
+                "Nội dung bài viết", 
+                fontWeight = FontWeight.Bold, 
+                color = MaterialTheme.colorScheme.onSurface, 
+                fontSize = 14.sp
+            )
             
             sections.forEachIndexed { index, section ->
                 SectionInputItem(
@@ -178,13 +201,13 @@ fun CreateArticleScreen(
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryColor, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor, contentColor = MaterialTheme.colorScheme.onPrimary),
                 enabled = !isSubmitting
             ) {
                 if (isSubmitting) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("GỬI BÀI VIẾT", fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    Text("GỬI BÀI VIẾT", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
             
@@ -197,14 +220,14 @@ fun CreateArticleScreen(
 fun CategoryChipItem(label: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         modifier = Modifier.clickable { onClick() },
-        color = if (isSelected) Color(0xFF2563EB) else Color.White,
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(10.dp),
-        border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+        border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Text(
             label, 
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            color = if (isSelected) Color.White else Color(0xFF475569),
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Bold,
             fontSize = 13.sp
         )
@@ -219,7 +242,7 @@ fun SectionInputItem(
     onDelete: () -> Unit,
     onUpdate: (String, String) -> Unit
 ) {
-    val primaryColor = Color(0xFF2563EB)
+    val primaryColor = MaterialTheme.colorScheme.primary
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     var isUploading by remember { mutableStateOf(false) }
@@ -244,7 +267,7 @@ fun SectionInputItem(
     
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(16.dp)
     ) {
@@ -256,7 +279,7 @@ fun SectionInputItem(
             ) {
                 Text("Mục ${index + 1}", fontWeight = FontWeight.Bold, color = primaryColor)
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, null, tint = Color.Red.copy(alpha = 0.6f))
+                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
                 }
             }
             
@@ -266,12 +289,13 @@ fun SectionInputItem(
                 label = { Text("Tiêu đề mục (không bắt buộc)") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
+                textStyle = TextStyle(
+                    color = MaterialTheme.colorScheme.onSurface, 
+                    fontWeight = FontWeight.Medium
+                ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
                     focusedBorderColor = primaryColor,
-                    unfocusedBorderColor = Color.Gray
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
             
@@ -283,19 +307,22 @@ fun SectionInputItem(
                 label = { Text("Nội dung mục *") },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
                 shape = RoundedCornerShape(12.dp),
-                textStyle = TextStyle(color = Color.Black),
+                textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
                     focusedBorderColor = primaryColor,
-                    unfocusedBorderColor = Color.Gray
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
             
             Spacer(modifier = Modifier.height(12.dp))
 
             // Lựa chọn hình ảnh
-            Text("Hình ảnh mục", fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+            Text(
+                "Hình ảnh mục", 
+                fontSize = 12.sp, 
+                color = MaterialTheme.colorScheme.onSurfaceVariant, 
+                fontWeight = FontWeight.Medium
+            )
             Spacer(modifier = Modifier.height(8.dp))
             
             Row(
@@ -307,7 +334,10 @@ fun SectionInputItem(
                     onClick = { imagePicker.launch("image/*") },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF1F5F9), contentColor = primaryColor),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant, 
+                        contentColor = primaryColor
+                    ),
                     enabled = !isUploading
                 ) {
                     if (isUploading) {
@@ -319,7 +349,7 @@ fun SectionInputItem(
                     }
                 }
                 
-                Text("hoặc", fontSize = 12.sp, color = Color.Gray)
+                Text("hoặc", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 
                 OutlinedTextField(
                     value = section["hinh_anh"] ?: "",
@@ -328,12 +358,13 @@ fun SectionInputItem(
                     modifier = Modifier.weight(1.5f),
                     shape = RoundedCornerShape(10.dp),
                     placeholder = { Text("https://...") },
-                    textStyle = TextStyle(color = Color.Black, fontSize = 12.sp),
+                    textStyle = TextStyle(
+                        color = MaterialTheme.colorScheme.onSurface, 
+                        fontSize = 12.sp
+                    ),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black,
                         focusedBorderColor = primaryColor,
-                        unfocusedBorderColor = Color.Gray
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     )
                 )
             }
@@ -349,7 +380,11 @@ fun SectionInputItem(
                     )
                     IconButton(
                         onClick = { onUpdate("hinh_anh", "") },
-                        modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).background(Color.Black.copy(0.5f), CircleShape).size(28.dp)
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .background(Color.Black.copy(0.5f), CircleShape)
+                            .size(28.dp)
                     ) {
                         Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(16.dp))
                     }

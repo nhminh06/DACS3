@@ -41,18 +41,18 @@ fun EditProfileScreen(userViewModel: UserViewModel, onBack: () -> Unit) {
             email = it.email
             sdt = it.sdt
             diaChi = it.dia_chi
-            gioiTinh = it.gioi_tinh
-            ngaySinh = it.ngay_sinh
+            gioiTinh = it.gioi_tinh ?: ""
+            ngaySinh = it.ngay_sinh ?: ""
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chỉnh sửa hồ sơ", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A)) },
+                title = { Text("Chỉnh sửa hồ sơ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color(0xFF0F172A))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 actions = {
@@ -81,10 +81,10 @@ fun EditProfileScreen(userViewModel: UserViewModel, onBack: () -> Unit) {
                         },
                         enabled = !userViewModel.isLoading.value
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Save", tint = Color(0xFF2563EB))
+                        Icon(Icons.Default.Check, contentDescription = "Save", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         }
     ) { padding ->
@@ -92,7 +92,7 @@ fun EditProfileScreen(userViewModel: UserViewModel, onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF8FAFC))
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(scrollState)
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -131,13 +131,16 @@ fun EditProfileScreen(userViewModel: UserViewModel, onBack: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB), contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary, 
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
                 enabled = !userViewModel.isLoading.value
             ) {
                 if (userViewModel.isLoading.value) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("LƯU THAY ĐỔI", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color.White)
+                    Text("LƯU THAY ĐỔI", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                 }
             }
         }
@@ -146,26 +149,35 @@ fun EditProfileScreen(userViewModel: UserViewModel, onBack: () -> Unit) {
 
 @Composable
 fun EditField(label: String, value: String, onValueChange: (String) -> Unit) {
-    val primaryColor = Color(0xFF2563EB)
+    val primaryColor = MaterialTheme.colorScheme.primary
     Column {
-        Text(label, fontWeight = FontWeight.Bold, color = Color(0xFF334155), fontSize = 14.sp)
+        Text(
+            label, 
+            fontWeight = FontWeight.Bold, 
+            color = MaterialTheme.colorScheme.onSurfaceVariant, 
+            fontSize = 14.sp
+        )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
-            textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium, fontSize = 15.sp),
+            textStyle = TextStyle(
+                color = MaterialTheme.colorScheme.onSurface, 
+                fontWeight = FontWeight.Medium, 
+                fontSize = 15.sp
+            ),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                 focusedBorderColor = primaryColor,
-                unfocusedBorderColor = Color.Gray,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                 cursorColor = primaryColor,
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 focusedLabelColor = primaryColor,
-                unfocusedLabelColor = Color(0xFF475569)
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         )
     }

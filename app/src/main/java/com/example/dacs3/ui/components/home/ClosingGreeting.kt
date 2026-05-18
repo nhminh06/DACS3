@@ -34,13 +34,13 @@ fun ClosingGreeting() {
                 .border(
                     width = 1.dp,
                     brush = Brush.verticalGradient(
-                        colors = listOf(Color(0xFF3B82F6).copy(alpha = 0.15f), Color.Transparent)
+                        colors = listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), Color.Transparent)
                     ),
                     shape = RoundedCornerShape(32.dp)
                 ),
             shape = RoundedCornerShape(32.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.surface
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
@@ -53,7 +53,7 @@ fun ClosingGreeting() {
                 Text(
                     text = "WINDTRAVEL",
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color(0xFF3B82F6),
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 4.sp
                 )
@@ -64,7 +64,7 @@ fun ClosingGreeting() {
                     text = "Hẹn gặp lại bạn tại\nMiền Trung thân yêu!",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E293B),
+                    color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
                     lineHeight = 32.sp
                 )
@@ -76,7 +76,7 @@ fun ClosingGreeting() {
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontFamily = FontFamily.Cursive
                     ),
-                    color = Color(0xFF2563EB),
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 24.sp,
                     textAlign = TextAlign.Center
                 )
@@ -89,7 +89,7 @@ fun ClosingGreeting() {
                         .height(4.dp)
                         .background(
                             brush = Brush.horizontalGradient(
-                                colors = listOf(Color(0xFF3B82F6), Color(0xFF93C5FD))
+                                colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)
                             ),
                             shape = CircleShape
                         )

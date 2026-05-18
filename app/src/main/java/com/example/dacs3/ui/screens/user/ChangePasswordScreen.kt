@@ -36,8 +36,8 @@ fun ChangePasswordScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val primaryColor = Color(0xFF2563EB)
-    val backgroundColor = Color(0xFFF8FAFC)
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val backgroundColor = MaterialTheme.colorScheme.background
     
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
@@ -53,14 +53,14 @@ fun ChangePasswordScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Đổi mật khẩu", fontWeight = FontWeight.ExtraBold, color = Color(0xFF1E293B))
+                    Text("Đổi mật khẩu", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color(0xFF1E293B))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.shadow(4.dp)
             )
         }
@@ -90,13 +90,13 @@ fun ChangePasswordScreen(
                 "Tạo mật khẩu mới",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1E293B)
+                color = MaterialTheme.colorScheme.onSurface
             )
             
             Text(
                 "Mật khẩu của bạn phải có ít nhất 8 ký tự",
                 fontSize = 14.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp)
             )
             
@@ -172,13 +172,16 @@ fun ChangePasswordScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryColor, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = primaryColor, 
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
                 enabled = !isLoading
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Cập nhật mật khẩu", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Cập nhật mật khẩu", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -203,19 +206,20 @@ fun PasswordField(
         trailingIcon = {
             val image = if (isVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
             IconButton(onClick = onVisibilityChange) {
-                Icon(imageVector = image, contentDescription = null, tint = Color.Gray)
+                Icon(imageVector = image, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
             }
         },
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
+        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = Color.Black,
-            unfocusedTextColor = Color.Black,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
             focusedBorderColor = primaryColor,
-            unfocusedBorderColor = Color.Gray,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
             cursorColor = primaryColor,
-            focusedLabelColor = primaryColor
+            focusedLabelColor = primaryColor,
+            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
         ),
         visualTransformation = if (isVisible) VisualTransformation.None else PasswordVisualTransformation(),
         singleLine = true,

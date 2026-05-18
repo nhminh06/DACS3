@@ -87,6 +87,7 @@ fun ArticleExplorerScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             AppBottomBar(
                 currentScreen = "explore",
@@ -98,7 +99,7 @@ fun ArticleExplorerScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = padding.calculateBottomPadding())
-                .background(Color(0xFFF8FAFC))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             item {
                 Box(
@@ -131,7 +132,7 @@ fun ArticleExplorerScreen(
                             .padding(horizontal = 24.dp, vertical = 16.dp)
                             .height(50.dp),
                         shape = RoundedCornerShape(25.dp),
-                        color = Color.White.copy(alpha = 0.95f),
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
                         shadowElevation = 8.dp
                     ) {
                         Row(
@@ -141,7 +142,7 @@ fun ArticleExplorerScreen(
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = null,
-                                tint = Color(0xFF2563EB),
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(22.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
@@ -150,14 +151,17 @@ fun ArticleExplorerScreen(
                                 if (searchQuery.isEmpty()) {
                                     Text(
                                         text = "Tìm kiếm bài viết văn hóa...",
-                                        color = Color.Gray,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 14.sp
                                     )
                                 }
                                 BasicTextField(
                                     value = searchQuery,
                                     onValueChange = { articleViewModel.setSearchQuery(it) },
-                                    textStyle = TextStyle(color = Color(0xFF1E293B), fontSize = 14.sp),
+                                    textStyle = TextStyle(
+                                        color = MaterialTheme.colorScheme.onSurface, 
+                                        fontSize = 14.sp
+                                    ),
                                     modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -169,7 +173,7 @@ fun ArticleExplorerScreen(
                                 Icon(
                                     Icons.Default.Notifications,
                                     contentDescription = null,
-                                    tint = Color(0xFF64748B),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -197,7 +201,7 @@ fun ArticleExplorerScreen(
             if (searchQuery.isBlank()) {
                 item {
                     Surface(
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.surface,
                         shadowElevation = 2.dp
                     ) {
                         ArticleCategoryTabs(
@@ -218,7 +222,7 @@ fun ArticleExplorerScreen(
                     },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF1E293B),
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -227,14 +231,17 @@ fun ArticleExplorerScreen(
             if (isLoading) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
             } else {
                 if (filteredArticles.isEmpty()) {
                     item {
                         Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
-                            Text("Không tìm thấy bài viết nào phù hợp", color = Color.Gray)
+                            Text(
+                                "Không tìm thấy bài viết nào phù hợp", 
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 } else {
@@ -283,9 +290,9 @@ fun PaginationControls(
             onClick = { if (currentPage > 1) onPageChange(currentPage - 1) },
             enabled = currentPage > 1,
             colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = Color.White,
-                contentColor = Color(0xFF2563EB),
-                disabledContainerColor = Color.White.copy(alpha = 0.5f)
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary,
+                disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
             ),
             modifier = Modifier.size(40.dp)
         ) {
@@ -304,19 +311,22 @@ fun PaginationControls(
                         .padding(horizontal = 4.dp)
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(if (currentPage == page) Color(0xFF2563EB) else Color.White)
+                        .background(
+                            if (currentPage == page) MaterialTheme.colorScheme.primary 
+                            else MaterialTheme.colorScheme.surface
+                        )
                         .clickable { onPageChange(page) },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = page.toString(),
-                        color = if (currentPage == page) Color.White else Color(0xFF1E293B),
+                        color = if (currentPage == page) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
                 }
             } else if (page == currentPage - 2 || page == currentPage + 2) {
-                Text("...", color = Color.Gray, modifier = Modifier.padding(horizontal = 4.dp))
+                Text("...", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
             }
         }
 
@@ -327,9 +337,9 @@ fun PaginationControls(
             onClick = { if (currentPage < totalPages) onPageChange(currentPage + 1) },
             enabled = currentPage < totalPages,
             colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = Color.White,
-                contentColor = Color(0xFF2563EB),
-                disabledContainerColor = Color.White.copy(alpha = 0.5f)
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary,
+                disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
             ),
             modifier = Modifier.size(40.dp)
         ) {
@@ -345,7 +355,7 @@ fun ExplorerArticleItem(article: ArticleEntity, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column {
@@ -386,13 +396,13 @@ fun ExplorerArticleItem(article: ArticleEntity, onClick: () -> Unit) {
                         Icon(
                             imageVector = Icons.Default.CalendarToday,
                             contentDescription = null,
-                            tint = Color.Gray,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Mới nhất",
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp
                         )
                     }
@@ -404,7 +414,7 @@ fun ExplorerArticleItem(article: ArticleEntity, onClick: () -> Unit) {
                     text = article.tieu_de,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
-                    color = Color(0xFF0F172A),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     lineHeight = 24.sp
@@ -415,7 +425,7 @@ fun ExplorerArticleItem(article: ArticleEntity, onClick: () -> Unit) {
                 val firstContent = article.sections.firstOrNull()?.get("noi_dung") ?: ""
                 Text(
                     text = firstContent,
-                    color = Color(0xFF475569),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
@@ -424,7 +434,7 @@ fun ExplorerArticleItem(article: ArticleEntity, onClick: () -> Unit) {
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                HorizontalDivider(color = Color(0xFFF1F5F9))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
@@ -435,14 +445,14 @@ fun ExplorerArticleItem(article: ArticleEntity, onClick: () -> Unit) {
                 ) {
                     Text(
                         text = "Đọc thêm",
-                        color = Color(0xFF2563EB),
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
                     
                     Text(
                         text = "3 phút đọc",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                 }

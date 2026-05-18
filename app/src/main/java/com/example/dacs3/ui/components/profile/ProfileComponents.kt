@@ -57,7 +57,7 @@ fun ProfileHeader(
                     modifier = Modifier
                         .size(110.dp)
                         .clip(CircleShape)
-                        .border(2.dp, Color.White, CircleShape),
+                        .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape),
                     contentScale = ContentScale.Crop
                 )
             } else {
@@ -67,7 +67,7 @@ fun ProfileHeader(
                     modifier = Modifier
                         .size(110.dp)
                         .clip(CircleShape)
-                        .border(2.dp, Color.White, CircleShape),
+                        .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape),
                     contentScale = ContentScale.Crop
                 )
             }
@@ -76,14 +76,14 @@ fun ProfileHeader(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .border(1.dp, Color.White, CircleShape)
+                    .border(1.dp, MaterialTheme.colorScheme.surface, CircleShape)
                     .clickable { launcher.launch("image/*") },
-                color = Color(0xFF2563EB)
+                color = MaterialTheme.colorScheme.primary
             ) {
                 Icon(
                     imageVector = Icons.Default.CameraAlt,
                     contentDescription = "Change Avatar",
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.padding(6.dp)
                 )
             }
@@ -93,12 +93,12 @@ fun ProfileHeader(
             text = name,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF1E293B)
+            color = MaterialTheme.colorScheme.onSurface
         )
         Text(
             text = email,
             fontSize = 14.sp,
-            color = Color(0xFF64748B)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -116,7 +116,7 @@ fun ProfileInfoItem(label: String, value: String, icon: ImageVector? = null, onC
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color(0xFF2563EB),
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
@@ -125,20 +125,20 @@ fun ProfileInfoItem(label: String, value: String, icon: ImageVector? = null, onC
             Text(
                 text = label,
                 fontSize = 12.sp,
-                color = Color(0xFF94A3B8),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium
             )
             Text(
                 text = value,
                 fontSize = 15.sp,
-                color = Color(0xFF334155),
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold
             )
         }
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
             contentDescription = null,
-            tint = Color(0xFFCBD5E1),
+            tint = MaterialTheme.colorScheme.outline,
             modifier = Modifier.size(14.dp)
         )
     }
@@ -150,7 +150,7 @@ fun SectionHeader(title: String) {
         text = title,
         fontSize = 13.sp,
         fontWeight = FontWeight.Bold,
-        color = Color(0xFF2563EB),
+        color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
     )
 }
@@ -167,13 +167,13 @@ fun ProfileOptionItem(title: String, icon: ImageVector, onClick: () -> Unit) {
         Box(
             modifier = Modifier
                 .size(36.dp)
-                .background(Color(0xFF2563EB).copy(alpha = 0.1f), CircleShape),
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color(0xFF2563EB),
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -182,13 +182,13 @@ fun ProfileOptionItem(title: String, icon: ImageVector, onClick: () -> Unit) {
             text = title,
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF334155),
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f)
         )
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
             contentDescription = null,
-            tint = Color(0xFFCBD5E1),
+            tint = MaterialTheme.colorScheme.outline,
             modifier = Modifier.size(14.dp)
         )
     }

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.dacs3.R
 import com.example.dacs3.data.model.Tour
 import java.text.NumberFormat
 import java.util.Locale
@@ -38,13 +39,9 @@ fun SpecialOffersSection(
     onTourClick: (Tour) -> Unit,
     onSeeAllClick: () -> Unit = {}
 ) {
-    // Luôn sử dụng dữ liệu mẫu nếu database trống để không làm mất giao diện
-    val displayTours = if (tours.isNotEmpty()) tours else listOf(
-        Tour(id = "demo1", title = "Tour Hội An - Làng Rau Trà Quế", price = 420000, originalPrice = 525000, discountTag = "-20%", timeLeft = "02:15:30", isOffer = true),
-        Tour(id = "demo2", title = "Hành Trình Di Sản Huế", price = 850000, originalPrice = 1000000, discountTag = "-15%", timeLeft = "05:10:00", isOffer = true)
-    )
+    if (tours.isEmpty()) return
 
-    val pages = displayTours.chunked(2)
+    val pages = tours.chunked(2)
     val pagerState = rememberPagerState(pageCount = { pages.size })
 
     Column(modifier = Modifier.padding(vertical = 12.dp)) {
@@ -62,16 +59,16 @@ fun SpecialOffersSection(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    "Ưu đãi đặc biệt",
+                    text = "Ưu đãi đặc biệt",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 19.sp,
-                    color = Color(0xFF0F172A)
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
             TextButton(onClick = onSeeAllClick) {
                 Text(
-                    "Xem tất cả",
-                    color = Color(0xFF2563EB),
+                    text = "Xem tất cả",
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -116,7 +113,7 @@ fun SpecialOffersSection(
                             .height(6.dp)
                             .width(if (isSelected) 18.dp else 6.dp)
                             .background(
-                                color = if (isSelected) Color(0xFF2563EB) else Color(0xFFCBD5E1),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                 shape = CircleShape
                             )
                     )
@@ -129,7 +126,7 @@ fun SpecialOffersSection(
 @Composable
 fun SpecialOfferCard(tour: Tour, onClick: () -> Unit) {
     val numberFormat = NumberFormat.getNumberInstance(Locale("vi", "VN"))
-    val priceStr = "${numberFormat.format(tour.price)} đ"
+    val priceStr = "${numberFormat.format(tour.price ?: 0)} đ"
     val originalPriceStr = "${numberFormat.format(tour.originalPrice)} đ"
 
     val displayImage = when {
@@ -144,21 +141,23 @@ fun SpecialOfferCard(tour: Tour, onClick: () -> Unit) {
             .height(200.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Ảnh chiếm 100% nền card
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(displayImage)
                     .crossfade(true)
+                    .placeholder(R.drawable.a5)
+                    .error(R.drawable.a5)
                     .build(),
                 contentDescription = tour.title,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
 
-            // Gradient tối dần từ dưới lên để chữ đọc được
+            // Lớp phủ Gradient để văn bản luôn rõ trên cả nền sáng và tối
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -174,14 +173,12 @@ fun SpecialOfferCard(tour: Tour, onClick: () -> Unit) {
                     )
             )
 
-            // Nội dung: badge trên cùng, thông tin dưới cùng
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(10.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Badge giảm giá góc trên trái
                 Surface(
                     color = Color(0xFFFF5252),
                     shape = RoundedCornerShape(10.dp)
@@ -195,11 +192,10 @@ fun SpecialOfferCard(tour: Tour, onClick: () -> Unit) {
                     )
                 }
 
-                // Thông tin phía dưới, chữ trắng trực tiếp trên ảnh
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         text = tour.title,
-                        color = Color.White,
+                        color = Color.White, // Luôn trắng trên nền tối
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
                         lineHeight = 17.sp,
@@ -207,7 +203,6 @@ fun SpecialOfferCard(tour: Tour, onClick: () -> Unit) {
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    // Giá tiền
                     Row(
                         verticalAlignment = Alignment.Bottom,
                         horizontalArrangement = Arrangement.spacedBy(5.dp)
@@ -220,13 +215,12 @@ fun SpecialOfferCard(tour: Tour, onClick: () -> Unit) {
                         )
                         Text(
                             text = originalPriceStr,
-                            color = Color.White.copy(alpha = 0.65f),
+                            color = Color.White.copy(alpha = 0.7f),
                             fontSize = 10.sp,
                             textDecoration = TextDecoration.LineThrough
                         )
                     }
 
-                    // Countdown
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(5.dp)

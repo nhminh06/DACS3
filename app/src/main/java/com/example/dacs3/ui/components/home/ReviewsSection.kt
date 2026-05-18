@@ -74,14 +74,14 @@ fun ReviewsSection(viewModel: MainViewModel) {
         Text(
             text = "Đánh giá",
             fontSize = 13.sp,
-            color = Color(0xFF64748B),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Medium
         )
         Text(
             text = "Trải nghiệm thực tế",
             fontWeight = FontWeight.ExtraBold,
             fontSize = 19.sp,
-            color = Color(0xFF1E293B)
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -119,7 +119,7 @@ fun ReviewsSection(viewModel: MainViewModel) {
                                 .height(6.dp)
                                 .width(if (isSelected) 18.dp else 6.dp),
                             shape = CircleShape,
-                            color = if (isSelected) Color(0xFF2563EB) else Color.LightGray.copy(alpha = 0.5f)
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
                         ) {}
                     }
                 }
@@ -138,9 +138,9 @@ fun ReviewCard(review: Review) {
             .fillMaxWidth()
             .height(165.dp),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp),
-        border = BorderStroke(1.dp, Color(0xFFF1F5F9))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -159,7 +159,7 @@ fun ReviewCard(review: Review) {
                         text = review.userName,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
-                        color = Color(0xFF1E293B),
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -177,7 +177,7 @@ fun ReviewCard(review: Review) {
                             color = Color(0xFF10B981),
                             fontWeight = FontWeight.Bold
                         )
-                        Text(text = " • $dateStr", fontSize = 11.sp, color = Color.Gray)
+                        Text(text = " • $dateStr", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 
@@ -202,7 +202,7 @@ fun ReviewCard(review: Review) {
             Text(
                 text = review.comment,
                 fontSize = 14.sp,
-                color = Color(0xFF475569),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 20.sp,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis

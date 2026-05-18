@@ -53,18 +53,22 @@ fun TopHeader(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
+        // Lớp phủ Gradient để bảo vệ văn bản ở cả trên và dưới
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f)),
-                        startY = 300f
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.5f),
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.7f)
+                        ),
+                        startY = 0f
                     )
                 )
         )
         
-        // Account Info Section
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -82,7 +86,7 @@ fun TopHeader(
                         .size(42.dp)
                         .clip(CircleShape)
                         .border(1.5.dp, Color.White, CircleShape)
-                        .background(Color.LightGray)
+                        .background(Color.Gray.copy(alpha = 0.3f))
                 ) {
                     if (currentUser?.avatar?.isNotEmpty() == true) {
                         AsyncImage(
@@ -107,7 +111,7 @@ fun TopHeader(
                 Column {
                     Text(
                         text = "Chào bạn,",
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = Color.White.copy(alpha = 0.9f),
                         fontSize = 12.sp
                     )
                     Text(
@@ -126,7 +130,7 @@ fun TopHeader(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.2f))
+                    .background(Color.White.copy(alpha = 0.25f))
             ) {
                 BadgedBox(
                     badge = {

@@ -18,19 +18,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dacs3.data.model.Tour
 import com.example.dacs3.ui.components.tours.TourCard
-import com.example.dacs3.ui.viewmodel.MainViewModel
+import com.example.dacs3.ui.viewmodel.TourViewModel
 import com.example.dacs3.ui.viewmodel.UserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritesToursScreen(
     userViewModel: UserViewModel,
-    mainViewModel: MainViewModel,
+    tourViewModel: TourViewModel,
     onBack: () -> Unit,
     onTourClick: (Tour) -> Unit
 ) {
     val user by userViewModel.currentUser
-    val allTours by mainViewModel.allTours.collectAsState()
+    val allTours by tourViewModel.allTours.collectAsState()
     
     val favoriteTours = remember(user?.favoriteTours, allTours) {
         allTours.filter { user?.favoriteTours?.contains(it.id) == true }
@@ -39,22 +39,35 @@ fun FavoritesToursScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tour yêu thích", fontWeight = FontWeight.Bold) },
+                title = { 
+                    Text(
+                        "Tour yêu thích", 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 18.sp
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         if (favoriteTours.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
-                    .background(Color(0xFFF8FAFC)),
+                    .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -62,12 +75,12 @@ fun FavoritesToursScreen(
                         Icons.Default.Favorite,
                         contentDescription = null,
                         modifier = Modifier.size(64.dp),
-                        tint = Color.LightGray
+                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         "Bạn chưa có tour yêu thích nào",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 16.sp,
                         textAlign = TextAlign.Center
                     )
@@ -77,8 +90,7 @@ fun FavoritesToursScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
-                    .background(Color(0xFFF8FAFC)),
+                    .padding(padding),
                 contentPadding = PaddingValues(vertical = 12.dp)
             ) {
                 items(favoriteTours) { tour ->

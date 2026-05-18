@@ -28,14 +28,14 @@ fun ArticleCategoryTabs(
     ScrollableTabRow(
         selectedTabIndex = selectedIndex,
         containerColor = Color.Transparent,
-        contentColor = Color(0xFF2563EB),
+        contentColor = MaterialTheme.colorScheme.primary,
         edgePadding = 20.dp,
         divider = {},
         indicator = { tabPositions ->
             if (selectedIndex < tabPositions.size) {
                 TabRowDefaults.SecondaryIndicator(
                     modifier = Modifier.tabIndicatorOffset(tabPositions[selectedIndex]),
-                    color = Color(0xFF2563EB)
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -53,13 +53,13 @@ fun ArticleCategoryTabs(
                     Text(
                         text = title,
                         fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
-                        color = if (isSelected) Color(0xFF1E293B) else Color(0xFF94A3B8),
+                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         fontSize = 16.sp
                     )
                     Text(
                         text = subtitle,
                         fontSize = 10.sp,
-                        color = if (isSelected) Color(0xFF3B82F6) else Color(0xFFCBD5E1)
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                     )
                 }
             }

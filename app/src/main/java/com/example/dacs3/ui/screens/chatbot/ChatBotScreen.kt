@@ -67,17 +67,32 @@ fun ChatBotScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.AutoAwesome, null, tint = Color(0xFF2563EB), modifier = Modifier.size(24.dp))
+                        Icon(
+                            Icons.Default.AutoAwesome, 
+                            null, 
+                            tint = MaterialTheme.colorScheme.primary, 
+                            modifier = Modifier.size(24.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Trợ lý AI WIND", fontWeight = FontWeight.Bold)
+                        Text(
+                            "Trợ lý AI WIND", 
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -86,8 +101,8 @@ fun ChatBotScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = padding.calculateTopPadding())
-                .imePadding()  // ← FIX: chuyển imePadding lên đây thay vì dùng windowInsetsPadding trên Surface
-                .background(Color(0xFFF8FAFC))
+                .imePadding()
+                .background(MaterialTheme.colorScheme.background)
         ) {
             LazyColumn(
                 state = listState,
@@ -104,7 +119,11 @@ fun ChatBotScreen(
                 if (isLoading) {
                     item {
                         Box(modifier = Modifier.padding(8.dp)) {
-                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp), 
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }
@@ -116,7 +135,9 @@ fun ChatBotScreen(
                         Text(
                             "Tour gợi ý cho bạn:",
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                            fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B)
+                            fontSize = 13.sp, 
+                            fontWeight = FontWeight.Bold, 
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 16.dp),
@@ -133,7 +154,9 @@ fun ChatBotScreen(
                         Text(
                             "Bài viết liên quan:",
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                            fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B)
+                            fontSize = 13.sp, 
+                            fontWeight = FontWeight.Bold, 
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 16.dp),
@@ -148,9 +171,10 @@ fun ChatBotScreen(
             }
 
             Surface(
-                modifier = Modifier.fillMaxWidth(),  // ← FIX: bỏ windowInsetsPadding khỏi đây
-                color = Color.White,
-                shadowElevation = 16.dp
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 16.dp,
+                tonalElevation = 2.dp
             ) {
                 Row(
                     modifier = Modifier.padding(12.dp),
@@ -164,10 +188,12 @@ fun ChatBotScreen(
                         shape = RoundedCornerShape(24.dp),
                         maxLines = 4,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFF2563EB),
-                            unfocusedBorderColor = Color(0xFFE2E8F0),
-                            focusedContainerColor = Color(0xFFF8FAFC),
-                            unfocusedContainerColor = Color(0xFFF8FAFC)
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            focusedContainerColor = MaterialTheme.colorScheme.background,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -180,9 +206,9 @@ fun ChatBotScreen(
                         },
                         enabled = inputText.isNotBlank() && !isLoading,
                         colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = Color(0xFF2563EB),
-                            contentColor = Color.White,
-                            disabledContainerColor = Color(0xFFCBD5E1)
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            disabledContainerColor = MaterialTheme.colorScheme.outlineVariant
                         )
                     ) {
                         Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
@@ -195,8 +221,8 @@ fun ChatBotScreen(
 
 @Composable
 fun ChatBubble(message: ChatMessage) {
-    val bubbleColor = if (message.isUser) Color(0xFF2563EB) else Color.White
-    val textColor = if (message.isUser) Color.White else Color(0xFF1E293B)
+    val bubbleColor = if (message.isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+    val textColor = if (message.isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
     val alignment = if (message.isUser) Alignment.CenterEnd else Alignment.CenterStart
     val shape = if (message.isUser) {
         RoundedCornerShape(18.dp, 18.dp, 2.dp, 18.dp)
@@ -213,10 +239,15 @@ fun ChatBubble(message: ChatMessage) {
                 Box(
                     modifier = Modifier
                         .size(28.dp)
-                        .background(Color(0xFF2563EB).copy(0.1f), CircleShape),
+                        .background(MaterialTheme.colorScheme.primary.copy(0.1f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.AutoAwesome, null, tint = Color(0xFF2563EB), modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Default.AutoAwesome, 
+                        null, 
+                        tint = MaterialTheme.colorScheme.primary, 
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
             }
@@ -225,7 +256,7 @@ fun ChatBubble(message: ChatMessage) {
                 color = bubbleColor,
                 shape = shape,
                 shadowElevation = 1.dp,
-                border = if (!message.isUser) BorderStroke(1.dp, Color(0xFFE2E8F0)) else null
+                border = if (!message.isUser) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) else null
             ) {
                 Text(
                     text = message.text,
@@ -246,8 +277,11 @@ fun SuggestionTourCard(tour: Tour, onClick: () -> Unit) {
             .width(200.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(2.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column {
             AsyncImage(
@@ -257,11 +291,27 @@ fun SuggestionTourCard(tour: Tour, onClick: () -> Unit) {
                 contentScale = ContentScale.Crop
             )
             Column(modifier = Modifier.padding(8.dp)) {
-                Text(tour.title, fontWeight = FontWeight.Bold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    tour.title, 
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 13.sp, 
+                    maxLines = 1, 
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Map, null, modifier = Modifier.size(12.dp), tint = Color.Gray)
+                    Icon(
+                        Icons.Default.Map, 
+                        null, 
+                        modifier = Modifier.size(12.dp), 
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(tour.location.split(",").last(), fontSize = 11.sp, color = Color.Gray)
+                    Text(
+                        tour.location.split(",").last(), 
+                        fontSize = 11.sp, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -275,18 +325,27 @@ fun SuggestionArticleCard(article: ArticleEntity, onClick: () -> Unit) {
             .width(180.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(2.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.AutoMirrored.Filled.ReadMore, null, tint = Color(0xFF2563EB), modifier = Modifier.size(20.dp))
+            Icon(
+                Icons.AutoMirrored.Filled.ReadMore, 
+                null, 
+                tint = MaterialTheme.colorScheme.primary, 
+                modifier = Modifier.size(20.dp)
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 article.tieu_de,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }

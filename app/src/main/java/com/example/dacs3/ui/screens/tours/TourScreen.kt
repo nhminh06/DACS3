@@ -40,7 +40,7 @@ import com.example.dacs3.ui.components.AppBottomBar
 import com.example.dacs3.ui.components.tours.FilterContent
 import com.example.dacs3.ui.components.tours.FilterTag
 import com.example.dacs3.ui.components.tours.TourCard
-import com.example.dacs3.ui.viewmodel.MainViewModel
+import com.example.dacs3.ui.viewmodel.TourViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,9 +48,8 @@ import kotlinx.coroutines.launch
 fun TourScreen(
     onNavigate: (String) -> Unit,
     onTourClick: (Tour) -> Unit,
-    viewModel: MainViewModel
+    viewModel: TourViewModel
 ) {
-    // SỬ DỤNG TRỰC TIẾP DỮ LIỆU ĐÃ PHÂN TRANG VÀ TỔNG SỐ TRANG TỪ VIEWMODEL
     val pagedTours by viewModel.pagedTours.collectAsState()
     val currentPage by viewModel.currentPage.collectAsState()
     val totalPages by viewModel.totalPages.collectAsState()
@@ -68,6 +67,7 @@ fun TourScreen(
     val focusManager = LocalFocusManager.current
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             AppBottomBar(currentScreen = "tours", onNavigate = onNavigate)
         }
@@ -77,7 +77,7 @@ fun TourScreen(
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF8FAFC))
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 item {
                     Box(
@@ -105,24 +105,31 @@ fun TourScreen(
                                 .padding(horizontal = 24.dp, vertical = 16.dp)
                                 .height(54.dp),
                             shape = RoundedCornerShape(27.dp),
-                            color = Color.White.copy(alpha = 0.95f),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
                             shadowElevation = 8.dp
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             ) {
-                                Icon(Icons.Default.Search, null, tint = Color(0xFF2563EB))
+                                Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary)
                                 Spacer(modifier = Modifier.width(12.dp))
                                 
                                 Box(modifier = Modifier.weight(1f)) {
                                     if (searchQuery.isEmpty()) {
-                                        Text("Tìm tour, địa điểm...", color = Color(0xFF475569), fontSize = 14.sp)
+                                        Text(
+                                            "Tìm tour, địa điểm...", 
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant, 
+                                            fontSize = 14.sp
+                                        )
                                     }
                                     BasicTextField(
                                         value = searchQuery,
                                         onValueChange = { viewModel.setSearchQuery(it) },
-                                        textStyle = TextStyle(color = Color(0xFF1E293B), fontSize = 14.sp),
+                                        textStyle = TextStyle(
+                                            color = MaterialTheme.colorScheme.onSurface, 
+                                            fontSize = 14.sp
+                                        ),
                                         modifier = Modifier.fillMaxWidth(),
                                         singleLine = true,
                                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -130,10 +137,13 @@ fun TourScreen(
                                     )
                                 }
                                 
-                                VerticalDivider(modifier = Modifier.padding(vertical = 12.dp).width(1.dp), color = Color.LightGray)
+                                VerticalDivider(
+                                    modifier = Modifier.padding(vertical = 12.dp).width(1.dp), 
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                                )
                                 
                                 IconButton(onClick = { showFilterSheet = true }) {
-                                    Icon(Icons.Default.FilterList, null, tint = Color(0xFF2563EB))
+                                    Icon(Icons.Default.FilterList, null, tint = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
@@ -161,7 +171,12 @@ fun TourScreen(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Lọc nhanh:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                            Text(
+                                "Lọc nhanh:", 
+                                fontSize = 13.sp, 
+                                fontWeight = FontWeight.Bold, 
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                         
                         LazyRow(
@@ -211,12 +226,11 @@ fun TourScreen(
                 if (tours.isEmpty() && !isLoading) {
                     item {
                         Box(modifier = Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
-                            Text("Không có tour nào khả dụng", color = Color(0xFF64748B))
+                            Text("Không có tour nào khả dụng", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
 
-                // HIỂN THỊ DANH SÁCH TOUR ĐÃ CHIA TRANG TỪ VIEWMODEL
                 items(pagedTours, key = { it.id }) { tour ->
                     TourCard(tour = tour, onClick = { onTourClick(tour) })
                 }
@@ -239,7 +253,10 @@ fun TourScreen(
             }
 
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color(0xFF2563EB))
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center), 
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
 
@@ -247,7 +264,7 @@ fun TourScreen(
             ModalBottomSheet(
                 onDismissRequest = { showFilterSheet = false },
                 sheetState = sheetState,
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surface,
                 dragHandle = { BottomSheetDefaults.DragHandle() }
             ) {
                 FilterContent(viewModel = viewModel, onApply = { showFilterSheet = false })
@@ -269,14 +286,13 @@ fun TourPaginationControls(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Nút Trước
         FilledIconButton(
             onClick = { if (currentPage > 1) onPageChange(currentPage - 1) },
             enabled = currentPage > 1,
             colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = Color.White,
-                contentColor = Color(0xFF2563EB),
-                disabledContainerColor = Color.White.copy(alpha = 0.5f)
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary,
+                disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
             ),
             modifier = Modifier.size(40.dp)
         ) {
@@ -285,7 +301,6 @@ fun TourPaginationControls(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Hiển thị số trang
         repeat(totalPages) { index ->
             val page = index + 1
             if (page == 1 || page == totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
@@ -294,32 +309,35 @@ fun TourPaginationControls(
                         .padding(horizontal = 4.dp)
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(if (currentPage == page) Color(0xFF2563EB) else Color.White)
+                        .background(
+                            if (currentPage == page) MaterialTheme.colorScheme.primary 
+                            else MaterialTheme.colorScheme.surface
+                        )
                         .clickable { onPageChange(page) },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = page.toString(),
-                        color = if (currentPage == page) Color.White else Color(0xFF1E293B),
+                        color = if (currentPage == page) MaterialTheme.colorScheme.onPrimary 
+                                else MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
                 }
             } else if (page == currentPage - 2 || page == currentPage + 2) {
-                Text("...", color = Color.Gray, modifier = Modifier.padding(horizontal = 4.dp))
+                Text("...", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
             }
         }
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Nút Sau
         FilledIconButton(
             onClick = { if (currentPage < totalPages) onPageChange(currentPage + 1) },
             enabled = currentPage < totalPages,
             colors = IconButtonDefaults.filledIconButtonColors(
-                containerColor = Color.White,
-                contentColor = Color(0xFF2563EB),
-                disabledContainerColor = Color.White.copy(alpha = 0.5f)
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary,
+                disabledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
             ),
             modifier = Modifier.size(40.dp)
         ) {

@@ -2,6 +2,7 @@ package com.example.dacs3.ui.screens.user
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -49,8 +50,8 @@ fun NotificationsScreen(
     notificationViewModel: NotificationViewModel,
     onBack: () -> Unit
 ) {
-    val primaryColor = Color(0xFF2563EB)
-    val backgroundColor = Color(0xFFF8FAFC)
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val backgroundColor = MaterialTheme.colorScheme.background
     
     val user by userViewModel.currentUser
     var allNotifications by remember { mutableStateOf<List<NotificationItem>>(emptyList()) }
@@ -101,11 +102,17 @@ fun NotificationsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Thông báo của tôi", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+                title = { Text("Thông báo của tôi", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
+                    IconButton(onClick = onBack) { 
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            null,
+                            tint = MaterialTheme.colorScheme.onSurface
+                        ) 
+                    }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.shadow(4.dp)
             )
         }
@@ -142,14 +149,18 @@ fun SystemNotificationItem(data: Map<String, Any>, isUnread: Boolean) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(modifier = Modifier.size(40.dp), shape = CircleShape, color = Color(0xFFFACC15).copy(alpha = 0.15f)) {
+            Surface(
+                modifier = Modifier.size(40.dp), 
+                shape = CircleShape, 
+                color = Color(0xFFFACC15).copy(alpha = if (isSystemInDarkTheme()) 0.25f else 0.15f)
+            ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(Icons.Default.CardTravel, null, tint = Color(0xFFEAB308), modifier = Modifier.size(20.dp))
                 }
@@ -157,12 +168,26 @@ fun SystemNotificationItem(data: Map<String, Any>, isUnread: Boolean) {
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = data["title"]?.toString() ?: "Thông báo", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF0F172A))
+                    Text(
+                        text = data["title"]?.toString() ?: "Thông báo", 
+                        fontWeight = FontWeight.Bold, 
+                        fontSize = 15.sp, 
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     if (isUnread) { Spacer(modifier = Modifier.width(8.dp)); NewTag() }
                 }
-                Text(text = data["message"]?.toString() ?: "", fontSize = 13.sp, color = Color(0xFF334155), lineHeight = 18.sp)
+                Text(
+                    text = data["message"]?.toString() ?: "", 
+                    fontSize = 13.sp, 
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, 
+                    lineHeight = 18.sp
+                )
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(text = timestamp?.let { sdf.format(it.toDate()) } ?: "", fontSize = 10.sp, color = Color(0xFF64748B))
+                Text(
+                    text = timestamp?.let { sdf.format(it.toDate()) } ?: "", 
+                    fontSize = 10.sp, 
+                    color = MaterialTheme.colorScheme.outline
+                )
             }
         }
     }
@@ -176,28 +201,61 @@ fun AdminReplyItem(data: Map<String, Any>, isUnread: Boolean, primaryColor: Colo
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.AutoMirrored.Filled.Reply, null, tint = primaryColor, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Phản hồi hỗ trợ", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF0F172A))
+                Text(
+                    "Phản hồi hỗ trợ", 
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 15.sp, 
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 if (isUnread) { Spacer(modifier = Modifier.weight(1f)); NewTag() }
             }
             Spacer(modifier = Modifier.height(10.dp))
-            Box(modifier = Modifier.fillMaxWidth().background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp)).padding(10.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                    .padding(10.dp)
+            ) {
                 Column {
-                    Text("Câu hỏi của bạn:", fontSize = 11.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Bold)
-                    Text(data["content"]?.toString() ?: "", fontSize = 13.sp, color = Color(0xFF1E293B))
+                    Text(
+                        "Câu hỏi của bạn:", 
+                        fontSize = 11.sp, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, 
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        data["content"]?.toString() ?: "", 
+                        fontSize = 13.sp, 
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text("Admin phản hồi:", fontSize = 11.sp, color = primaryColor, fontWeight = FontWeight.ExtraBold)
-            Text(data["reply"]?.toString() ?: "", fontSize = 14.sp, color = Color(0xFF0F172A))
+            Text(
+                "Admin phản hồi:", 
+                fontSize = 11.sp, 
+                color = primaryColor, 
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                data["reply"]?.toString() ?: "", 
+                fontSize = 14.sp, 
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(timestamp?.let { sdf.format(it.toDate()) } ?: "", fontSize = 10.sp, color = Color(0xFF64748B), modifier = Modifier.align(Alignment.End))
+            Text(
+                timestamp?.let { sdf.format(it.toDate()) } ?: "", 
+                fontSize = 10.sp, 
+                color = MaterialTheme.colorScheme.outline, 
+                modifier = Modifier.align(Alignment.End)
+            )
         }
     }
 }
@@ -212,37 +270,84 @@ fun ReportReplyItem(data: Map<String, Any>, isUnread: Boolean, primaryColor: Col
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Report, null, tint = Color.Red, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Report, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Phản hồi báo cáo", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color(0xFF0F172A))
+                Text(
+                    "Phản hồi báo cáo", 
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 15.sp, 
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 if (isUnread) { Spacer(modifier = Modifier.weight(1f)); NewTag() }
             }
             Spacer(modifier = Modifier.height(10.dp))
-            Box(modifier = Modifier.fillMaxWidth().background(Color(0xFFFFEBEE), RoundedCornerShape(8.dp)).padding(10.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f), 
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(10.dp)
+            ) {
                 Column {
-                    Text("Đối tượng:", fontSize = 11.sp, color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold)
-                    Text(targetName?.toString() ?: "", fontSize = 13.sp, color = Color(0xFF1E293B))
-                    Text("Lý do: ${data["reason"]}", fontSize = 12.sp, color = Color(0xFF475569), fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+                    Text(
+                        "Đối tượng:", 
+                        fontSize = 11.sp, 
+                        color = MaterialTheme.colorScheme.error, 
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        targetName?.toString() ?: "", 
+                        fontSize = 13.sp, 
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        "Lý do: ${data["reason"]}", 
+                        fontSize = 12.sp, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, 
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    )
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text("Admin phản hồi:", fontSize = 11.sp, color = primaryColor, fontWeight = FontWeight.ExtraBold)
-            Text(data["reply"]?.toString() ?: "", fontSize = 14.sp, color = Color(0xFF0F172A))
+            Text(
+                "Admin phản hồi:", 
+                fontSize = 11.sp, 
+                color = primaryColor, 
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                data["reply"]?.toString() ?: "", 
+                fontSize = 14.sp, 
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(timestamp?.let { sdf.format(it.toDate()) } ?: "", fontSize = 10.sp, color = Color(0xFF64748B), modifier = Modifier.align(Alignment.End))
+            Text(
+                timestamp?.let { sdf.format(it.toDate()) } ?: "", 
+                fontSize = 10.sp, 
+                color = MaterialTheme.colorScheme.outline, 
+                modifier = Modifier.align(Alignment.End)
+            )
         }
     }
 }
 
 @Composable
 fun NewTag() {
-    Surface(color = Color.Red, shape = RoundedCornerShape(4.dp)) {
-        Text("MỚI", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+    Surface(color = MaterialTheme.colorScheme.error, shape = RoundedCornerShape(4.dp)) {
+        Text(
+            "MỚI", 
+            color = MaterialTheme.colorScheme.onError, 
+            fontSize = 9.sp, 
+            fontWeight = FontWeight.Bold, 
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        )
     }
 }
 
@@ -250,9 +355,19 @@ fun NewTag() {
 fun EmptyNotifications() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Default.Notifications, null, modifier = Modifier.size(64.dp), tint = Color(0xFFCBD5E1))
+            Icon(
+                Icons.Default.Notifications, 
+                null, 
+                modifier = Modifier.size(64.dp), 
+                tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Chưa có thông báo nào", color = Color(0xFF64748B), fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            Text(
+                "Chưa có thông báo nào", 
+                color = MaterialTheme.colorScheme.onSurfaceVariant, 
+                fontSize = 16.sp, 
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

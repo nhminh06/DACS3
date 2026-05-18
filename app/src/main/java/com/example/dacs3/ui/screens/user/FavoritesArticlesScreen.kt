@@ -39,13 +39,25 @@ fun FavoritesArticlesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Bài viết yêu thích", fontWeight = FontWeight.Bold) },
+                title = { 
+                    Text(
+                        "Bài viết yêu thích", 
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         }
     ) { padding ->
@@ -54,7 +66,7 @@ fun FavoritesArticlesScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .background(Color(0xFFF8FAFC)),
+                    .background(MaterialTheme.colorScheme.background),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -62,12 +74,12 @@ fun FavoritesArticlesScreen(
                         Icons.Default.Favorite,
                         contentDescription = null,
                         modifier = Modifier.size(64.dp),
-                        tint = Color.LightGray
+                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         "Bạn chưa có bài viết yêu thích nào",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 16.sp,
                         textAlign = TextAlign.Center
                     )
@@ -78,7 +90,7 @@ fun FavoritesArticlesScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .background(Color(0xFFF8FAFC)),
+                    .background(MaterialTheme.colorScheme.background),
                 contentPadding = PaddingValues(vertical = 12.dp)
             ) {
                 items(favoriteArticles) { article ->
