@@ -195,7 +195,7 @@ class MainViewModel : ViewModel() {
             }
             list = list.filter { it.getPrice().toFloat() in _priceRange.value }
             if (_selectedRating.value > 0) list = list.filter { it.rating >= _selectedRating.value }
-            
+
             _tours.value = list
             updatePagedList()
         }

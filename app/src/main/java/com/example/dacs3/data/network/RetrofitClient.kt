@@ -1,5 +1,6 @@
-package com.example.dacs3.data.remote
+package com.example.dacs3.data.network
 
+import com.example.dacs3.data.remote.AuthApiService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 

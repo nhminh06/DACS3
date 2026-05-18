@@ -41,6 +41,7 @@ fun ArticleDetailScreen(
     article: ArticleEntity,
     onBack: () -> Unit,
     onNavigateToTour: () -> Unit,
+    onRequireLogin: () -> Unit = {},
     userViewModel: UserViewModel,
     articleViewModel: ArticleViewModel
 ) {
@@ -80,7 +81,7 @@ fun ArticleDetailScreen(
                         if (isLoggedIn) {
                             userViewModel.toggleFavoriteArticle(article.id)
                         } else {
-                            Toast.makeText(context, "Vui lòng đăng nhập để lưu yêu thích", Toast.LENGTH_SHORT).show()
+                            onRequireLogin()
                         }
                     }) {
                         Icon(
@@ -98,7 +99,7 @@ fun ArticleDetailScreen(
                             reportReason = ""
                             showReportDialog = true 
                         } else {
-                            Toast.makeText(context, "Bạn cần đăng nhập để báo cáo", Toast.LENGTH_SHORT).show()
+                            onRequireLogin()
                         }
                     }) {
                         Icon(Icons.Outlined.Flag, contentDescription = "Report Article")
@@ -199,7 +200,7 @@ fun ArticleDetailScreen(
                                 reportReason = ""
                                 showReportDialog = true
                             } else {
-                                Toast.makeText(context, "Bạn cần đăng nhập để báo cáo", Toast.LENGTH_SHORT).show()
+                                onRequireLogin()
                             }
                         },
                         comments = comments,
@@ -228,9 +229,10 @@ fun ArticleDetailScreen(
                             if (isLoggedIn) {
                                 articleViewModel.toggleLikeComment(article.id, comment.id, user?.id ?: "")
                             } else {
-                                Toast.makeText(context, "Bạn cần đăng nhập để thả tim", Toast.LENGTH_SHORT).show()
+                                onRequireLogin()
                             }
                         },
+                        onLoginClick = onRequireLogin,
                         isCommenting = isCommenting,
                         primaryColor = primaryColor
                     )
@@ -393,6 +395,7 @@ fun CommentSection(
     onPostComment: (String) -> Unit,
     onDeleteComment: (Comment) -> Unit,
     onLikeComment: (Comment, Boolean) -> Unit,
+    onLoginClick: () -> Unit = {},
     isCommenting: Boolean,
     primaryColor: Color
 ) {
@@ -414,9 +417,10 @@ fun CommentSection(
         OutlinedTextField(
             value = commentText,
             onValueChange = { commentText = it },
-            enabled = isLoggedIn && !isCommenting,
+            enabled = !isCommenting,
+            readOnly = !isLoggedIn,
             placeholder = { Text(if (isLoggedIn) "Chia sẻ cảm nghĩ của bạn..." else "Bạn cần đăng nhập để bình luận", fontSize = 14.sp) },
-            modifier = Modifier.fillMaxWidth().height(120.dp),
+            modifier = Modifier.fillMaxWidth().height(120.dp).clickable { if(!isLoggedIn) onLoginClick() },
             shape = RoundedCornerShape(16.dp),
             textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
             colors = OutlinedTextFieldDefaults.colors(
@@ -432,12 +436,14 @@ fun CommentSection(
         
         Button(
             onClick = {
-                if (commentText.isNotBlank()) {
+                if (!isLoggedIn) {
+                    onLoginClick()
+                } else if (commentText.isNotBlank()) {
                     onPostComment(commentText)
                     commentText = ""
                 }
             },
-            enabled = isLoggedIn && !isCommenting && commentText.isNotBlank(),
+            enabled = !isCommenting && (isLoggedIn || commentText.isBlank()),
             modifier = Modifier.align(Alignment.End),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
@@ -445,7 +451,7 @@ fun CommentSection(
             if (isCommenting) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
             } else {
-                Text("Gửi bình luận", fontWeight = FontWeight.Bold, color = Color.White)
+                Text(if (isLoggedIn) "Gửi bình luận" else "Đăng nhập để bình luận", fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
 

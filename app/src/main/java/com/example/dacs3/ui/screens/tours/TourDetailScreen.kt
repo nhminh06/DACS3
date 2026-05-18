@@ -47,6 +47,7 @@ fun TourDetailScreen(
     tour: Tour,
     onBack: () -> Unit,
     onNavigateToBooking: (Int, Int, Int) -> Unit,
+    onRequireLogin: () -> Unit = {},
     reviewViewModel: ReviewViewModel = viewModel(),
     mainViewModel: MainViewModel = viewModel(),
     userViewModel: UserViewModel
@@ -87,7 +88,7 @@ fun TourDetailScreen(
                         if (userViewModel.isLoggedIn()) {
                             userViewModel.toggleFavoriteTour(tour.id)
                         } else {
-                            Toast.makeText(context, "Vui lòng đăng nhập để lưu yêu thích", Toast.LENGTH_SHORT).show()
+                            onRequireLogin()
                         }
                     }) {
                         Icon(
@@ -111,7 +112,13 @@ fun TourDetailScreen(
             BookingBottomBar(
                 price = tour.getPrice(),
                 originalPrice = if (tour.isOffer) tour.originalPrice else 0
-            ) { showBookingSheet = true }
+            ) { 
+                if (userViewModel.isLoggedIn()) {
+                    showBookingSheet = true 
+                } else {
+                    onRequireLogin()
+                }
+            }
         }
     ) { paddingValues ->
         Column(

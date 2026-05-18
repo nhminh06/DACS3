@@ -1,29 +1,36 @@
 package com.example.dacs3.ui
 
+import android.widget.Toast
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dacs3.data.local.SessionManager
-import com.example.dacs3.data.model.Tour
+import com.example.dacs3.data.model.ArticleCategory
 import com.example.dacs3.data.model.Guide
+import com.example.dacs3.data.model.Tour
 import com.example.dacs3.data.remote.FirebaseService
 import com.example.dacs3.data.repository.ArticleEntity
-import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.data.repository.ContactRepository
 import com.example.dacs3.data.repository.GuideRepository
 import com.example.dacs3.data.repository.SupportRepository
-import com.example.dacs3.ui.screens.user.*
-import com.example.dacs3.ui.screens.articles.*
-import com.example.dacs3.ui.screens.home.AppHomeScreen
-import com.example.dacs3.ui.screens.tours.*
-import com.example.dacs3.ui.screens.contact.*
-import com.example.dacs3.ui.screens.staff.*
-import com.example.dacs3.ui.components.guides.GuidesListScreen
+import com.example.dacs3.data.repository.UserRepository
 import com.example.dacs3.ui.components.guides.GuideDetailScreen
+import com.example.dacs3.ui.components.guides.GuidesListScreen
+import com.example.dacs3.ui.screens.articles.*
 import com.example.dacs3.ui.screens.chatbot.ChatBotScreen
+import com.example.dacs3.ui.screens.contact.*
+import com.example.dacs3.ui.screens.home.AppHomeScreen
+import com.example.dacs3.ui.screens.staff.*
+import com.example.dacs3.ui.screens.tours.*
+import com.example.dacs3.ui.screens.user.*
 import com.example.dacs3.ui.viewmodel.*
 import com.example.dacs3.ui.viewmodel.factory.*
-import com.example.dacs3.data.model.ArticleCategory
 
 @Composable
 fun MainContainer() {
@@ -63,18 +70,41 @@ fun MainContainer() {
     LaunchedEffect(user?.id) {
         user?.id?.let { uid ->
             bookingViewModel.listenAndNotifyBookingStatus(uid)
-            notificationViewModel.startListening(uid) // Bắt đầu lắng nghe thông báo thời gian thực
+            notificationViewModel.startListening(uid)
             if (user?.role == "guide") {
                 staffViewModel.loadGuideProfile(uid)
             }
         }
     }
 
-    // Mặc định vào App
+    // Navigation State
     var currentScreen by remember { mutableStateOf("home") }
     var previousScreenForDetail by remember { mutableStateOf("explore") }
     var previousScreenForGuideDetail by remember { mutableStateOf("home") }
+    var showLoginSuggestion by remember { mutableStateOf(false) }
     
+    // Danh sách màn hình cần đăng nhập
+    val protectedScreens = listOf(
+        "booking_form", "my_bookings", "booking_detail", "profile", "edit_profile",
+        "favorites_tours", "favorites_articles", "my_articles", "create_article", 
+        "edit_article", "support_chat", "notifications", "change_password",
+        "staff_personal", "staff_schedule", "staff_trip_detail", "staff_notes", "staff_skills"
+    )
+
+    // Hàm xử lý khi cần đăng nhập
+    val onRequireLoginAction = {
+        showLoginSuggestion = true
+        Toast.makeText(context, "Vui lòng đăng nhập để sử dụng tính năng này", Toast.LENGTH_SHORT).show()
+    }
+
+    val navigateTo: (String) -> Unit = { screen ->
+        if (protectedScreens.contains(screen) && !userViewModel.isLoggedIn()) {
+            onRequireLoginAction()
+        } else {
+            currentScreen = screen
+        }
+    }
+
     // Nếu là guide, chuyển thẳng sang màn hình staff personal profile
     LaunchedEffect(user?.role) {
         if (user?.role == "guide" && (currentScreen == "home" || currentScreen == "login")) {
@@ -92,6 +122,33 @@ fun MainContainer() {
     var adultCount by remember { mutableIntStateOf(1) }
     var childCount by remember { mutableIntStateOf(0) }
     var infantCount by remember { mutableIntStateOf(0) }
+
+    // Dialog gợi ý đăng nhập
+    if (showLoginSuggestion) {
+        AlertDialog(
+            onDismissRequest = { showLoginSuggestion = false },
+            title = { Text("Yêu cầu đăng nhập", fontWeight = FontWeight.Bold) },
+            text = { Text("Bạn cần đăng nhập để sử dụng chức năng này. Bạn có muốn đăng nhập ngay không?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLoginSuggestion = false
+                        currentScreen = "login"
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                ) {
+                    Text("Đăng nhập")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLoginSuggestion = false }) {
+                    Text("Để sau")
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
+        )
+    }
 
     when (currentScreen) {
         "login" -> {
@@ -123,7 +180,7 @@ fun MainContainer() {
         }
         "home" -> {
             AppHomeScreen(
-                onNavigate = { screen -> currentScreen = screen },
+                onNavigate = navigateTo,
                 viewModel = mainViewModel,
                 articleViewModel = articleViewModel,
                 userViewModel = userViewModel,
@@ -139,18 +196,18 @@ fun MainContainer() {
                 },
                 onCategoryClick = { category ->
                     when (category) {
-                        "Du lịch" -> currentScreen = "tours"
+                        "Du lịch" -> navigateTo("tours")
                         "Văn hóa" -> {
                             initialArticleCategory = ArticleCategory.CULTURE
-                            currentScreen = "explore"
+                            navigateTo("explore")
                         }
                         "Ẩm thực" -> {
                             initialArticleCategory = ArticleCategory.CUISINE
-                            currentScreen = "explore"
+                            navigateTo("explore")
                         }
                         "Làng nghề" -> {
                             initialArticleCategory = ArticleCategory.CRAFT_VILLAGE
-                            currentScreen = "explore"
+                            navigateTo("explore")
                         }
                     }
                 }
@@ -192,7 +249,7 @@ fun MainContainer() {
         }
         "tours" -> {
             TourScreen(
-                onNavigate = { screen -> currentScreen = screen },
+                onNavigate = navigateTo,
                 onTourClick = { tour ->
                     selectedTour = tour
                     currentScreen = "tour_detail"
@@ -206,11 +263,16 @@ fun MainContainer() {
                     tour = tour,
                     onBack = { currentScreen = "tours" },
                     onNavigateToBooking = { a, c, i ->
-                        adultCount = a
-                        childCount = c
-                        infantCount = i
-                        currentScreen = "booking_form" 
+                        if (userViewModel.isLoggedIn()) {
+                            adultCount = a
+                            childCount = c
+                            infantCount = i
+                            currentScreen = "booking_form"
+                        } else {
+                            onRequireLoginAction()
+                        }
                     },
+                    onRequireLogin = onRequireLoginAction,
                     mainViewModel = mainViewModel,
                     userViewModel = userViewModel
                 )
@@ -234,7 +296,7 @@ fun MainContainer() {
         }
         "explore" -> {
             ArticleExplorerScreen(
-                onNavigate = { screen -> currentScreen = screen },
+                onNavigate = navigateTo,
                 onArticleClick = { article ->
                     selectedArticle = article
                     previousScreenForDetail = "explore"
@@ -250,6 +312,7 @@ fun MainContainer() {
                     article = article,
                     onBack = { currentScreen = previousScreenForDetail },
                     onNavigateToTour = { currentScreen = "tours" },
+                    onRequireLogin = onRequireLoginAction,
                     userViewModel = userViewModel,
                     articleViewModel = articleViewModel
                 )
@@ -282,7 +345,7 @@ fun MainContainer() {
             ContactScreen(
                 userViewModel = userViewModel,
                 contactViewModel = contactViewModel,
-                onNavigate = { screen -> currentScreen = screen }
+                onNavigate = navigateTo
             )
         }
         "support_chat" -> {
@@ -293,25 +356,19 @@ fun MainContainer() {
             )
         }
         "profile" -> {
-            if (userViewModel.isLoggedIn()) {
-                ProfileScreen(
-                    userViewModel = userViewModel,
-                    articleViewModel = articleViewModel,
-                    onNavigate = { screen ->
-                        if (screen == "login") {
-                            userViewModel.logout {
-                                currentScreen = "login"
-                            }
-                        } else {
-                            currentScreen = screen
+            ProfileScreen(
+                userViewModel = userViewModel,
+                articleViewModel = articleViewModel,
+                onNavigate = { screen ->
+                    if (screen == "login") {
+                        userViewModel.logout {
+                            currentScreen = "login"
                         }
+                    } else {
+                        navigateTo(screen)
                     }
-                )
-            } else {
-                LaunchedEffect(Unit) {
-                    currentScreen = "login"
                 }
-            }
+            )
         }
         "favorites_tours" -> {
             FavoritesToursScreen(
@@ -432,7 +489,7 @@ fun MainContainer() {
                     if (screen == "login") {
                         userViewModel.logout { currentScreen = "login" }
                     } else {
-                        currentScreen = screen
+                        navigateTo(screen)
                     }
                 },
                 onBack = { 

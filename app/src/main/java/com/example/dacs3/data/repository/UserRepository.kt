@@ -4,7 +4,7 @@ import android.net.Uri
 import android.util.Log
 import com.example.dacs3.data.model.User
 import com.example.dacs3.data.remote.FirebaseService
-import com.example.dacs3.data.remote.RetrofitClient
+import com.example.dacs3.data.network.RetrofitClient
 import com.example.dacs3.data.repository.storage.StorageRepository
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.GoogleAuthProvider
