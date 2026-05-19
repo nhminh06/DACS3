@@ -1,5 +1,6 @@
 package com.example.dacs3.ui.screens.articles
 
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -47,6 +48,7 @@ fun ArticleDetailScreen(
 ) {
     val scrollState = rememberScrollState()
     val primaryColor = MaterialTheme.colorScheme.primary
+    val context = LocalContext.current
     
     // Report States
     var showReportDialog by remember { mutableStateOf(false) }
@@ -59,7 +61,6 @@ fun ArticleDetailScreen(
     val isCommenting by articleViewModel.isCommenting.collectAsState()
     val user by userViewModel.currentUser
     val isLoggedIn = userViewModel.isLoggedIn()
-    val context = LocalContext.current
     
     val isFavorite = user?.favoriteArticles?.contains(article.id) ?: false
 
@@ -104,7 +105,19 @@ fun ArticleDetailScreen(
                             tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    IconButton(onClick = { /* Share */ }) {
+                    IconButton(onClick = { 
+                        // Logic chia sẻ bài viết
+                        val summary = article.sections.firstOrNull { it["noi_dung"] != null }?.get("noi_dung")?.take(150) ?: ""
+                        val shareText = "Khám phá bài viết: ${article.tieu_de}\n\n$summary..."
+                        
+                        val sendIntent: Intent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT, shareText)
+                            type = "text/plain"
+                        }
+                        val shareIntent = Intent.createChooser(sendIntent, "Chia sẻ bài viết qua")
+                        context.startActivity(shareIntent)
+                    }) {
                         Icon(
                             Icons.Default.Share, 
                             contentDescription = "Share",
