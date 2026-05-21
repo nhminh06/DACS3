@@ -40,7 +40,7 @@ fun StaffScheduleScreen(
     val tabs = listOf("Tour sắp tới", "Lịch sử")
 
     var searchQuery by remember { mutableStateOf("") }
-    val primaryColor = Color(0xFF2563EB)
+    val primaryColor = MaterialTheme.colorScheme.primary
 
     Scaffold(
         topBar = {
@@ -51,7 +51,11 @@ fun StaffScheduleScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
@@ -59,11 +63,11 @@ fun StaffScheduleScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF8FAFC))
+                .background(MaterialTheme.colorScheme.background)
         ) {
             TabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = primaryColor,
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
@@ -78,7 +82,7 @@ fun StaffScheduleScreen(
                         onClick = { selectedTab = index },
                         text = { Text(title, fontWeight = FontWeight.Bold) },
                         selectedContentColor = primaryColor,
-                        unselectedContentColor = Color.Gray
+                        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -98,13 +102,11 @@ fun StaffScheduleScreen(
                         leadingIcon = { Icon(Icons.Default.Search, null) },
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true,
-                        textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                             focusedBorderColor = primaryColor,
-                            unfocusedBorderColor = Color.Gray,
-                            cursorColor = primaryColor
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline
                         )
                     )
                 }
@@ -130,12 +132,12 @@ fun StaffScheduleScreen(
                             Icons.AutoMirrored.Filled.EventNote, 
                             contentDescription = null, 
                             modifier = Modifier.size(64.dp),
-                            tint = Color.LightGray
+                            tint = MaterialTheme.colorScheme.outlineVariant
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = if (selectedTab == 0) "Hiện chưa có lịch trình nào sắp tới" else "Không tìm thấy lịch sử chuyến đi", 
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 16.sp
                         )
                     }
@@ -162,7 +164,7 @@ fun ScheduleTourItem(tour: Map<String, Any>, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -209,18 +211,18 @@ fun ScheduleTourItem(tour: Map<String, Any>, onClick: () -> Unit) {
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
-                    color = Color(0xFF1E293B)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CalendarToday, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.CalendarToday, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = tour["startDate"] as? String ?: "No Date",
                         fontSize = 13.sp,
-                        color = Color(0xFF64748B),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -228,12 +230,12 @@ fun ScheduleTourItem(tour: Map<String, Any>, onClick: () -> Unit) {
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.LocationOn, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = tour["location"] as? String ?: "Điểm đến chưa cập nhật",
                         fontSize = 13.sp,
-                        color = Color(0xFF64748B),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
                     )
                 }
@@ -244,14 +246,14 @@ fun ScheduleTourItem(tour: Map<String, Any>, onClick: () -> Unit) {
                     Text(
                         text = "Chi tiết",
                         fontSize = 12.sp,
-                        color = Color(0xFF2563EB),
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack, 
                         contentDescription = null,
                         modifier = Modifier.size(12.dp).padding(start = 2.dp).graphicsLayer(rotationZ = 180f),
-                        tint = Color(0xFF2563EB)
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }

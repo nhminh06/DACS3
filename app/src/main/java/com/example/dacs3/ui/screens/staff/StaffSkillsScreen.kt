@@ -31,7 +31,7 @@ fun StaffSkillsScreen(
 ) {
     val guide by staffViewModel.guideProfile
     val context = LocalContext.current
-    val primaryColor = Color(0xFF2563EB)
+    val primaryColor = MaterialTheme.colorScheme.primary
     
     var newSkill by remember { mutableStateOf("") }
     val skills = remember { mutableStateListOf<String>() }
@@ -46,13 +46,17 @@ fun StaffSkillsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Kỹ năng", fontWeight = FontWeight.Bold, color = Color(0xFF1E293B)) },
+                title = { Text("Kỹ năng", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color(0xFF1E293B))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
@@ -60,10 +64,10 @@ fun StaffSkillsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF8FAFC))
+                .background(MaterialTheme.colorScheme.background)
                 .padding(24.dp)
         ) {
-            Text("Thêm kỹ năng mới", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+            Text("Thêm kỹ năng mới", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
             Spacer(modifier = Modifier.height(12.dp))
             
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -74,13 +78,11 @@ fun StaffSkillsScreen(
                     placeholder = { Text("VD: Tiếng Anh, Giao tiếp...") },
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true,
-                    textStyle = TextStyle(color = Color.Black, fontWeight = FontWeight.Medium),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = primaryColor,
-                        unfocusedBorderColor = Color.Gray,
-                        cursorColor = primaryColor
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     )
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -94,16 +96,16 @@ fun StaffSkillsScreen(
                         }
                     },
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor, contentColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
                     modifier = Modifier.height(56.dp)
                 ) {
-                    Icon(Icons.Default.Add, null, tint = Color.White)
+                    Icon(Icons.Default.Add, null)
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Text("Kỹ năng của bạn", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+            Text("Kỹ năng của bạn", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
             Spacer(modifier = Modifier.height(16.dp))
 
             FlowRow(
@@ -135,9 +137,9 @@ fun StaffSkillsScreen(
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = primaryColor, contentColor = Color.White)
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
             ) {
-                Text("Lưu thay đổi", fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Lưu thay đổi", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -146,21 +148,21 @@ fun StaffSkillsScreen(
 @Composable
 fun SkillTag(name: String, onDelete: () -> Unit) {
     Surface(
-        color = Color(0xFFEFF6FF),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
         shape = RoundedCornerShape(100.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDBEAFE))
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(name, color = Color(0xFF1E40AF), fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            Text(name, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium, fontSize = 14.sp)
             Spacer(modifier = Modifier.width(4.dp))
             Icon(
                 Icons.Default.Close,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp).clickable { onDelete() },
-                tint = Color(0xFF1E40AF)
+                tint = MaterialTheme.colorScheme.primary
             )
         }
     }

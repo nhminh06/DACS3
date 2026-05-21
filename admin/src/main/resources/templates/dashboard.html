@@ -55,7 +55,6 @@
             padding: 20px 25px;
             border-bottom: 1px solid #334155;
             display: flex;
-            justify-content: space-between;
             align-items: center;
         }
         .card-header-v2 h2 { font-size: 18px; font-weight: 700; margin: 0; }
@@ -235,7 +234,6 @@
                     <div class="progress mt-3" style="height: 6px;">
                         <div class="progress-bar" role="progressbar" th:style="'width: ' + (${totalBookings} > 0 ? (${confirmedBookings} * 100 / ${totalBookings}) : 0) + '%'"></div>
                     </div>
-                    <div class="small text-white mt-2 text-center">Tỷ lệ đơn thành công</div>
                 </div>
 
                 <!-- Recent Reviews Section (New - Fills the gap) -->

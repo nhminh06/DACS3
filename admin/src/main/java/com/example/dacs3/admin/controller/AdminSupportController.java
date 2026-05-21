@@ -79,7 +79,7 @@ public class AdminSupportController {
                         .collect(Collectors.toList());
                 
                 model.addAttribute("messages", messages);
-                
+
                 DocumentSnapshot selUser = firestore.collection("users").document(userId).get().get();
                 model.addAttribute("selectedUser", selUser.getData());
             }
@@ -102,7 +102,7 @@ public class AdminSupportController {
             message.put("timestamp", Timestamp.now());
 
             firestore.collection("support_messages").add(message).get();
-            
+
             result.put("success", true);
         } catch (Exception e) {
             result.put("success", false);

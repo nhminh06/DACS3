@@ -37,7 +37,7 @@ fun StaffTripDetailScreen(
     val bookings by staffViewModel.selectedTourBookings
     
     var noteText by remember { mutableStateOf(tour?.get("tripNote") as? String ?: "") }
-    val primaryColor = Color(0xFF2563EB)
+    val primaryColor = MaterialTheme.colorScheme.primary
 
     LaunchedEffect(bookingId) {
         tour?.let {
@@ -56,7 +56,11 @@ fun StaffTripDetailScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { padding ->
@@ -69,7 +73,7 @@ fun StaffTripDetailScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .background(Color(0xFFF8FAFC))
+                    .background(MaterialTheme.colorScheme.background)
                     .verticalScroll(rememberScrollState())
             ) {
                 // Info Header
@@ -88,7 +92,7 @@ fun StaffTripDetailScreen(
                         text = tour["title"] as? String ?: "",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
@@ -106,18 +110,18 @@ fun StaffTripDetailScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     // Timeline
-                    Text("Trạng thái chuyến đi", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Trạng thái chuyến đi", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(12.dp))
                     TripTimeline(currentStatus = tour["status"] as? String ?: "preparing")
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     // Guest List
-                    Text("Danh sách khách (${bookings.size} đơn)", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Danh sách khách (${bookings.size} đơn)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     if (bookings.isEmpty()) {
-                        Text("Chưa có danh sách khách cho chuyến này", fontSize = 14.sp, color = Color.Gray)
+                        Text("Chưa có danh sách khách cho chuyến này", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
                         bookings.forEach { bk ->
                             GuestItem(bk)
@@ -128,12 +132,12 @@ fun StaffTripDetailScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     // Notes from Admin
-                    Text("Ghi chú từ quản trị", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("Ghi chú từ quản trị", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         shape = RoundedCornerShape(12.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
@@ -141,7 +145,7 @@ fun StaffTripDetailScreen(
                             Text(
                                 text = tour["tripNote"] as? String ?: "Không có ghi chú nào.",
                                 fontSize = 14.sp,
-                                color = if (tour["tripNote"] != null) Color.Black else Color.Gray
+                                color = if (tour["tripNote"] != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -154,11 +158,11 @@ fun StaffTripDetailScreen(
 @Composable
 fun DetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
     Row(modifier = Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
+        Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
         Spacer(modifier = Modifier.width(8.dp))
-        Text(label, color = Color.Gray, fontSize = 14.sp)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         Spacer(modifier = Modifier.weight(1f))
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -182,12 +186,17 @@ fun TimelineNode(label: String, active: Boolean, completed: Boolean) {
             modifier = Modifier
                 .size(16.dp)
                 .background(
-                    if (completed) Color(0xFF10B981) else if (active) Color(0xFF2563EB) else Color.LightGray, 
+                    if (completed) Color(0xFF10B981) else if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, 
                     CircleShape
                 )
         )
         Spacer(modifier = Modifier.height(4.dp))
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (active) Color.Black else Color.Gray)
+        Text(
+            label, 
+            fontSize = 11.sp, 
+            fontWeight = FontWeight.Medium, 
+            color = if (active) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -195,7 +204,7 @@ fun TimelineNode(label: String, active: Boolean, completed: Boolean) {
 fun GuestItem(booking: Map<String, Any>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -203,7 +212,7 @@ fun GuestItem(booking: Map<String, Any>) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val id = booking["id"] as? String ?: ""
                 val shortId = if (id.length > 8) id.substring(id.length - 8) else id
-                Text(shortId.uppercase(), fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), fontSize = 12.sp)
+                Text(shortId.uppercase(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
                     text = booking["paymentStatus"] as? String ?: "Pending", 
@@ -212,13 +221,18 @@ fun GuestItem(booking: Map<String, Any>) {
                     fontSize = 10.sp
                 )
             }
-            Text(text = booking["customerName"] as? String ?: "N/A", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text(text = "${booking["phone"] ?: "N/A"} • ${booking["email"] ?: ""}", fontSize = 12.sp, color = Color.Gray)
+            Text(text = booking["customerName"] as? String ?: "N/A", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+            Text(text = "${booking["phone"] ?: "N/A"} • ${booking["email"] ?: ""}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             
             val adults = (booking["adults"] as? Number)?.toInt() ?: 0
             val children = (booking["children"] as? Number)?.toInt() ?: 0
             val infants = (booking["infants"] as? Number)?.toInt() ?: 0
-            Text(text = "Đoàn: $adults người lớn, $children trẻ em, $infants em bé", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Text(
+                text = "Đoàn: $adults người lớn, $children trẻ em, $infants em bé", 
+                fontSize = 12.sp, 
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
