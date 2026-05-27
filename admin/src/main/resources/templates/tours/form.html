@@ -192,7 +192,7 @@
                 <div class="mb-4">
                     <label class="form-label">Ngày khởi hành</label>
                     <div class="d-flex gap-2 mb-2">
-                        <input type="date" class="form-control" id="datePicker" style="max-width:200px">
+                        <input type="date" class="form-control" id="datePicker" style="max-width:200px;background:#162d55">
                         <button type="button" class="btn btn-primary" onclick="addDate()">
                             <i class="bi bi-plus-circle me-1"></i> Thêm ngày
                         </button>
@@ -234,37 +234,30 @@
                 autoCalculate();
             }
         }
-        // Trước khi submit form, tính epoch ms từ giờ + phút nhập vào
-document.getElementById('tourForm').addEventListener('submit', function() {
-    const hours   = parseInt(document.getElementById('offerHours').value)   || 0;
-    const minutes = parseInt(document.getElementById('offerMinutes').value) || 0;
 
-    const isOffer = document.getElementById('isOffer').checked;
-    if (isOffer && (hours > 0 || minutes > 0)) {
-        const expiry = Date.now() + (hours * 60 + minutes) * 60 * 1000;
-        document.getElementById('timeLeftHidden').value = String(expiry);
-    } else if (!isOffer) {
-        document.getElementById('timeLeftHidden').value = '0';
-    }
-    // Nếu isOffer bật nhưng không nhập giờ/phút → giữ nguyên timestamp cũ (hidden rỗng, backend giữ cũ)
-});
+        document.getElementById('tourForm').addEventListener('submit', function() {
+            const hours   = parseInt(document.getElementById('offerHours').value)   || 0;
+            const minutes = parseInt(document.getElementById('offerMinutes').value) || 0;
+            const isOffer = document.getElementById('isOffer').checked;
+            if (isOffer && (hours > 0 || minutes > 0)) {
+                const expiry = Date.now() + (hours * 60 + minutes) * 60 * 1000;
+                document.getElementById('timeLeftHidden').value = String(expiry);
+            } else if (!isOffer) {
+                document.getElementById('timeLeftHidden').value = '0';
+            }
+        });
+
         function autoCalculate() {
             const pct = parseFloat(document.getElementById('discountPercent').value) || 0;
             const factor = (100 - pct) / 100;
-            const fields = [ ['origNL', 'priceNL'], ['origTE', 'priceTE'], ['origTN', 'priceTN'] ];
+            const fields = [['origNL','priceNL'],['origTE','priceTE'],['origTN','priceTN']];
             fields.forEach(([origId, priceId]) => {
-                const origEl = document.getElementById(origId);
+                const origEl  = document.getElementById(origId);
                 const priceEl = document.getElementById(priceId);
                 const origVal = parseFloat(origEl.value) || 0;
-                if (origVal > 0) {
-                    priceEl.value = Math.round(origVal * factor);
-                }
+                if (origVal > 0) priceEl.value = Math.round(origVal * factor);
             });
-            if (pct > 0) {
-                document.getElementById('discountTag').value = "-" + pct + "%";
-            } else {
-                document.getElementById('discountTag').value = "";
-            }
+            document.getElementById('discountTag').value = pct > 0 ? '-' + pct + '%' : '';
         }
 
         function handlePriceInput() {
@@ -277,107 +270,117 @@ document.getElementById('tourForm').addEventListener('submit', function() {
         }
 
         function calculatePercentFromPrices() {
-            const origNL = parseFloat(document.getElementById('origNL').value) || 0;
+            const origNL  = parseFloat(document.getElementById('origNL').value)  || 0;
             const priceNL = parseFloat(document.getElementById('priceNL').value) || 0;
             if (origNL > priceNL && origNL > 0) {
                 const pct = Math.round((1 - (priceNL / origNL)) * 100);
                 document.getElementById('discountPercent').value = pct;
-                document.getElementById('discountTag').value = "-" + pct + "%";
+                document.getElementById('discountTag').value = '-' + pct + '%';
             }
         }
 
         function syncToOriginal(force = false) {
-            const fields = [ ['origNL', 'priceNL'], ['origTE', 'priceTE'], ['origTN', 'priceTN'] ];
+            const fields = [['origNL','priceNL'],['origTE','priceTE'],['origTN','priceTN']];
             fields.forEach(([origId, priceId]) => {
-                const origEl = document.getElementById(origId);
+                const origEl  = document.getElementById(origId);
                 const priceEl = document.getElementById(priceId);
-                if (force || !origEl.value || origEl.value == "0") {
+                if (force || !origEl.value || origEl.value === '0') {
                     origEl.value = priceEl.value;
                 }
             });
         }
 
-       window.addEventListener('DOMContentLoaded', (event) => {
-    const isChecked = document.getElementById('isOffer').checked;
-    if (isChecked) {
-        document.getElementById('offerSection').style.display = 'block';
-
-        // Nếu origNL = 0 (tour mới bật offer) thì sync từ giá thực tế lên
-        const origNL = parseFloat(document.getElementById('origNL').value) || 0;
-        if (origNL === 0) {
-            syncToOriginal(true);
-        }
-        // Sau đó tính lại % và discountTag
-        autoCalculate();
-    }
-});
-
         function previewMain(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = e => { document.getElementById('mainPreview').innerHTML = `<img src="${e.target.result}" class="preview-img">`; }
+                reader.onload = e => {
+                    document.getElementById('mainPreview').innerHTML =
+                        `<img src="${e.target.result}" class="preview-img">`;
+                };
                 reader.readAsDataURL(input.files[0]);
             }
         }
+
         function previewOffer(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = e => { document.getElementById('offerPreview').innerHTML = `<img src="${e.target.result}" class="preview-img">`; }
+                reader.onload = e => {
+                    document.getElementById('offerPreview').innerHTML =
+                        `<img src="${e.target.result}" class="preview-img">`;
+                };
                 reader.readAsDataURL(input.files[0]);
             }
         }
+
+        /* ── Date tags ── */
         let dates = [];
 
-// Khi load trang edit, parse ngày cũ thành tags
-window.addEventListener('DOMContentLoaded', () => {
-    const existing = document.getElementById('ngayKhoiHanh').value;
-    if (existing) {
-        existing.split(',').map(s => s.trim()).filter(Boolean).forEach(label => {
-            const parts = label.split('/');
-            if (parts.length === 3) {
-                const val = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-                dates.push({ val, label });
+        function addDate() {
+            const input = document.getElementById('datePicker');
+            const val   = input.value;               // "YYYY-MM-DD"
+            if (!val || dates.find(d => d.val === val)) { input.value = ''; return; }
+
+            // Tách thủ công để tránh lệch timezone
+            const [y, m, day] = val.split('-');
+            const label = `${day}/${m}/${y}`;
+            dates.push({ val, label });
+            renderTags();
+            input.value = '';
+        }
+
+        function removeDate(val) {
+            dates = dates.filter(d => d.val !== val);
+            renderTags();
+        }
+
+        function renderTags() {
+            const wrap   = document.getElementById('tagsWrap');
+            const hidden = document.getElementById('ngayKhoiHanh');
+            if (!dates.length) {
+                wrap.innerHTML =
+                    '<span id="emptyHint" class="text-muted small align-self-center">Chưa có ngày nào</span>';
+                hidden.value = '';
+                return;
+            }
+            const sorted = [...dates].sort((a, b) => a.val.localeCompare(b.val));
+            wrap.innerHTML = sorted.map(d => `
+                <span class="badge d-inline-flex align-items-center gap-1"
+                      style="background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid #1d4ed8;
+                             font-size:13px;padding:6px 10px;border-radius:6px">
+                    <i class="bi bi-calendar3"></i> ${d.label}
+                    <button type="button" onclick="removeDate('${d.val}')"
+                            style="background:none;border:none;color:inherit;cursor:pointer;
+                                   padding:0;margin-left:4px;font-size:15px;line-height:1">&times;</button>
+                </span>
+            `).join('');
+            hidden.value = sorted.map(d => d.label).join(', ');
+        }
+
+        /* ── Khởi tạo một lần duy nhất ── */
+        window.addEventListener('DOMContentLoaded', () => {
+
+            // 1. Parse ngày cũ thành tags
+            const existing = document.getElementById('ngayKhoiHanh').value;
+            if (existing) {
+                existing.split(',').map(s => s.trim()).filter(Boolean).forEach(label => {
+                    const parts = label.split('/');
+                    if (parts.length === 3) {
+                        const val = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                        if (!dates.find(d => d.val === val)) dates.push({ val, label });
+                    }
+                });
+                renderTags();
+            }
+
+            // 2. Khởi tạo offer section
+            const isChecked = document.getElementById('isOffer').checked;
+            if (isChecked) {
+                document.getElementById('offerSection').style.display = 'block';
+                const origNL = parseFloat(document.getElementById('origNL').value) || 0;
+                if (origNL === 0) syncToOriginal(true);
+                autoCalculate();
             }
         });
-        renderTags();
-    }
-});
-
-function addDate() {
-    const input = document.getElementById('datePicker');
-    const val = input.value;
-    if (!val || dates.find(d => d.val === val)) { input.value = ''; return; }
-    const d = new Date(val + 'T00:00:00');
-    const label = d.toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' });
-    dates.push({ val, label });
-    renderTags();
-    input.value = '';
-}
-
-function removeDate(val) {
-    dates = dates.filter(d => d.val !== val);
-    renderTags();
-}
-
-function renderTags() {
-    const wrap = document.getElementById('tagsWrap');
-    const hidden = document.getElementById('ngayKhoiHanh');
-    if (!dates.length) {
-        wrap.innerHTML = '<span id="emptyHint" class="text-muted small align-self-center">Chưa có ngày nào</span>';
-        hidden.value = '';
-        return;
-    }
-    const sorted = [...dates].sort((a,b) => a.val.localeCompare(b.val));
-    wrap.innerHTML = sorted.map(d => `
-        <span class="badge d-inline-flex align-items-center gap-1"
-              style="background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid #1d4ed8;font-size:13px;padding:6px 10px;border-radius:6px">
-            <i class="bi bi-calendar3"></i> ${d.label}
-            <button type="button" onclick="removeDate('${d.val}')"
-                    style="background:none;border:none;color:inherit;cursor:pointer;padding:0;margin-left:4px;font-size:15px;line-height:1">&times;</button>
-        </span>
-    `).join('');
-    hidden.value = sorted.map(d => d.label).join(', ');
-}
     </script>
 </body>
 </html>

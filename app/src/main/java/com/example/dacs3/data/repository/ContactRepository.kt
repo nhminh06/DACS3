@@ -29,7 +29,7 @@ class ContactRepository(private val firebaseService: FirebaseService) {
 
     suspend fun getUserContacts(userId: String): Result<List<Contact>> {
         return try {
-            // Tạm thời bỏ orderBy để kiểm tra nếu thiếu Index Firestore
+
             val snapshot = contactsCollection
                 .whereEqualTo("userId", userId)
                 .get()
@@ -43,7 +43,7 @@ class ContactRepository(private val firebaseService: FirebaseService) {
                     e.printStackTrace()
                     null
                 }
-            }.sortedByDescending { it.timestamp } // Sắp xếp bằng code thay vì Query Firestore để tránh lỗi Index
+            }.sortedByDescending { it.timestamp }
 
             Result.success(contacts)
         } catch (e: Exception) {
