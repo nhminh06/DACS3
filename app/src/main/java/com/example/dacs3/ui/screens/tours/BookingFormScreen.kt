@@ -60,14 +60,27 @@ fun BookingFormScreen(
     val dateGuestCounts by bookingViewModel.dateGuestCounts.collectAsState()
 
     val availableDates = remember(tour.startDate) {
+        val today = LocalDate.now()
         tour.startDate.split(",")
             .filter { it.isNotBlank() }
-            .map { dateStr ->
+            .mapNotNull { dateStr ->
                 try {
-                    LocalDate.parse(dateStr.trim(), DateTimeFormatter.ISO_LOCAL_DATE)
-                        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    // Thử parse theo chuẩn ISO (yyyy-MM-dd)
+                    val parsedDate = LocalDate.parse(dateStr.trim(), DateTimeFormatter.ISO_LOCAL_DATE)
+                    if (parsedDate.isBefore(today)) {
+                        null // Loại bỏ ngày đã qua
+                    } else {
+                        parsedDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    }
                 } catch (e: Exception) {
-                    dateStr.trim()
+                    try {
+                        // Thử parse theo chuẩn dd/MM/yyyy nếu dữ liệu đã format sẵn
+                        val parsedDate = LocalDate.parse(dateStr.trim(), DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                        if (parsedDate.isBefore(today)) null else dateStr.trim()
+                    } catch (e2: Exception) {
+                        // Nếu không parse được thì giữ nguyên để tránh mất dữ liệu tour (hoặc xử lý tùy ý)
+                        dateStr.trim()
+                    }
                 }
             }
     }
@@ -105,7 +118,7 @@ fun BookingFormScreen(
 
     val isOverLimit = overLimitCount > 0
     val shouldHidePaymentSection = overLimitCount >= 3
-    val canBook = overLimitCount <= 2
+    val canBook = overLimitCount <= 2 && availableDates.isNotEmpty()
 
     // Dùng helper functions thay vì truy cập trực tiếp
     val priceTreEm = if (tour.getGiaTreEm() > 0) tour.getGiaTreEm() else (tour.getPrice() * 0.7).toLong()
@@ -226,9 +239,10 @@ fun BookingFormScreen(
                     Button(
                         onClick = {
                             if (!canBook) {
+                                val message = if (availableDates.isEmpty()) "Không còn ngày khởi hành khả dụng." else "Chuyến đi đã quá tải, không thể đặt thêm."
                                 Toast.makeText(
                                     context,
-                                    "Chuyến đi đã quá tải, không thể đặt thêm.",
+                                    message,
                                     Toast.LENGTH_SHORT
                                 ).show()
                                 return@Button
@@ -290,7 +304,9 @@ fun BookingFormScreen(
                             )
                         } else {
                             Text(
-                                if (canBook) "XÁC NHẬN ĐẶT TOUR" else "HẾT CHỖ TRỐNG",
+                                if (availableDates.isEmpty()) "KHÔNG CÓ NGÀY KHẢ DỤNG" 
+                                else if (canBook) "XÁC NHẬN ĐẶT TOUR" 
+                                else "HẾT CHỖ TRỐNG",
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 16.sp,
                                 color = MaterialTheme.colorScheme.onPrimary
@@ -322,10 +338,25 @@ fun BookingFormScreen(
 
             item {
                 SectionTitle("NGÀY KHỞI HÀNH")
-                AvailableDatesSection(
-                    tour.id, tour.maxGuests, selectedDate,
-                    availableDates, dateGuestCounts
-                ) { selectedDate = it }
+                if (availableDates.isEmpty()) {
+                    Card(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                    ) {
+                        Text(
+                            "⚠️ Hiện tại chưa có ngày khởi hành nào khả dụng.",
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                } else {
+                    AvailableDatesSection(
+                        tour.id, tour.maxGuests, selectedDate,
+                        availableDates, dateGuestCounts
+                    ) { selectedDate = it }
+                }
             }
 
             item {
