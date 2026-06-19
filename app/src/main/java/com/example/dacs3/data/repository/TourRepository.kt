@@ -13,9 +13,6 @@ class TourRepository {
     private val storageRepository = StorageRepository()
     private val toursCollection = firestore.collection("tours")
 
-    /**
-     * Lấy danh sách tour đang hoạt động
-     */
     suspend fun getActiveTours(): List<Tour> {
         return try {
             val querySnapshot = toursCollection

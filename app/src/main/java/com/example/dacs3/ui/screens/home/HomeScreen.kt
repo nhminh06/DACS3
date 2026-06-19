@@ -189,8 +189,6 @@ fun AppHomeScreen(
                             onScrollTo = { index ->
                                 coroutineScope.launch {
                                     val viewportHeight = listState.layoutInfo.viewportSize.height
-                                    // Cuộn để section xuất hiện ở giữa màn hình
-                                    // Sử dụng offset khoảng 1/3 viewport để phần đầu section nằm ở vị trí dễ nhìn
                                     listState.animateScrollToItem(index, scrollOffset = -(viewportHeight / 3))
                                 }
                             },
@@ -212,7 +210,7 @@ fun AppHomeScreen(
                     }
                 }
 
-                // Index 6: Featured Tours (Giữ cố định Index bằng cách bao quanh bởi item)
+                // Index 6: Featured Tours
                 item {
                     if (featuredTours.isNotEmpty()) {
                         HomePaddingWrapper {
